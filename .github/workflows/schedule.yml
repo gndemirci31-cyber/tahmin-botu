@@ -2,9 +2,12 @@ name: Tahmin Botu
 
 on:
   schedule:
-    - cron: "0 7 * * *"      # TR 10:00 (UTC 07:00) → Günün Tahminleri
-    - cron: "59 20 * * *"    # TR 23:59 (UTC 20:59) → Günün Sonuçları
-  workflow_dispatch: {}       # Elle çalıştırma butonu
+    - cron: "0 7 * * *"     # TR 10:00 (UTC+3) → Günün Tahminleri
+    - cron: "59 20 * * *"   # TR 23:59 (UTC+3) → Günün Sonuçları
+  workflow_dispatch: {}     # Elle çalıştırma
+
+permissions:
+  contents: read
 
 jobs:
   run:
@@ -16,11 +19,20 @@ jobs:
           python-version: "3.11"
       - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
+      - name: Sabah/Gece seçimi
+        id: pick
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "07" ]; then
+            echo "mode=PREDICT" >> $GITHUB_OUTPUT
+          else
+            echo "mode=RESULTS" >> $GITHUB_OUTPUT
+          fi
       - name: Botu çalıştır
         env:
-          GMAIL_USER:      ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS:      ${{ secrets.GMAIL_PASS }}
-          GMAIL_TO:        ${{ secrets.GMAIL_TO }}
-          SHEET_CSV_URL:   ${{ secrets.SHEET_CSV_URL }}
-          RESULTS_CSV_URL: ${{ secrets.RESULTS_CSV_URL }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO:   ${{ secrets.GMAIL_TO }}
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          MODE: ${{ steps.pick.outputs.mode }}
         run: python mailer.py
