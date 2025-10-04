@@ -25,25 +25,26 @@ jobs:
           python-version: "3.11"
       - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
-       - name: Sabah/Gece seçimi
-    id: pick
-    run: |
-      # Manuel giriş varsa onu kullan
-      if [ "${{ github.event.inputs.mode }}" = "PREDICT" ]; then
-        echo "mode=PREDICT" >> $GITHUB_OUTPUT
-        exit 0
-      elif [ "${{ github.event.inputs.mode }}" = "RESULTS" ]; then
-        echo "mode=RESULTS" >> $GITHUB_OUTPUT
-        exit 0
-      fi
+            - name: Sabah/Gece modu seç
+        id: pick
+        env:
+          DISPATCH_MODE: ${{ github.event.inputs.mode || '' }}
+        run: |
+          # Manuel tetikleme: mode parametresi geldiyse onu kullan
+          if [ -n "$DISPATCH_MODE" ] && [ "$DISPATCH_MODE" != "AUTO" ]; then
+            echo "mode=$DISPATCH_MODE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-      # Otomatik (saat kontrolü, UTC)
-      HOUR=$(date -u +%H)
-      if [ "$HOUR" = "07" ]; then
-        echo "mode=PREDICT" >> $GITHUB_OUTPUT
-      else
-        echo "mode=RESULTS" >> $GITHUB_OUTPUT
-      fi
+          # Otomatik (cron): UTC saate göre
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "07" ]; then
+            echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Botu çalıştır
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
@@ -51,3 +52,4 @@ jobs:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           MODE: ${{ steps.pick.outputs.mode }}
         run: python mailer.py
+
