@@ -2,31 +2,25 @@ name: Tahmin Botu
 
 on:
   schedule:
-    # GitHub cron ZAMAN DİLİMİ: UTC'dir.
-    # 10:00 Türkiye saati (UTC+3) = 07:00 UTC
-    - cron: "0 7 * * *"
-    # 23:59 Türkiye saati (UTC+3) = 20:59 UTC
-    - cron: "59 20 * * *"
-  workflow_dispatch: {}   # Elle tetiklemek için
+    - cron: "0 7 * * *"      # TR 10:00 (UTC 07:00) → Günün Tahminleri
+    - cron: "59 20 * * *"    # TR 23:59 (UTC 20:59) → Günün Sonuçları
+  workflow_dispatch: {}       # Elle çalıştırma butonu
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
-
       - name: Botu çalıştır
         env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          GMAIL_TO:   ${{ secrets.GMAIL_TO }}
+          GMAIL_USER:      ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS:      ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO:        ${{ secrets.GMAIL_TO }}
           SHEET_CSV_URL:   ${{ secrets.SHEET_CSV_URL }}
           RESULTS_CSV_URL: ${{ secrets.RESULTS_CSV_URL }}
         run: python mailer.py
