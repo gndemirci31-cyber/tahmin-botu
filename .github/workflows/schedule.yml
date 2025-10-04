@@ -2,9 +2,9 @@ name: Tahmin Botu
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # Her gün 15:00 Türkiye saati (TR=UTC+3 → 12:00 UTC)
-  workflow_dispatch: {}     # Elle test için
-
+    - cron: "0 7 * * *"     # Her gün 10:00 Türkiye saati (TR=UTC+3 → 07:00 UTC)
+    - cron: "59 20 * * *"   # Her gün 23:59 Türkiye saati (TR=UTC+3 → 20:59 UTC)
+  workflow_dispatch: {}      # Elle tetiklemek için
 jobs:
   run:
     runs-on: ubuntu-latest
