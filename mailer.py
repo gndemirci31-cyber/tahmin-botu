@@ -1,28 +1,20 @@
-import os, smtplib, math, json, time
+import os, sys, json, math, smtplib, requests
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 
-import requests
-from dateutil.relativedelta import relativedelta
+# ------------ Ayarlar / Secret'lar ------------
+GMAIL_USER = os.environ["GMAIL_USER"]
+GMAIL_PASS = os.environ["GMAIL_PASS"]
+GMAIL_TO   = os.environ.get("GMAIL_TO", GMAIL_USER)
+FD_TOKEN   = os.environ.get("FOOTBALL_DATA_TOKEN", "").strip()
+MODE_ENV   = os.environ.get("MODE", "AUTO").upper()
 
-# ---------------- CFG ----------------
-FD_TOKEN = os.environ.get("FOOTBALL_DATA_TOKEN", "").strip()
-GMAIL_USER = os.environ.get("GMAIL_USER", "").strip()
-GMAIL_PASS = os.environ.get("GMAIL_PASS", "").strip()
-GMAIL_TO   = os.environ.get("GMAIL_TO", "").strip()
-MODE       = os.environ.get("MODE", "PREDICT").upper()  # PREDICT | RESULTS
+UTC = timezone.utc
+TODAY = datetime.now(UTC).date()
 
-API_BASE = "https://api.football-data.org/v4"
-
-TR_TZ = timezone(timedelta(hours=3))
-
-# ---------------- UTIL ----------------
-def today_tr():
-    # TR tarihini (YYYY-MM-DD) üret
-    return datetime.now(TR_TZ).date()
-
-def send_mail(subject: str, body: str):
-    msg = MIMEText(body, _charset="utf-8")
+# ------------ Mail ------------
+def send_mail(subject, body):
+    msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = GMAIL_USER
     msg["To"] = GMAIL_TO
@@ -30,195 +22,128 @@ def send_mail(subject: str, body: str):
         s.login(GMAIL_USER, GMAIL_PASS)
         s.sendmail(GMAIL_USER, [GMAIL_TO], msg.as_string())
 
-def http_get(url, params=None):
-    headers = {"X-Auth-Token": FD_TOKEN} if FD_TOKEN else {}
-    r = requests.get(url, params=params or {}, headers=headers, timeout=30)
+# ------------ football-data.org basit istemci ------------
+BASE = "https://api.football-data.org/v4"
+
+def fd_get(path, params=None):
+    if not FD_TOKEN:
+        raise RuntimeError("FOOTBALL_DATA_TOKEN yok. Settings → Secrets → Actions ekleyin.")
+    headers = {"X-Auth-Token": FD_TOKEN}
+    r = requests.get(f"{BASE}{path}", params=params or {}, headers=headers, timeout=25)
+    if r.status_code == 426:
+        # plan kısıtına takıldıysa daha küçük set döner
+        pass
     r.raise_for_status()
     return r.json()
 
-def poisson_pmf(lmb, k):
-    return math.exp(-lmb) * (lmb**k) / math.factorial(k)
+def get_matches(date_from, date_to, status=None):
+    params = {"dateFrom": str(date_from), "dateTo": str(date_to)}
+    js = fd_get("/matches", params)
+    ms = js.get("matches", [])
+    if status:
+        ms = [m for m in ms if m.get("status")==status]
+    return ms
 
-def probs_poisson(lh, la):
-    p1 = pX = p2 = 0.0
-    for h in range(0, 11):
-        ph = poisson_pmf(lh, h)
-        for a in range(0, 11):
-            pa = poisson_pmf(la, a)
-            if h > a: p1 += ph * pa
-            elif h == a: pX += ph * pa
-            else: p2 += ph * pa
-    return {"1": p1, "X": pX, "2": p2}
-
-# ---------------- DATA ----------------
-def fetch_matches_for_date(day):
-    """Günün tüm maçları."""
-    if not FD_TOKEN:
-        return []
-    d = day.strftime("%Y-%m-%d")
-    url = f"{API_BASE}/matches"
-    data = http_get(url, {"dateFrom": d, "dateTo": d})
-    return data.get("matches", [])
-
-def fetch_team_recent(team_id, days=90):
-    """Takımın son 10 bitmiş maçı (GF/GA formu)."""
-    if not FD_TOKEN:
-        return {"gf": 1.2, "ga": 1.2}  # güvenli varsayılan
-    to = today_tr()
-    fr = to - relativedelta(days=days)
-    url = f"{API_BASE}/teams/{team_id}/matches"
-    params = {
-        "status": "FINISHED",
-        "dateFrom": fr.strftime("%Y-%m-%d"),
-        "dateTo": to.strftime("%Y-%m-%d"),
-    }
-    data = http_get(url, params)
-    ms = data.get("matches", [])[:10]  # ilk 10
-    gf = ga = n = 0
-    for m in ms:
-        ht, at = m["homeTeam"]["id"], m["awayTeam"]["id"]
-        sc = (m.get("score") or {}).get("fullTime", {})
-        hg, ag = (sc.get("home") or 0), (sc.get("away") or 0)
-        if team_id == ht:
+def team_recent_form(team_id, n=5):
+    try:
+        js = fd_get(f"/teams/{team_id}/matches", {"status":"FINISHED","limit":n})
+        matches = js.get("matches", [])[:n]
+    except Exception:
+        matches = []
+    gf=ga=0
+    for m in matches:
+        home_id = m["homeTeam"]["id"]
+        ft = (m.get("score") or {}).get("fullTime",{})
+        hg, ag = ft.get("home",0) or 0, ft.get("away",0) or 0
+        if home_id==team_id:
             gf += hg; ga += ag
         else:
             gf += ag; ga += hg
-        n += 1
-    if n == 0:  # veri yoksa nötr
-        return {"gf": 1.2, "ga": 1.2}
-    return {"gf": max(0.2, gf / n), "ga": max(0.2, ga / n)}
+    if len(matches)==0:
+        return {"gfpm":1.2, "gapm":1.2}  # varsayılan
+    return {"gfpm": gf/len(matches), "gapm": ga/len(matches)}
 
-def league_mu_proxy():
-    """Lig gol temposu için basit proxy (global ortalama)."""
-    # Basit güvenli sabit: 2.6 toplam gol ~ Avrupa ortalaması
-    return 2.6
+# ------------ Basit Poisson tahmini ------------
+def poisson_pmf(lmb, k):
+    return math.exp(-lmb) * (lmb**k) / math.factorial(k)
 
-# ---------------- MODEL ----------------
-def match_prediction(m):
-    """Tek maç için 1X2 tahmini + nedenler."""
-    ht = m["homeTeam"]; at = m["awayTeam"]
-    hid, aid = ht["id"], at["id"]
-    hname, aname = ht["name"], at["name"]
+def match_probs(h_form, a_form, mu=2.6, home_adv=1.10):
+    lam_h = max(0.2, mu * (h_form["gfpm"]/max(0.6, a_form["gapm"])) * home_adv)
+    lam_a = max(0.2, mu * (a_form["gfpm"]/max(0.6, h_form["gapm"])))
+    p1=pX=p2=0.0
+    for h in range(0,8):
+        ph=poisson_pmf(lam_h,h)
+        for a in range(0,8):
+            pa=poisson_pmf(lam_a,a)
+            if h>a:   p1+=ph*pa
+            elif h==a: pX+=ph*pa
+            else:     p2+=ph*pa
+    return {"1":p1, "X":pX, "2":p2, "lam_h":lam_h, "lam_a":lam_a}
 
-    # Form
-    hs = fetch_team_recent(hid)
-    as_ = fetch_team_recent(aid)
+def pick_from_probs(p):
+    side = max(p, key=lambda k: p[k])  # "1","X","2"
+    conf = p[side]
+    return side, conf
 
-    mu = league_mu_proxy()
-    # basit ev-saha etkisi
-    home_adv = 1.10
-
-    # lambda'lar: lig temposu × form oranı
-    lam_h = max(0.2, mu * (hs["gf"] / max(0.5, as_["ga"])) * home_adv)
-    lam_a = max(0.2, mu * (as_["gf"] / max(0.5, hs["ga"])))
-
-    pr = probs_poisson(lam_h, lam_a)
-    pick = max(pr, key=pr.get)
-    conf = round(pr[pick] * 100, 1)
-
-    # 1 satır açıklama
-    why = []
-    if hs["gf"] > as_["ga"]:  why.append("Ev formu↑")
-    if as_["gf"] > hs["ga"]:  why.append("Dep. üretken")
-    if lam_h + lam_a >= 2.8:  why.append("Tempo↑")
-    if lam_h + lam_a <= 2.2:  why.append("Tempo↓")
-    why_s = ", ".join(why) if why else "Temel form/tempo"
-
-    return {
-        "id": m["id"],
-        "home": hname,
-        "away": aname,
-        "lam_h": lam_h, "lam_a": lam_a,
-        "p": pr, "pick": pick, "conf": conf,
-        "why": why_s
-    }
-
-def format_pred_line(p):
-    side_map = {"1": p["home"], "X": "Beraberlik", "2": p["away"]}
-    return f"• {p['home']} – {p['away']} → Seçim: {side_map[p['pick']]} ({p['conf']}%)  —  {p['why']}"
-
-# ---------------- FLOWS ----------------
-def run_predict():
-    day = today_tr()
-    ms = fetch_matches_for_date(day)
-    # çok alakasız ligleri temizlemek istersen burada filtreleyebilirsin
+# ------------ Raporlar ------------
+def build_predict_report():
+    # Bugünün programı (SCHEDULED)
+    ms = get_matches(TODAY, TODAY)  # tüm maçlar
+    ms = [m for m in ms if m.get("status") in ("TIMED","SCHEDULED")]
     if not ms:
-        send_mail(f"Günün Tahminleri | {day}", "Bugün için maç bulunamadı.")
-        return
+        return "Bugün için tahmin çıkarılacak maç bulunamadı.", False
 
-    lines = [f"📅 Günün Tahminleri — {day}", ""]
-    preds = []
-    for m in ms:
-        if m.get("status") not in (None, "SCHEDULED", "TIMED", "POSTPONED"):
-            continue
+    lines = [f"📅 Günün Tahminleri — {TODAY.isoformat()}"]
+    cnt=0
+    for m in sorted(ms, key=lambda x: x.get("utcDate")):
+        ht, at = m["homeTeam"]["name"], m["awayTeam"]["name"]
+        hid, aid = m["homeTeam"]["id"], m["awayTeam"]["id"]
         try:
-            p = match_prediction(m)
-            preds.append(p)
+            h_form = team_recent_form(hid)
+            a_form = team_recent_form(aid)
+            probs = match_probs(h_form, a_form)
+            side, conf = pick_from_probs(probs)
+            conf_pc = int(round(conf*100))
+            note = f"(λH={probs['lam_h']:.2f}, λA={probs['lam_a']:.2f} | form H:{h_form['gfpm']:.2f}/{h_form['gapm']:.2f} A:{a_form['gfpm']:.2f}/{a_form['gapm']:.2f})"
+            lines.append(f"— {ht} vs {at} → Tahmin: {side} | Güven %{conf_pc} {note}")
+            cnt+=1
         except Exception as e:
-            lines.append(f"• {m['homeTeam']['name']} – {m['awayTeam']['name']} → hesaplanamadı ({e})")
+            lines.append(f"— {ht} vs {at} → (tahmin üretilemedi: {e})")
+    if cnt==0:
+        lines.append("\nNot: Ücretsiz plandaki lig kapsamı sınırlı olabilir.")
+    return "\n".join(lines), True
 
-        # rate limitten kaçınmak için mini bekleme
-        time.sleep(0.2)
-
-    if not preds:
-        send_mail(f"Günün Tahminleri | {day}", "Bugün için uygun maç bulunamadı.")
-        return
-
-    # güvene göre sırala
-    preds.sort(key=lambda x: x["conf"], reverse=True)
-    for p in preds:
-        lines.append(format_pred_line(p))
-
-    # yüksek güven sepeti
-    hi = [p for p in preds if p["conf"] >= 90]
-    if hi:
-        lines += ["", "⚡ Yüksek Güven (≥%90):"]
-        for p in hi:
-            lines.append(f"  - {p['home']} – {p['away']} ({p['conf']}%)")
-
-    body = "\n".join(lines)
-    send_mail(f"Günün Tahminleri | {day}", body)
-
-def run_results():
-    day = today_tr()
-    ms = fetch_matches_for_date(day)
+def build_results_report():
+    ms = get_matches(TODAY, TODAY, status="FINISHED")
     if not ms:
-        send_mail(f"Günün Sonuçları | {day}", "Bugün için maç bulunamadı.")
-        return
+        return "Bugün için tamamlanmış maç bulunamadı.", False
+    lines = [f"📊 Günün Sonuçları — {TODAY.isoformat()}"]
+    for m in sorted(ms, key=lambda x: x.get("utcDate")):
+        ht, at = m["homeTeam"]["name"], m["awayTeam"]["name"]
+        ft = (m.get("score") or {}).get("fullTime",{})
+        hg, ag = ft.get("home",0) or 0, ft.get("away",0) or 0
+        lines.append(f"— {ht} {hg}-{ag} {at}")
+    return "\n".join(lines), True
 
-    lines = [f"📊 Günün Sonuçları — {day}", ""]
-    correct = wrong = 0
-
-    for m in ms:
-        if m.get("status") != "FINISHED":
-            continue
-        sc = (m.get("score") or {}).get("fullTime", {})
-        hg, ag = (sc.get("home") or 0), (sc.get("away") or 0)
-
-        # aynı günkü metoda göre pick’i tekrar üret (deterministik)
-        try:
-            p = match_prediction(m)
-        except Exception as e:
-            lines.append(f"• {m['homeTeam']['name']} {hg}-{ag} {m['awayTeam']['name']} → analiz edilemedi ({e})")
-            continue
-
-        if (p["pick"] == "1" and hg > ag) or (p["pick"] == "2" and ag > hg) or (p["pick"] == "X" and hg == ag):
-            correct += 1
-            res = "✅ tuttu"
-        else:
-            wrong += 1
-            res = "❌ tutmadı"
-
-        lines.append(f"• {m['homeTeam']['name']} {hg}-{ag} {m['awayTeam']['name']} → Seçim: {p['pick']} ({p['conf']}%) → {res}")
-
-        time.sleep(0.2)
-
-    lines += ["", f"Özet: {correct} doğru / {wrong} yanlış"]
-    send_mail(f"Günün Sonuçları | {day}", "\n".join(lines))
-
-# ---------------- MAIN ----------------
-if __name__ == "__main__":
-    if MODE == "RESULTS":
-        run_results()
+# ------------ Koş ve maille ------------
+def main():
+    # AUTO modu: UTC 07'de PREDICT, UTC 20:59 sonrası RESULTS
+    if MODE_ENV not in ("AUTO","PREDICT","RESULTS"):
+        mode = "AUTO"
     else:
-        run_predict()
+        mode = MODE_ENV
+    now_h = int(datetime.now(UTC).strftime("%H"))
+    if mode=="AUTO":
+        mode = "PREDICT" if now_h<21 else "RESULTS"
+
+    if mode=="PREDICT":
+        body, ok = build_predict_report()
+        subject = f"Günün Tahminleri | {TODAY.isoformat()}"
+    else:
+        body, ok = build_results_report()
+        subject = f"Günün Sonuçları | {TODAY.isoformat()}"
+
+    send_mail(subject, body)
+
+if __name__=="__main__":
+    main()
