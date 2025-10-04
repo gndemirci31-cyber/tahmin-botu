@@ -1,5 +1,6 @@
 name: Tahmin Botu
-
+permissions:
+  contents: write
 on:
   schedule:
     # TR 10:00 (UTC 07:00) → Günün Tahminleri
