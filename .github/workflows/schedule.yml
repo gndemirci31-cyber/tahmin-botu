@@ -1,24 +1,25 @@
 name: Tahmin Botu
 
-permissions:
-  contents: write
-
 on:
   schedule:
-    - cron: "0 7 * * *"    # TR 10:00 (UTC 07:00) → Günün Tahminleri
-    - cron: "59 20 * * *"  # TR 23:59 (UTC 20:59) → Günün Sonuçları
+    - cron: "0 7 * * *"     # TR 10:00 (UTC 07:00) → Günün Tahminleri
+    - cron: "59 20 * * *"   # TR 23:59 (UTC 20:59) → Günün Sonuçları
   workflow_dispatch:
     inputs:
       mode:
-        description: "Manuel çalışma modu (AUTO/PREDICT/RESULTS)"
+        description: "Manuel çalışma modu (AUTO / PREDICT / RESULTS)"
         required: false
         default: "AUTO"
+
+permissions:
+  contents: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -26,29 +27,28 @@ jobs:
       - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
 
-      - name: Sabah/Gece modu seç
+      - name: Modu seç
         id: pick
-        env:
-          DISPATCH_MODE: ${{ github.event.inputs.mode || '' }}
         run: |
-          if [ -n "$DISPATCH_MODE" ] && [ "$DISPATCH_MODE" != "AUTO" ]; then
-            echo "mode=$DISPATCH_MODE" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          HOUR=$(date -u +%H)
-          if [ "$HOUR" = "07" ]; then
-            echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+          MODE_INPUT="${{ github.event.inputs.mode }}"
+          if [ -n "$MODE_INPUT" ] && [ "$MODE_INPUT" != "AUTO" ]; then
+            echo "mode=$MODE_INPUT" >> "$GITHUB_OUTPUT"
           else
-            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" = "07" ]; then
+              echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+            else
+              echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Botu çalıştır
-  env:
-    GMAIL_USER:       ${{ secrets.GMAIL_USER }}
-    GMAIL_PASS:       ${{ secrets.GMAIL_PASS }}
-    GMAIL_TO:         ${{ secrets.GMAIL_TO }}
-    FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-    SHEET_CSV_URL:    ${{ secrets.SHEET_CSV_URL }}
-    RESULTS_CSV_URL:  ${{ secrets.RESULTS_CSV_URL }}
-    MODE:             ${{ steps.pick.outputs.mode }}
-  run: python mailer.py
+        env:
+          GMAIL_USER:            ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO:              ${{ secrets.GMAIL_TO }}
+          FOOTBALL_DATA_TOKEN:   ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          SHEET_CSV_URL:         ${{ secrets.SHEET_CSV_URL }}
+          RESULTS_CSV_URL:       ${{ secrets.RESULTS_CSV_URL }}
+          MODE:                  ${{ steps.pick.outputs.mode }}
+        run: python mailer.py
