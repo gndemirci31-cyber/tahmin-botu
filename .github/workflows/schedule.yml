@@ -1,19 +1,20 @@
 name: Tahmin Botu
+
 permissions:
   contents: write
+
 on:
   schedule:
-    # TR 10:00 (UTC 07:00) → Günün Tahminleri
-    - cron: "0 7 * * *"
-    # TR 23:59 (UTC 20:59) → Günün Sonuçları
-    - cron: "59 20 * * *"
+    - cron: "0 7 * * *"    # TR 10:00 (UTC 07:00) → Günün Tahminleri
+    - cron: "59 20 * * *"  # TR 23:59 (UTC 20:59) → Günün Sonuçları
   workflow_dispatch:
     inputs:
       mode:
-        description: "Manuel çalıştırma modu (AUTO/PREDICT/RESULTS)"
+        description: "Manuel çalışma modu (AUTO/PREDICT/RESULTS)"
         required: false
         default: "AUTO"
-        jobs:
+
+jobs:
   run:
     runs-on: ubuntu-latest
     steps:
@@ -21,19 +22,19 @@ on:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Bağımlılıkları yükle
-              - name: Sabah/Gece modu seç
+        run: pip install -r requirements.txt
+
+      - name: Sabah/Gece modu seç
         id: pick
         env:
           DISPATCH_MODE: ${{ github.event.inputs.mode || '' }}
         run: |
-          # Manuel tetikleme: mode parametresi verildiyse onu kullan
           if [ -n "$DISPATCH_MODE" ] && [ "$DISPATCH_MODE" != "AUTO" ]; then
             echo "mode=$DISPATCH_MODE" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          # Otomatik (cron): UTC saate göre
           HOUR=$(date -u +%H)
           if [ "$HOUR" = "07" ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
@@ -41,7 +42,7 @@ on:
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
           fi
 
-            - name: Botu çalıştır
+      - name: Botu çalıştır
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
@@ -49,4 +50,3 @@ on:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           MODE: ${{ steps.pick.outputs.mode }}
         run: python mailer.py
-
