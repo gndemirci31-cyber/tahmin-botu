@@ -2,11 +2,8 @@ name: Tahmin Botu
 
 on:
   schedule:
-    # Türkiye saati 10:00 (UTC 07:00)
-    - cron: "0 7 * * *"
-    # Türkiye saati 23:59 (UTC 20:59)
-    - cron: "59 20 * * *"
-  workflow_dispatch: {}  # Elle çalıştırmak için
+    - cron: "0 12 * * *"   # Her gün 15:00 Türkiye saati (TR=UTC+3 → 12:00 UTC)
+  workflow_dispatch: {}     # Elle test için
 
 jobs:
   run:
@@ -17,18 +14,9 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - name: Sabah/Gece seçimi
-        id: pick
-        run: |
-          HOUR=$(date -u +%H)
-          if [ "$HOUR" = "07" ]; then
-            echo "job=morning" >> $GITHUB_OUTPUT
-          else
-            echo "job=night" >> $GITHUB_OUTPUT
-          fi
       - name: Çalıştır
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           GMAIL_TO:   ${{ secrets.GMAIL_TO }}
-        run: python mailer.py "${{ steps.pick.outputs.job }}"
+        run: python mailer.py morning
