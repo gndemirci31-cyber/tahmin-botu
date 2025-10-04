@@ -57,6 +57,6 @@ jobs:
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           GMAIL_TO:   ${{ secrets.GMAIL_TO }}
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          # ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}   # (opsiyonel)
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           MODE: ${{ steps.pick.outputs.mode }}
         run: python mailer.py
