@@ -43,10 +43,12 @@ jobs:
           fi
 
       - name: Botu çalıştır
-        env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          GMAIL_TO:   ${{ secrets.GMAIL_TO }}
-          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          MODE: ${{ steps.pick.outputs.mode }}
-        run: python mailer.py
+  env:
+    GMAIL_USER:       ${{ secrets.GMAIL_USER }}
+    GMAIL_PASS:       ${{ secrets.GMAIL_PASS }}
+    GMAIL_TO:         ${{ secrets.GMAIL_TO }}
+    FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+    SHEET_CSV_URL:    ${{ secrets.SHEET_CSV_URL }}
+    RESULTS_CSV_URL:  ${{ secrets.RESULTS_CSV_URL }}
+    MODE:             ${{ steps.pick.outputs.mode }}
+  run: python mailer.py
