@@ -71,24 +71,39 @@ jobs:
 
       - name: Botu çalıştır
         env:
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          GMAIL_TO:   ${{ secrets.GMAIL_TO }}
-          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
-          MODE: ${{ steps.pick.outputs.mode }}
+          GMAIL_USER:            ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO:              ${{ secrets.GMAIL_TO }}
+          FOOTBALL_DATA_TOKEN:   ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
+          APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
+          MODE:                  ${{ steps.pick.outputs.mode }}
+
           # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
-          TOP_N:          ${{ vars.TOP_N          || '5'  }}
-          MIN_CONF:       ${{ vars.MIN_CONF       || '0'  }}
-          HIGH_ALERT:     ${{ vars.HIGH_ALERT     || '90' }}
-          OLD_LEAGUES:    ${{ vars.OLD_LEAGUES    || 'bundesliga,bundesliga2' }}
-          ODDS_TTL_MIN:   ${{ vars.ODDS_TTL_MIN   || '15' }}
-          ELO_K:          ${{ vars.ELO_K          || '24' }}
-          ELO_HOME_ADV:   ${{ vars.ELO_HOME_ADV   || '60' }}
-          FORM_LOOKBACK:  ${{ vars.FORM_LOOKBACK  || '10' }}
-          FORM_DAYS:      ${{ vars.FORM_DAYS      || '120' }}
-          ALLOW_STATE_FILE: ${{ vars.ALLOW_STATE_FILE || '1' }}
+          TOP_N:                 ${{ vars.TOP_N                 || '5'   }}
+          MIN_CONF:              ${{ vars.MIN_CONF              || '0'   }}
+          HIGH_ALERT:            ${{ vars.HIGH_ALERT            || '90'  }}
+          SPLIT_HIGH_ALERT_MAIL: ${{ vars.SPLIT_HIGH_ALERT_MAIL || '0'   }}
+
+          OLD_LEAGUES:           ${{ vars.OLD_LEAGUES           || 'bundesliga,bundesliga2' }}
+          ODDS_TTL_MIN:          ${{ vars.ODDS_TTL_MIN          || '15'  }}
+
+          ELO_K:                 ${{ vars.ELO_K                 || '24'  }}
+          ELO_HOME_ADV:          ${{ vars.ELO_HOME_ADV          || '60'  }}
+          FORM_LOOKBACK:         ${{ vars.FORM_LOOKBACK         || '10'  }}
+          FORM_DAYS:             ${{ vars.FORM_DAYS             || '120' }}
+          ALLOW_STATE_FILE:      ${{ vars.ALLOW_STATE_FILE      || '1'   }}
+
+          # Otomatik öğrenme & eşleştirme
+          W_MKT_INIT:            ${{ vars.W_MKT_INIT            || '0.35' }}
+          LEARN_RATE:            ${{ vars.LEARN_RATE            || '0.05' }}
+          GOAL_LR:               ${{ vars.GOAL_LR               || '0.02' }}
+          PRED_MATCH_WINDOW_HRS: ${{ vars.PRED_MATCH_WINDOW_HRS || '48'   }}
+
+          # Table/Streak ayarları
+          TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
+          STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
+          STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
         run: python mailer.py
 
       - name: State’i kalıcılaştır (yalnızca RESULTS)
