@@ -23,6 +23,9 @@ Opsiyonel ENV (varsayılanlar):
 - ELO_K=24, ELO_HOME_ADV=60
 - FORM_LOOKBACK=10, FORM_DAYS=120
 - ALLOW_STATE_FILE=1
+- DRY_RUN=0                           # 1 -> mail atma, sadece logla (test)
+- SEPARATE_HIGH_ALERT_MAIL=0          # 1 -> yüksek güvenli seçimleri ayrı mail at
+- HIGH_ALERT_TO=""                    # ayrı mail alıcısı; boşsa GMAIL_TO kullanılır
 """
 
 import os, math, time, json, smtplib, traceback
@@ -34,7 +37,10 @@ import requests
 # --- Ortak yardımcılar -------------------------------------------------------
 
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
-HEADERS_JSON = {"Accept": "application/json"}
+HEADERS_JSON = {
+    "Accept": "application/json",
+    "User-Agent": "tahmin-botu/1.0 (+mail)"
+}
 
 def log(msg): print(f"[mailer] {msg}", flush=True)
 
@@ -42,7 +48,14 @@ def http_get(url, headers=None, params=None, timeout=20):
     try:
         r = requests.get(url, headers=headers or {}, params=params or {}, timeout=timeout)
         if r.status_code == 200:
-            return r.json()
+            ct = (r.headers.get("Content-Type") or "")
+            # bazı uçlar boş body döndürebilir
+            if "application/json" in ct.lower():
+                return r.json()
+            try:
+                return r.json()
+            except Exception:
+                return None
         log(f"GET {url} -> {r.status_code}")
     except Exception as e:
         log(f"GET ERROR {url}: {e}")
@@ -77,11 +90,16 @@ OLD_LEAGUES  = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesl
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 
 # Elo / Form ayarları
-ELO_K          = float(os.getenv("ELO_K", "24"))
-ELO_HOME_ADV   = float(os.getenv("ELO_HOME_ADV", "60"))   # puan
-FORM_LOOKBACK  = int(os.getenv("FORM_LOOKBACK", "10"))    # son N maç
-FORM_DAYS      = int(os.getenv("FORM_DAYS", "120"))       # geçmiş gün penceresi
+ELO_K            = float(os.getenv("ELO_K", "24"))
+ELO_HOME_ADV     = float(os.getenv("ELO_HOME_ADV", "60"))   # puan
+FORM_LOOKBACK    = int(os.getenv("FORM_LOOKBACK", "10"))    # son N maç
+FORM_DAYS        = int(os.getenv("FORM_DAYS", "120"))       # geçmiş gün penceresi
 ALLOW_STATE_FILE = os.getenv("ALLOW_STATE_FILE", "1") == "1"
+
+# Test & ayrı mail
+DRY_RUN                  = os.getenv("DRY_RUN", "0") == "1"
+SEPARATE_HIGH_ALERT_MAIL = os.getenv("SEPARATE_HIGH_ALERT_MAIL", "0") == "1"
+HIGH_ALERT_TO            = (os.getenv("HIGH_ALERT_TO") or "").strip() or None
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
@@ -104,9 +122,9 @@ def _state_save(st):
         log("STATE kaydı kapalı (ALLOW_STATE_FILE=0)")
         return
     try:
+        st["last_saved"] = datetime.utcnow().isoformat() + "Z"  # önce set et
         with open(STATE_PATH, "w", encoding="utf-8") as f:
             json.dump(st, f, ensure_ascii=False, indent=2)
-        st["last_saved"] = datetime.utcnow().isoformat() + "Z"
         log(f"state saved -> {STATE_PATH}")
     except Exception as e:
         log(f"state save err: {e}")
@@ -592,7 +610,8 @@ def build_form_cache_for_date(fixtures):
             if tid and tid not in seen:
                 seen.add(tid)
                 try:
-                    _form_adjust_from_matches(tid, fx.get("area","Europe"), fx.get("home") if tid==fx.get("home_id") else fx.get("away"))
+                    _form_adjust_from_matches(tid, fx.get("area","Europe"),
+                                              fx.get("home") if tid==fx.get("home_id") else fx.get("away"))
                     time.sleep(0.05)  # nazik ol
                 except Exception as e:
                     log(f"form cache err team_id={tid}: {e}")
@@ -600,17 +619,17 @@ def build_form_cache_for_date(fixtures):
 # --- Derecelendirme ----------------------------------------------------------
 
 def rate_fixture(fix, odds_info):
-    area = fix["area"] or "Europe"
+    area = fix.get("area") or "Europe"
     tot  = base_total_goals(area)
 
     # SPI proxy: ev etkisi (sabit) + minik isim-uzunluğu farkı
     ah    = 1.12
-    noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
+    noise = (len((fix.get("home") or "")) - len((fix.get("away") or ""))) * 0.01
     lam_h = max(0.2, tot*0.5*ah        + noise)
     lam_a = max(0.2, tot*0.5*(2 - ah)  - noise)
 
     # Hava
-    wx = fetch_weather_note(fix["home"])
+    wx = fetch_weather_note(fix.get("home"))
     if wx:
         wind, precip = parse_weather(wx)
         try:
@@ -623,7 +642,7 @@ def rate_fixture(fix, odds_info):
             pass
 
     # Elo etkisi (lambda'ya küçük çarpan)
-    Eh = elo_get(area, fix["home"]); Ea = elo_get(area, fix["away"])
+    Eh = elo_get(area, fix.get("home")); Ea = elo_get(area, fix.get("away"))
     elo_diff = (Eh + ELO_HOME_ADV) - Ea
     elo_adj  = max(-0.20, min(0.20, (elo_diff/400.0)*0.15))  # ±%20 sınır
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
@@ -632,10 +651,10 @@ def rate_fixture(fix, odds_info):
     form_bits = []
     home_adj = away_adj = 0.0
     if fix.get("home_id"):
-        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix["home"])
+        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix.get("home"))
         form_bits.append(t)
     if fix.get("away_id"):
-        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix["away"])
+        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix.get("away"))
         form_bits.append(t)
     net_form = max(-0.18, min(0.18, home_adj - away_adj))
     lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
@@ -698,16 +717,28 @@ def fetch_fd_results(date_str):
 
 # --- Mail gönderimi ----------------------------------------------------------
 
-def send_mail(subject, body):
+def send_mail(subject, body, to=None):
     body = (body or "").strip()
     if not body:
         body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
-    msg = EmailMessage()
-    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
-    msg.set_content(body)
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-        s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
-    log(f"Mail gönderildi: {subject}")
+
+    # Test modu
+    if DRY_RUN:
+        log(f"[DRY_RUN] Mail atlanıyor | To={to or GMAIL_TO} | Subject={subject}\n---\n{body}\n---")
+        return
+
+    try:
+        msg = EmailMessage()
+        msg["From"] = GMAIL_USER
+        msg["To"] = to or GMAIL_TO
+        msg["Subject"] = subject
+        msg.set_content(body)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+            s.login(GMAIL_USER, GMAIL_PASS)
+            s.send_message(msg)
+        log(f"Mail gönderildi: {subject} -> {msg['To']}")
+    except Exception as e:
+        log(f"Mail gönderim hatası: {e}")
 
 # --- Raporlar ----------------------------------------------------------------
 
@@ -751,6 +782,14 @@ def report_predictions(date_str):
     body = "\n".join(lines + [""] + best + hi_block)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
+    # İsteğe bağlı: yüksek güven ayrı mail
+    if SEPARATE_HIGH_ALERT_MAIL and hi:
+        hi_lines = [f"⚡ Yüksek Güven — {date_str}", ""]
+        for c, l in hi:
+            hi_lines.append(l.replace("- ", ""))
+        send_mail(f"⚡ Yüksek Güven Seçimler | {date_str}", "\n".join(hi_lines),
+                  to=(HIGH_ALERT_TO or GMAIL_TO))
+
 def report_results(date_str):
     res = fetch_fd_results(date_str)
     if not res:
@@ -759,9 +798,10 @@ def report_results(date_str):
 
     lines = [f"📊 Günün Sonuçları — {date_str}", ""]
     for r in res:
-        h,a = r["home_goals"], r["away_goals"]
-        score = f"{r['home']} {h}-{a} {r['away']}"
-        lines.append(f"- {score} | {r['area']} {r['competition']}")
+        h = r.get("home_goals")
+        a = r.get("away_goals")
+        score = f"{r.get('home')} {h}-{a} {r.get('away')}"
+        lines.append(f"- {score} | {r.get('area')} {r.get('competition')}")
 
         # Elo güncelle
         try:
@@ -769,7 +809,7 @@ def report_results(date_str):
                 if h > a:    res_hw = 1.0
                 elif h == a: res_hw = 0.5
                 else:        res_hw = 0.0
-                elo_update(r["area"], r["home"], r["away"], res_hw)
+                elo_update(r.get("area"), r.get("home"), r.get("away"), res_hw)
         except Exception as e:
             log(f"Elo update warn: {e}")
 
