@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — tek parça mailer.py (GÜNCEL)
+Tahmin Botu — tek parça mailer.py (GÜNCEL + Elo + OppAdj Form + State)
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar)  -> X-Auth-Token: FOOTBALL_DATA_TOKEN
-- OpenLigaDB (ek lig fallback'i)         -> anahtar gerekmez
+- OpenLigaDB (fallback)                  -> anahtar gerekmez
 - Open-Meteo (hava)                      -> anahtar gerekmez
 - The Odds API (opsiyonel oranlar)       -> ODDS_API_KEY varsa kullanılır
 
@@ -19,7 +19,10 @@ Opsiyonel Secrets: ODDS_API_KEY, APIFOOTBALL_KEY (şimdilik kullanılmıyor)
 Opsiyonel ENV (varsayılanlar):
 - TOP_N=5, MIN_CONF=0, HIGH_ALERT=90
 - OLD_LEAGUES="bundesliga,bundesliga2"
-- ODDS_TTL_MIN=15   # dakika
+- ODDS_TTL_MIN=15
+- ELO_K=24, ELO_HOME_ADV=60
+- FORM_LOOKBACK=10, FORM_DAYS=120
+- ALLOW_STATE_FILE=1
 """
 
 import os, math, time, json, smtplib, traceback
@@ -73,8 +76,73 @@ HIGH_ALERT   = int(os.getenv("HIGH_ALERT", "90"))
 OLD_LEAGUES  = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 
+# Elo / Form ayarları
+ELO_K          = float(os.getenv("ELO_K", "24"))
+ELO_HOME_ADV   = float(os.getenv("ELO_HOME_ADV", "60"))   # puan
+FORM_LOOKBACK  = int(os.getenv("FORM_LOOKBACK", "10"))    # son N maç
+FORM_DAYS      = int(os.getenv("FORM_DAYS", "120"))       # geçmiş gün penceresi
+ALLOW_STATE_FILE = os.getenv("ALLOW_STATE_FILE", "1") == "1"
+
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
+
+# --- State (kalibrasyon/Elo) -------------------------------------------------
+
+STATE_PATH = "model_state.json"
+
+def _state_load():
+    try:
+        if os.path.exists(STATE_PATH):
+            with open(STATE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        log(f"state load err: {e}")
+    return {"elo": {}, "last_saved": None}
+
+def _state_save(st):
+    if not ALLOW_STATE_FILE:
+        log("STATE kaydı kapalı (ALLOW_STATE_FILE=0)")
+        return
+    try:
+        with open(STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump(st, f, ensure_ascii=False, indent=2)
+        st["last_saved"] = datetime.utcnow().isoformat() + "Z"
+        log(f"state saved -> {STATE_PATH}")
+    except Exception as e:
+        log(f"state save err: {e}")
+
+STATE = _state_load()
+
+def _team_key(area, name):
+    a = (area or "Europe").strip().lower()
+    n = (name or "").strip().lower()
+    return f"{a}:{n}"
+
+def elo_get(area, name):
+    key = _team_key(area, name)
+    return float(STATE.get("elo", {}).get(key, 1500.0))
+
+def elo_set(area, name, val):
+    key = _team_key(area, name)
+    STATE.setdefault("elo", {})[key] = float(val)
+
+def elo_expect(elo_a, elo_b, home_adv=0.0):
+    # 1/(1+10^(-diff/400))
+    diff = (elo_a + home_adv) - elo_b
+    return 1.0 / (1.0 + 10.0 ** (-diff / 400.0))
+
+def elo_update(area, home_name, away_name, result_hw):
+    # result_hw: 1=home win, 0.5=draw, 0=away win
+    Eh = elo_get(area, home_name)
+    Ea = elo_get(area, away_name)
+    ph = elo_expect(Eh, Ea, ELO_HOME_ADV)
+    pa = 1.0 - ph
+    # home
+    Eh_new = Eh + ELO_K * (result_hw - ph)
+    # away
+    Ea_new = Ea + ELO_K * ((1.0 - result_hw) - pa)
+    elo_set(area, home_name, Eh_new)
+    elo_set(area, away_name, Ea_new)
 
 # --- Odds sport-key haritalaması --------------------------------------------
 
@@ -178,8 +246,7 @@ def parse_weather(wx_text):
 
 def fetch_fd_fixtures(date_str):
     """
-    FD: UTC ±1 gün penceresiyle çek, sonra TR tarihine filtrele.
-    (Saat dilimi nedeniyle “bugün yok” kaçaklarını engeller.)
+    FD: UTC ±1 gün penceresiyle çek, TR gününe filtrele.
     """
     if not FD_TOKEN:
         return []
@@ -190,7 +257,7 @@ def fetch_fd_fixtures(date_str):
     from_utc = (tr_day - timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
     to_utc   = (tr_day + timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
 
-    data = http_get(url, headers=headers, params={"dateFrom": from_utc, "dateTo": to_utc, "status": "SCHEDULED"})
+    data = http_get(url, headers=headers, params={"dateFrom": from_utc, "dateTo": to_utc})
     out = []
     if data and data.get("matches"):
         for m in data["matches"]:
@@ -203,11 +270,15 @@ def fetch_fd_fixtures(date_str):
                 continue
             comp = m.get("competition", {})
             area = comp.get("area", {}).get("name", "")
+            ht = m.get("homeTeam", {}) or {}
+            at = m.get("awayTeam", {}) or {}
             out.append({
                 "source": "FD",
                 "utc_kickoff": dtp,
-                "home": m.get("homeTeam", {}).get("name"),
-                "away": m.get("awayTeam", {}).get("name"),
+                "home": ht.get("name"),
+                "away": at.get("name"),
+                "home_id": ht.get("id"),
+                "away_id": at.get("id"),
                 "area": area,
                 "competition": comp.get("name", ""),
                 "id": m.get("id"),
@@ -237,6 +308,7 @@ def fetch_openligadb_day(date_str):
                 "utc_kickoff": dtp,
                 "home": mm.get("Team1",{}).get("TeamName"),
                 "away": mm.get("Team2",{}).get("TeamName"),
+                "home_id": None, "away_id": None,
                 "area": "Germany",
                 "competition": comp,
                 "id": f"old:{mm.get('MatchID')}",
@@ -247,7 +319,6 @@ def fetch_openligadb_day(date_str):
 # --- 3. Fallback: The Odds API'den fikstür listesi --------------------------
 
 def fetch_odds_fixtures(date_str):
-    """FD+OLD boşsa: The Odds API'den bugüne ait eventleri fikstür olarak kullan."""
     if not ODDS_KEY:
         return []
     keys = [
@@ -283,6 +354,7 @@ def fetch_odds_fixtures(date_str):
                 "utc_kickoff": dtp,
                 "home": ev.get("home_team"),
                 "away": ev.get("away_team"),
+                "home_id": None, "away_id": None,
                 "area": area,
                 "competition": comp,
                 "id": f"odds:{skey}:{ev.get('id','')}",
@@ -356,7 +428,7 @@ def fetch_odds_avg(area, comp, home, away):
     p1, px, p2 = (1/o1)/inv, (1/ox)/inv, (1/o2)/inv
     return {"odds": (o1, ox, o2), "probs": (p1, px, p2)}
 
-# --- Poisson + "SPI proxy" ---------------------------------------------------
+# --- Poisson + Lig tabanı ----------------------------------------------------
 
 LEAGUE_GOAL_BASE = {
     "Turkey": 2.60, "England": 2.75, "Spain": 2.50, "Italy": 2.70,
@@ -382,11 +454,10 @@ def poisson_prob(lambda_h, lambda_a):
     return p_home, p_draw, p_away
 
 def poisson_over_prob(lam, line_int):
-    # line 8.5 -> >8.5 yani m>=9
     start = int(line_int) + 1
     s = 0.0
     m = start
-    while m <= start + 40:  # güvenli üst sınır
+    while m <= start + 40:
         s += (lam**m) * math.exp(-lam) / math.factorial(m)
         m += 1
     return min(max(s,0.0),1.0)
@@ -414,27 +485,36 @@ def base_from_area(area, table, default):
             return v
     return default
 
+def parse_weather(wx_text):
+    if not wx_text: return (None, None)
+    wind = None; precip = None
+    try:
+        if "rüzgâr" in wx_text:
+            wind = safe_float(wx_text.split("rüzgâr")[1].split("km/s")[0].strip().split()[-1], None)
+        if "yağış" in wx_text:
+            precip = safe_float(wx_text.split("yağış")[1].split("mm")[0].strip().split()[-1], None)
+    except Exception:
+        pass
+    return (wind, precip)
+
 def model_cards_corners(area, lam_h, lam_a, wx_text):
     cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
     corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
 
     wind, precip = parse_weather(wx_text)
-    # tempo proxy: toplam gol λ
     tempo_factor = (lam_h + lam_a) / 2.6
     tempo_factor = max(0.7, min(1.4, tempo_factor))
 
     cards   = cards_base
     corners = corner_base * tempo_factor
 
-    # hava etkisi (yumuşak)
     if precip is not None:
-        cards   *= 1.00 + min(0.10, 0.02  * precip)   # yağış -> kart ufak artış
-        corners *= 1.00 - min(0.10, 0.015 * precip)   # yağış -> korner ufak düşüş
+        cards   *= 1.00 + min(0.10, 0.02  * precip)
+        corners *= 1.00 - min(0.10, 0.015 * precip)
     if wind is not None:
-        corners *= 1.00 + min(0.08, 0.003 * wind)     # rüzgar -> ortalar/korner ufak artış
-        cards   *= 1.00 + min(0.05, 0.002 * wind)     # rüzgar -> temas/kart ufak artış
+        corners *= 1.00 + min(0.08, 0.003 * wind)
+        cards   *= 1.00 + min(0.05, 0.002 * wind)
 
-    # O/U olasılıkları (örnek çizgiler)
     p_corners_8_5 = poisson_over_prob(corners, 8.5)
     p_corners_9_5 = poisson_over_prob(corners, 9.5)
     p_cards_3_5   = poisson_over_prob(cards,   3.5)
@@ -446,18 +526,102 @@ def model_cards_corners(area, lam_h, lam_a, wx_text):
         "p_over_corners_8_5": p_corners_8_5, "p_over_corners_9_5": p_corners_9_5
     }
 
+# --- Opponent-adjusted form (FD team-id ile) ---------------------------------
+
+def _fd_team_matches(team_id, days=120):
+    if not (FD_TOKEN and team_id):
+        return []
+    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
+    to_dt   = datetime.utcnow().date()
+    from_dt = to_dt - timedelta(days=days)
+    url = f"https://api.football-data.org/v4/teams/{team_id}/matches"
+    data = http_get(url, headers=headers, params={
+        "status": "FINISHED",
+        "dateFrom": from_dt.isoformat(),
+        "dateTo": to_dt.isoformat()
+    })
+    if not data or not data.get("matches"):
+        return []
+    # tarihe göre sırala (yeniden eskiye)
+    ms = []
+    for m in data["matches"]:
+        dtp = to_dt_utc(m.get("utcDate"))
+        if not dtp: 
+            continue
+        ms.append((dtp, m))
+    ms.sort(key=lambda x: x[0], reverse=True)
+    return [m for _, m in ms]
+
+_FORM_CACHE = {}  # team_id -> form_adj,info_text
+
+def _form_adjust_from_matches(team_id, area, team_name):
+    # cache
+    if team_id in _FORM_CACHE:
+        return _FORM_CACHE[team_id]
+
+    matches = _fd_team_matches(team_id, days=FORM_DAYS)
+    if not matches:
+        _FORM_CACHE[team_id] = (0.0, "")
+        return (0.0, "")
+
+    n = 0
+    score_sum = 0.0
+    for m in matches:
+        ht = (m.get("homeTeam", {}) or {}).get("name", "")
+        at = (m.get("awayTeam", {}) or {}).get("name", "")
+        score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
+        gh, ga = safe_float(score.get("home")), safe_float(score.get("away"))
+        if gh is None or ga is None:
+            continue
+        is_home = (ht == team_name)
+        gf = gh if is_home else ga
+        ga_ = ga if is_home else gh
+        opp_name = at if is_home else ht
+        opp_elo = elo_get(area, opp_name)
+        # rakip güçlü ise (Elo yüksek) pozitif gol farkına daha fazla ağırlık
+        w = 1.0 + max(-0.2, min(0.2, (opp_elo - 1500.0)/1000.0))
+        score_sum += (gf - ga_) * w
+        n += 1
+        if n >= FORM_LOOKBACK:
+            break
+
+    if n == 0:
+        adj = 0.0
+    else:
+        avg = score_sum / n
+        # yumuşak sıkıştırma
+        adj = max(-0.15, min(0.15, math.tanh(avg / 3.0) * 0.12))
+
+    txt = f"FormAdj {('+' if adj>=0 else '')}{int(adj*100)}%"
+    _FORM_CACHE[team_id] = (adj, txt)
+    return (adj, txt)
+
+def build_form_cache_for_date(fixtures):
+    # FD kaynaklı fikstürlerde team_id var; onlar için önceden cache oluştur.
+    seen = set()
+    for fx in fixtures:
+        for tid in (fx.get("home_id"), fx.get("away_id")):
+            if tid and tid not in seen:
+                seen.add(tid)
+                try:
+                    _form_adjust_from_matches(tid, fx.get("area","Europe"), fx.get("home") if tid==fx.get("home_id") else fx.get("away"))
+                    time.sleep(0.05)  # nazik ol
+                except Exception as e:
+                    log(f"form cache err team_id={tid}: {e}")
+
 # --- Derecelendirme ----------------------------------------------------------
 
 def rate_fixture(fix, odds_info):
     area = fix["area"] or "Europe"
     tot  = base_total_goals(area)
 
-    # "SPI proxy": ev etkisi + minik isim-uzunluğu farkı
+    # SPI proxy: ev etkisi (sabit) + minik isim-uzunluğu farkı
     ah    = 1.12
     noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
     lam_h = max(0.2, tot*0.5*ah        + noise)
     lam_a = max(0.2, tot*0.5*(2 - ah)  - noise)
 
+    # Hava
     wx = fetch_weather_note(fix["home"])
     if wx:
         wind, precip = parse_weather(wx)
@@ -469,6 +633,22 @@ def rate_fixture(fix, odds_info):
             lam_h *= adj; lam_a *= adj
         except Exception:
             pass
+
+    # Elo etkisi (lambda'ya küçük çarpan)
+    Eh = elo_get(area, fix["home"]); Ea = elo_get(area, fix["away"])
+    elo_diff = (Eh + ELO_HOME_ADV) - Ea
+    elo_adj  = max(-0.20, min(0.20, (elo_diff/400.0)*0.15))  # ±%20 sınır
+    lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
+
+    # Opponent-adjusted form (yalnızca FD'de team_id varsa güçlü)
+    form_txt = ""
+    home_adj = away_adj = 0.0
+    if fix.get("home_id"):
+        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix["home"]);  form_txt += " | " + t
+    if fix.get("away_id"):
+        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix["away"]);  form_txt += " / " + t
+    net_form = max(-0.18, min(0.18, home_adj - away_adj))
+    lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
 
     # Model 1X2
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
@@ -487,18 +667,19 @@ def rate_fixture(fix, odds_info):
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
 
-    # Kart/Korner metrikleri
+    # Kart/Korner
     kk = model_cards_corners(area, lam_h, lam_a, wx)
     kk_txt = (f" | Korner μ≈{kk['mu_corners']:.1f} (Üst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
               f"Üst9.5 {int(kk['p_over_corners_9_5']*100)}%)"
               f" | Kart μ≈{kk['mu_cards']:.1f} (Üst3.5 {int(kk['p_over_cards_3_5']*100)}%)")
 
     wx_txt = f" | {wx}" if wx else ""
-    note = f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}{wx_txt}{odds_txt}{kk_txt}"
+    note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
+            f"{wx_txt}{odds_txt}{kk_txt}{form_txt}")
 
     return {"pick": pick, "confidence": conf_pct, "lambda_h": lam_h, "lambda_a": lam_a, "note": note}
 
-# --- Sonuçlar (gece raporu) --------------------------------------------------
+# --- Sonuçlar (gece raporu) + Elo güncelle ----------------------------------
 
 def fetch_fd_results(date_str):
     if not FD_TOKEN:
@@ -511,11 +692,17 @@ def fetch_fd_results(date_str):
         for m in data["matches"]:
             if m.get("status") != "FINISHED":
                 continue
-            home = m.get("homeTeam",{}).get("name"); away = m.get("awayTeam",{}).get("name")
-            comp = m.get("competition",{}).get("name",""); area = m.get("competition",{}).get("area",{}).get("name","")
-            score = m.get("score",{}); full = score.get("fullTime",{})
-            out.append({"home":home,"away":away,"area":area,"competition":comp,
-                        "home_goals": full.get("home"), "away_goals": full.get("away")})
+            comp = m.get("competition",{}) or {}
+            area = comp.get("area",{}).get("name","") or "Europe"
+            ht = (m.get("homeTeam",{}) or {})
+            at = (m.get("awayTeam",{}) or {})
+            score = (m.get("score",{}) or {}).get("fullTime",{}) or {}
+            out.append({
+                "home": ht.get("name"), "away": at.get("name"),
+                "home_id": ht.get("id"), "away_id": at.get("id"),
+                "area": area, "competition": comp.get("name",""),
+                "home_goals": score.get("home"), "away_goals": score.get("away")
+            })
     return out
 
 # --- Mail gönderimi ----------------------------------------------------------
@@ -539,7 +726,13 @@ def report_predictions(date_str):
         send_mail(f"Günün Tahminleri | {date_str}", "Bugün için tahmin çıkarılacak maç bulunamadı.")
         return
 
-    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Model + OddsCache)\n"]
+    # Opp-adjusted form için öncache (FD olanlar)
+    try:
+        build_form_cache_for_date(fixtures)
+    except Exception as e:
+        log(f"form build warn: {e}")
+
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + OddsCache)\n"]
     top = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     for fx in fixtures:
@@ -572,12 +765,31 @@ def report_results(date_str):
     if not res:
         send_mail(f"Günün Sonuçları | {date_str}", "Bugün için maç bulunamadı.")
         return
+
     lines = [f"📊 Günün Sonuçları — {date_str}", ""]
     for r in res:
         h,a = r["home_goals"], r["away_goals"]
         score = f"{r['home']} {h}-{a} {r['away']}"
         lines.append(f"- {score} | {r['area']} {r['competition']}")
-    body = "\n".join(lines); send_mail(f"Günün Sonuçları | {date_str}", body)
+
+        # Elo güncelle
+        try:
+            if h is not None and a is not None:
+                if h > a:    res_hw = 1.0
+                elif h == a: res_hw = 0.5
+                else:        res_hw = 0.0
+                elo_update(r["area"], r["home"], r["away"], res_hw)
+        except Exception as e:
+            log(f"Elo update warn: {e}")
+
+    # State kaydet
+    try:
+        _state_save(STATE)
+    except Exception as e:
+        log(f"state save warn: {e}")
+
+    body = "\n".join(lines)
+    send_mail(f"Günün Sonuçları | {date_str}", body)
 
 # --- Çalıştırıcı -------------------------------------------------------------
 
