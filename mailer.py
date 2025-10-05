@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — tek parça mailer.py
+Tahmin Botu — tek parça mailer.py (GÜNCEL)
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar)  -> X-Auth-Token: FOOTBALL_DATA_TOKEN
 - OpenLigaDB (ek lig fallback'i)         -> anahtar gerekmez
@@ -12,8 +12,14 @@ Modlar:
 - MODE=RESULTS  -> 23:59 TR “Günün Sonuçları”
 - MODE=AUTO     -> Saat 07 UTC ise PREDICT, aksi ise RESULTS
 
-Gerekli Secrets: GMAIL_USER, GMAIL_PASS, GMAIL_TO, FOOTBALL_DATA_TOKEN
-Opsiyonel Secrets: ODDS_API_KEY
+Zorunlu Secrets: GMAIL_USER, GMAIL_PASS, GMAIL_TO
+Önerilen Secrets: FOOTBALL_DATA_TOKEN
+Opsiyonel Secrets: ODDS_API_KEY, APIFOOTBALL_KEY (şimdilik kullanılmıyor)
+
+Opsiyonel ENV (varsayılanlar):
+- TOP_N=5, MIN_CONF=0, HIGH_ALERT=90
+- OLD_LEAGUES="bundesliga,bundesliga2"
+- ODDS_TTL_MIN=15   # dakika
 """
 
 import os, math, time, json, smtplib, traceback
@@ -39,14 +45,10 @@ def http_get(url, headers=None, params=None, timeout=20):
         log(f"GET ERROR {url}: {e}")
     return None
 
-def today_str_tz(tz=TR_TZ):
-    return datetime.now(tz).strftime("%Y-%m-%d")
-
 def to_dt_utc(s):
     try:
         if not s:
             return None
-        # football-data & odds iso8601
         return datetime.fromisoformat(str(s).replace("Z", "+00:00")).astimezone(timezone.utc)
     except Exception:
         return None
@@ -62,12 +64,19 @@ GMAIL_PASS = os.getenv("GMAIL_PASS")
 GMAIL_TO   = os.getenv("GMAIL_TO")
 FD_TOKEN   = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY   = os.getenv("ODDS_API_KEY")
+APIFOOT    = os.getenv("APIFOOTBALL_KEY", "").strip()  # ileride kullanacağız
 MODE_ENV   = (os.getenv("MODE") or "AUTO").upper().strip()
+
+TOP_N        = int(os.getenv("TOP_N", "5"))
+MIN_CONF     = int(os.getenv("MIN_CONF", "0"))
+HIGH_ALERT   = int(os.getenv("HIGH_ALERT", "90"))
+OLD_LEAGUES  = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
+ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
 
-# --- Odds sport-key haritalaması (geniş) ------------------------------------
+# --- Odds sport-key haritalaması --------------------------------------------
 
 def guess_sport_key(area: str, comp: str):
     a = (area or "").lower()
@@ -153,6 +162,18 @@ def fetch_weather_note(home_team):
     except Exception:
         return None
 
+def parse_weather(wx_text):
+    if not wx_text: return (None, None)
+    wind = None; precip = None
+    try:
+        if "rüzgâr" in wx_text:
+            wind = safe_float(wx_text.split("rüzgâr")[1].split("km/s")[0].strip().split()[-1], None)
+        if "yağış" in wx_text:
+            precip = safe_float(wx_text.split("yağış")[1].split("mm")[0].strip().split()[-1], None)
+    except Exception:
+        pass
+    return (wind, precip)
+
 # --- Football-Data (ana kaynak) + OpenLigaDB (fallback) ----------------------
 
 def fetch_fd_fixtures(date_str):
@@ -169,9 +190,7 @@ def fetch_fd_fixtures(date_str):
     from_utc = (tr_day - timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
     to_utc   = (tr_day + timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
 
-    data = http_get(url, headers=headers, params={
-        "dateFrom": from_utc, "dateTo": to_utc, "status": "SCHEDULED"
-    })
+    data = http_get(url, headers=headers, params={"dateFrom": from_utc, "dateTo": to_utc, "status": "SCHEDULED"})
     out = []
     if data and data.get("matches"):
         for m in data["matches"]:
@@ -198,29 +217,29 @@ def fetch_fd_fixtures(date_str):
 
 def fetch_openligadb_day(date_str):
     y, m, d = date_str.split("-")
-    leagues = [("bundesliga", int(y)), ("bundesliga2", int(y))]
+    leagues = [(lg.strip(), int(y)) for lg in OLD_LEAGUES if lg.strip()]
     out = []
     for lg, season in leagues:
         url = f"https://www.openligadb.de/api/getmatchdata/{lg}/{season}"
         data = http_get(url)
         if not data: 
             continue
-        for m in data:
-            dt = m.get("MatchDateTimeUTC") or m.get("MatchDateTime")
+        for mm in data:
+            dt = mm.get("MatchDateTimeUTC") or mm.get("MatchDateTime")
             dtp = to_dt_utc(dt) if dt else None
             if not dtp: 
                 continue
             if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
                 continue
-            comp = m.get("LeagueName") or lg
+            comp = mm.get("LeagueName") or lg
             out.append({
                 "source":"OLD",
                 "utc_kickoff": dtp,
-                "home": m.get("Team1",{}).get("TeamName"),
-                "away": m.get("Team2",{}).get("TeamName"),
+                "home": mm.get("Team1",{}).get("TeamName"),
+                "away": mm.get("Team2",{}).get("TeamName"),
                 "area": "Germany",
                 "competition": comp,
-                "id": f"old:{m.get('MatchID')}",
+                "id": f"old:{mm.get('MatchID')}",
             })
     log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
     return out
@@ -281,7 +300,20 @@ def fetch_fixtures(date_str):
         fixtures = fetch_odds_fixtures(date_str)
     return fixtures
 
-# --- Oranlar (opsiyonel) -----------------------------------------------------
+# --- Oranlar: cache'li -------------------------------------------------------
+
+_odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
+
+def _fetch_odds_sport_cached(skey):
+    now = time.time()
+    ent = _odds_cache.get(skey)
+    if ent and (now - ent["ts"] < ODDS_TTL_MIN*60):
+        return ent["data"]
+    url = f"https://api.the-odds-api.com/v4/sports/{skey}/odds/"
+    params = {"regions":"eu,uk","markets":"h2h","oddsFormat":"decimal","apiKey":ODDS_KEY}
+    data = http_get(url, params=params) if ODDS_KEY else None
+    _odds_cache[skey] = {"ts": now, "data": data or []}
+    return _odds_cache[skey]["data"]
 
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
@@ -289,9 +321,7 @@ def fetch_odds_avg(area, comp, home, away):
     skey = guess_sport_key(area, comp)
     if not skey:
         return None
-    url = "https://api.the-odds-api.com/v4/sports/{}/odds/".format(skey)
-    params = {"regions": "eu,uk", "markets": "h2h", "oddsFormat": "decimal", "apiKey": ODDS_KEY}
-    data = http_get(url, params=params)
+    data = _fetch_odds_sport_cached(skey)
     if not data or not isinstance(data, list):
         return None
     def norm(x): return (x or "").lower().replace(".", "").replace("-", " ").replace(" fc","").strip()
@@ -302,7 +332,7 @@ def fetch_odds_avg(area, comp, home, away):
         if not comps: 
             continue
         t1 = norm(ev.get("home_team")); t2 = norm(ev.get("away_team"))
-        if (t1.startswith(h) and t2.startswith(a)) or (t1 in h and t2 in a):
+        if (t1.startswith(h) and t2.startswith(a)) or (h.startswith(t1) and a.startswith(t2)):
             prices = {"home":[], "draw":[], "away":[]}
             for bk in comps:
                 for mk in bk.get("markets", []):
@@ -326,7 +356,7 @@ def fetch_odds_avg(area, comp, home, away):
     p1, px, p2 = (1/o1)/inv, (1/ox)/inv, (1/o2)/inv
     return {"odds": (o1, ox, o2), "probs": (p1, px, p2)}
 
-# --- Basit Poisson + "SPI proxy" --------------------------------------------
+# --- Poisson + "SPI proxy" ---------------------------------------------------
 
 LEAGUE_GOAL_BASE = {
     "Turkey": 2.60, "England": 2.75, "Spain": 2.50, "Italy": 2.70,
@@ -348,8 +378,18 @@ def poisson_prob(lambda_h, lambda_a):
             pa = pois(ga, lambda_a)
             if gh > ga:  p_home += ph*pa
             elif gh == ga: p_draw += ph*pa
-            else:        p_away += ph*pa
+            else:         p_away += ph*pa
     return p_home, p_draw, p_away
+
+def poisson_over_prob(lam, line_int):
+    # line 8.5 -> >8.5 yani m>=9
+    start = int(line_int) + 1
+    s = 0.0
+    m = start
+    while m <= start + 40:  # güvenli üst sınır
+        s += (lam**m) * math.exp(-lam) / math.factorial(m)
+        m += 1
+    return min(max(s,0.0),1.0)
 
 def blend_model_market(model_probs, market_probs):
     if not market_probs:
@@ -357,24 +397,80 @@ def blend_model_market(model_probs, market_probs):
     w_mkt = 0.35
     return tuple((1-w_mkt)*m + w_mkt*mk for m, mk in zip(model_probs, market_probs))
 
+# --- Kart / Korner (model tabanlı) -------------------------------------------
+
+LEAGUE_CARD_BASE = {
+    "Germany": 4.7, "Turkey": 5.1, "England": 4.1, "Spain": 5.0, "Italy": 4.8,
+    "France": 4.3, "Brazil": 5.2, "Europe": 4.6
+}
+LEAGUE_CORNER_BASE = {
+    "Germany": 9.4, "Turkey": 9.2, "England": 10.1, "Spain": 9.1, "Italy": 9.5,
+    "France": 9.0, "Brazil": 8.7, "Europe": 9.2
+}
+
+def base_from_area(area, table, default):
+    for k, v in table.items():
+        if k.lower() in (area or "").lower():
+            return v
+    return default
+
+def model_cards_corners(area, lam_h, lam_a, wx_text):
+    cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
+    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
+
+    wind, precip = parse_weather(wx_text)
+    # tempo proxy: toplam gol λ
+    tempo_factor = (lam_h + lam_a) / 2.6
+    tempo_factor = max(0.7, min(1.4, tempo_factor))
+
+    cards   = cards_base
+    corners = corner_base * tempo_factor
+
+    # hava etkisi (yumuşak)
+    if precip is not None:
+        cards   *= 1.00 + min(0.10, 0.02  * precip)   # yağış -> kart ufak artış
+        corners *= 1.00 - min(0.10, 0.015 * precip)   # yağış -> korner ufak düşüş
+    if wind is not None:
+        corners *= 1.00 + min(0.08, 0.003 * wind)     # rüzgar -> ortalar/korner ufak artış
+        cards   *= 1.00 + min(0.05, 0.002 * wind)     # rüzgar -> temas/kart ufak artış
+
+    # O/U olasılıkları (örnek çizgiler)
+    p_corners_8_5 = poisson_over_prob(corners, 8.5)
+    p_corners_9_5 = poisson_over_prob(corners, 9.5)
+    p_cards_3_5   = poisson_over_prob(cards,   3.5)
+    p_cards_4_5   = poisson_over_prob(cards,   4.5)
+
+    return {
+        "mu_cards": cards, "mu_corners": corners,
+        "p_over_cards_3_5": p_cards_3_5, "p_over_cards_4_5": p_cards_4_5,
+        "p_over_corners_8_5": p_corners_8_5, "p_over_corners_9_5": p_corners_9_5
+    }
+
+# --- Derecelendirme ----------------------------------------------------------
+
 def rate_fixture(fix, odds_info):
     area = fix["area"] or "Europe"
-    tot = base_total_goals(area)
-    ah = 1.12
+    tot  = base_total_goals(area)
+
+    # "SPI proxy": ev etkisi + minik isim-uzunluğu farkı
+    ah    = 1.12
     noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
-    lam_h = max(0.2, tot*0.5*ah + noise)
-    lam_a = max(0.2, tot*0.5*(2-ah) - noise)
+    lam_h = max(0.2, tot*0.5*ah        + noise)
+    lam_a = max(0.2, tot*0.5*(2 - ah)  - noise)
 
     wx = fetch_weather_note(fix["home"])
-    if wx and "rüzgâr" in wx and "yağış" in wx:
+    if wx:
+        wind, precip = parse_weather(wx)
         try:
-            wind = safe_float(wx.split("rüzgâr")[1].split("km/s")[0].strip().split()[-1])
-            precip = safe_float(wx.split("yağış")[1].split("mm")[0].strip().split()[-1])
-            adj = 1.0 - min(0.15, 0.003*wind + 0.01*precip)
+            adj = 1.0
+            if wind   is not None: adj -= min(0.08, 0.003 * wind)
+            if precip is not None: adj -= min(0.08, 0.01  * precip)
+            adj = max(0.8, adj)
             lam_h *= adj; lam_a *= adj
         except Exception:
             pass
 
+    # Model 1X2
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
 
     market_probs = None
@@ -391,8 +487,14 @@ def rate_fixture(fix, odds_info):
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
 
+    # Kart/Korner metrikleri
+    kk = model_cards_corners(area, lam_h, lam_a, wx)
+    kk_txt = (f" | Korner μ≈{kk['mu_corners']:.1f} (Üst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
+              f"Üst9.5 {int(kk['p_over_corners_9_5']*100)}%)"
+              f" | Kart μ≈{kk['mu_cards']:.1f} (Üst3.5 {int(kk['p_over_cards_3_5']*100)}%)")
+
     wx_txt = f" | {wx}" if wx else ""
-    note = f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}{wx_txt}{odds_txt}"
+    note = f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}{wx_txt}{odds_txt}{kk_txt}"
 
     return {"pick": pick, "confidence": conf_pct, "lambda_h": lam_h, "lambda_a": lam_a, "note": note}
 
@@ -419,6 +521,9 @@ def fetch_fd_results(date_str):
 # --- Mail gönderimi ----------------------------------------------------------
 
 def send_mail(subject, body):
+    body = (body or "").strip()
+    if not body:
+        body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
     msg = EmailMessage()
     msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
     msg.set_content(body)
@@ -433,18 +538,33 @@ def report_predictions(date_str):
     if not fixtures:
         send_mail(f"Günün Tahminleri | {date_str}", "Bugün için tahmin çıkarılacak maç bulunamadı.")
         return
-    lines = []; top = []
-    lines.append(f"⚽ Günün Tahminleri — {date_str} (OpenLigaDB + SPI + Hava + Odds)\n")
+
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Model + OddsCache)\n"]
+    top = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     for fx in fixtures:
         odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
         rated = rate_fixture(fx, odds)
+        if rated["confidence"] < MIN_CONF:
+            continue
         ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M")
         line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
         lines.append(line); top.append((rated["confidence"], line))
+
+    if len(lines) == 1:
+        lines.append("Filtreler nedeniyle listelenecek maç kalmadı (MIN_CONF yüksek olabilir).")
+
     top.sort(reverse=True)
-    best = ["\n⭐ En Güçlü 5 Seçim:"] + ["  " + l.replace("- ","").strip() for c, l in top[:5]]
-    body = "\n".join(lines + [""] + best)
+    best = [f"\n⭐ En Güçlü {TOP_N} Seçim:"] + ["  " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
+
+    hi = [x for x in top if x[0] >= HIGH_ALERT]
+    hi_block = []
+    if hi:
+        hi_block.append("\n⚡ Yüksek Güven Seçimler:")
+        for c, l in hi:
+            hi_block.append("  " + l.replace("- ","").strip())
+
+    body = "\n".join(lines + [""] + best + hi_block)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
 def report_results(date_str):
@@ -466,9 +586,11 @@ def main():
         now_utc = datetime.now(timezone.utc)
         tr_now  = now_utc.astimezone(TR_TZ)
         date_str = tr_now.strftime("%Y-%m-%d")
+
         mode = MODE_ENV
         if mode == "AUTO":
             mode = "PREDICT" if now_utc.hour == 7 else "RESULTS"
+
         log(f"MODE={mode} | TR now={tr_now} | date={date_str}")
         if mode == "PREDICT":
             report_predictions(date_str)
@@ -476,7 +598,7 @@ def main():
             report_results(date_str)
         else:
             send_mail("Tahmin Botu | Bilgi", "AUTO modu dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS bekleniyor.")
-    except Exception as e:
+    except Exception:
         tb = traceback.format_exc(); log(tb)
         try: send_mail("Tahmin Botu | Hata", tb)
         except Exception: pass
