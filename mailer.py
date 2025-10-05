@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Tahmin Botu — tek parça mailer.py
-(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme)
+(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail
+ + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L))
 
 Ücretsiz kaynaklar:
-- football-data.org (Fixtures/sonuçlar)  -> X-Auth-Token: FOOTBALL_DATA_TOKEN
-- OpenLigaDB (fallback)                  -> anahtar gerekmez
-- Open-Meteo (hava)                      -> anahtar gerekmez
-- The Odds API (opsiyonel oranlar)       -> ODDS_API_KEY varsa kullanılır
-- API-Football (opsiyonel, free tier)    -> APIFOOTBALL_KEY varsa kart/korner ipucu
+- football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
+- OpenLigaDB (fallback)                            -> anahtar gerekmez
+- Open-Meteo (hava)                                -> anahtar gerekmez
+- The Odds API (opsiyonel oranlar)                 -> ODDS_API_KEY varsa kullanılır
+- API-Football (opsiyonel, free tier)              -> APIFOOTBALL_KEY varsa kart/korner ipucu
 
 Modlar:
 - MODE=PREDICT  -> 10:00 TR “Günün Tahminleri”
@@ -31,6 +32,9 @@ Opsiyonel ENV (varsayılanlar):
 - LEARN_RATE=0.05         # w_mkt için öğrenme hızı
 - GOAL_LR=0.02            # lig bazlı gol tabanı ölçek learning rate
 - PRED_MATCH_WINDOW_HRS=48  # tahmin-sonuç eşleşme toleransı
+- TABLE_WEIGHT=0.12       # standings etkisi (±%12 sınır)
+- STREAK_UNIT=0.02        # tek W/L adımı etkisi
+- STREAK_MAX=0.08         # W/L toplam mutlak sınır
 """
 
 import os, math, time, json, smtplib, traceback
@@ -112,6 +116,11 @@ W_MKT_INIT  = float(os.getenv("W_MKT_INIT", "0.35"))
 LEARN_RATE  = float(os.getenv("LEARN_RATE", "0.05"))
 GOAL_LR     = float(os.getenv("GOAL_LR", "0.02"))
 PRED_MATCH_WINDOW_HRS = int(os.getenv("PRED_MATCH_WINDOW_HRS", "48"))
+
+# Table/Streak ayarları
+TABLE_WEIGHT = float(os.getenv("TABLE_WEIGHT", "0.12"))
+STREAK_UNIT  = float(os.getenv("STREAK_UNIT",  "0.02"))
+STREAK_MAX   = float(os.getenv("STREAK_MAX",   "0.08"))
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
@@ -292,12 +301,9 @@ def parse_weather(wx_text):
         pass
     return (wind, precip)
 
-# --- Football-Data (ana kaynak) + OpenLigaDB (fallback) ----------------------
+# --- Football-Data (fixtures) + OpenLigaDB (fallback) ------------------------
 
 def fetch_fd_fixtures(date_str):
-    """
-    FD: UTC ±1 gün penceresiyle çek, TR gününe filtrele.
-    """
     if not FD_TOKEN:
         return []
     url = "https://api.football-data.org/v4/matches"
@@ -312,14 +318,14 @@ def fetch_fd_fixtures(date_str):
     if data and data.get("matches"):
         for m in data["matches"]:
             dtp = to_dt_utc(m.get("utcDate"))
-            if not dtp: 
+            if not dtp:
                 continue
             if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
                 continue
             if m.get("status") not in ("SCHEDULED", "TIMED"):
                 continue
-            comp = m.get("competition", {})
-            area = comp.get("area", {}).get("name", "")
+            comp = m.get("competition", {}) or {}
+            area = (comp.get("area", {}) or {}).get("name", "")
             ht = m.get("homeTeam", {}) or {}
             at = m.get("awayTeam", {}) or {}
             out.append({
@@ -331,6 +337,7 @@ def fetch_fd_fixtures(date_str):
                 "away_id": at.get("id"),
                 "area": area,
                 "competition": comp.get("name", ""),
+                "competition_id": comp.get("id"),  # standings için
                 "id": m.get("id"),
             })
     log(f"FD fixtures (TR={date_str}) -> {len(out)}")
@@ -343,12 +350,12 @@ def fetch_openligadb_day(date_str):
     for lg, season in leagues:
         url = f"https://www.openligadb.de/api/getmatchdata/{lg}/{season}"
         data = http_get(url)
-        if not data: 
+        if not data:
             continue
         for mm in data:
             dt = mm.get("MatchDateTimeUTC") or mm.get("MatchDateTime")
             dtp = to_dt_utc(dt) if dt else None
-            if not dtp: 
+            if not dtp:
                 continue
             if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
                 continue
@@ -361,12 +368,13 @@ def fetch_openligadb_day(date_str):
                 "home_id": None, "away_id": None,
                 "area": "Germany",
                 "competition": comp,
+                "competition_id": None,
                 "id": f"old:{mm.get('MatchID')}",
             })
     log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
     return out
 
-# --- Oranlar: cache'li -------------------------------------------------------
+# --- 3. Fallback: The Odds API'den fikstür listesi --------------------------
 
 _odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
 
@@ -397,7 +405,7 @@ def fetch_odds_fixtures(date_str):
     ]
     out = []
     for skey, area, comp in keys:
-        data = _fetch_odds_sport_cached(skey)  # cache'li
+        data = _fetch_odds_sport_cached(skey)
         if not data or not isinstance(data, list):
             continue
         for ev in data:
@@ -414,6 +422,7 @@ def fetch_odds_fixtures(date_str):
                 "home_id": None, "away_id": None,
                 "area": area,
                 "competition": comp,
+                "competition_id": None,
                 "id": f"odds:{skey}:{ev.get('id','')}",
             })
     log(f"OddsAPI fixtures (TR={date_str}) -> {len(out)}")
@@ -445,7 +454,7 @@ def fetch_odds_avg(area, comp, home, away):
     best = None
     for ev in data:
         comps = ev.get("bookmakers", [])
-        if not comps: 
+        if not comps:
             continue
         t1 = norm(ev.get("home_team")); t2 = norm(ev.get("away_team"))
         if (t1.startswith(h) and t2.startswith(a)) or (h.startswith(t1) and a.startswith(t2)):
@@ -485,7 +494,6 @@ def base_total_goals(area):
         if k.lower() in (area or "").lower():
             base = v
             break
-    # dinamik ölçek uygula (öğrenme ile)
     scale = get_goal_scale(area)
     return clamp(base * scale, 1.5, 3.8)
 
@@ -504,8 +512,7 @@ def poisson_prob(lambda_h, lambda_a):
 def poisson_over_prob(lam, line_int):
     lam = max(0.05, lam)
     start = int(line_int) + 1
-    s = 0.0
-    m = start
+    s = 0.0; m = start
     while m <= start + 40:
         s += (lam**m) * math.exp(-lam) / math.factorial(m)
         m += 1
@@ -640,7 +647,7 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         if h_cards or a_cards:
             vals = [v for v in [h_cards, a_cards] if v]
             if vals:
-                out["mu_cards_hint"] = sum(vals)/len(vals) * 2.0 * 0.5  # yumuşatılmış toplam proxy
+                out["mu_cards_hint"] = sum(vals)/len(vals) * 2.0 * 0.5
         if h_corners or a_corners:
             vals = [v for v in [h_corners, a_corners] if v]
             if vals:
@@ -703,13 +710,13 @@ def _fd_team_matches(team_id, days=120):
     ms = []
     for m in data["matches"]:
         dtp = to_dt_utc(m.get("utcDate"))
-        if not dtp: 
+        if not dtp:
             continue
         ms.append((dtp, m))
     ms.sort(key=lambda x: x[0], reverse=True)
     return [m for _, m in ms]
 
-_FORM_CACHE = {}  # team_id -> form_adj,info_text
+_FORM_CACHE = {}  # team_id -> (adj, txt)
 
 def _form_adjust_from_matches(team_id, area, team_name):
     if team_id in _FORM_CACHE:
@@ -745,12 +752,7 @@ def _form_adjust_from_matches(team_id, area, team_name):
         if n >= FORM_LOOKBACK:
             break
 
-    if n == 0:
-        adj = 0.0
-    else:
-        avg = score_sum / n
-        adj = clamp(math.tanh(avg / 3.0) * 0.12, -0.15, 0.15)
-
+    adj = 0.0 if n == 0 else clamp(math.tanh((score_sum / n) / 3.0) * 0.12, -0.15, 0.15)
     txt = f"FormAdj {('+' if adj>=0 else '')}{int(adj*100)}%"
     _FORM_CACHE[team_id] = (adj, txt)
     return (adj, txt)
@@ -769,6 +771,122 @@ def build_form_cache_for_date(fixtures):
                     time.sleep(0.05)
                 except Exception as e:
                     log(f"form cache err team_id={tid}: {e}")
+
+# --- Standings (TableAdj) ----------------------------------------------------
+
+_STANDINGS_CACHE = {}  # competition_id -> {"total_teams":N, "by_id": {team_id: {...}}}
+
+def _fd_competition_standings(comp_id):
+    if not (FD_TOKEN and comp_id):
+        return None
+    if comp_id in _STANDINGS_CACHE:
+        return _STANDINGS_CACHE[comp_id]
+    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
+    url = f"https://api.football-data.org/v4/competitions/{comp_id}/standings"
+    data = http_get(url, headers=headers)
+    by_id = {}
+    total_teams = None
+    try:
+        for st in (data.get("standings") or []):
+            if (st.get("type") or "").upper() != "TOTAL":
+                continue
+            table = st.get("table") or []
+            total_teams = len(table)
+            for row in table:
+                team = (row.get("team") or {})
+                tid  = team.get("id")
+                pos  = safe_float(row.get("position"), None)
+                played = safe_float(row.get("playedGames"), None)
+                pts    = safe_float(row.get("points"), None)
+                ppg    = (pts/played) if (pts is not None and played and played>0) else None
+                if tid is not None:
+                    by_id[int(tid)] = {"position": int(pos) if pos else None,
+                                       "played": int(played) if played else None,
+                                       "points": int(pts) if pts else None,
+                                       "ppg": ppg}
+        if by_id and total_teams:
+            _STANDINGS_CACHE[comp_id] = {"total_teams": total_teams, "by_id": by_id}
+            return _STANDINGS_CACHE[comp_id]
+    except Exception as e:
+        log(f"standings parse err: {e}")
+    return None
+
+def _table_strength(comp_id, team_id):
+    st = _fd_competition_standings(comp_id)
+    if not (st and team_id):
+        return (None, None, None)
+    row = (st["by_id"].get(int(team_id))) if isinstance(team_id, int) or str(team_id).isdigit() else None
+    if not row or not row.get("position"):
+        return (None, None, None)
+    N = st["total_teams"] or 20
+    pos = row["position"]
+    if N <= 1:
+        rank_pct = 0.5
+    else:
+        # 1 (lider) -> 1.0, N (son) -> 0.0
+        rank_pct = (N - pos) / (N - 1)
+    return (rank_pct, pos, N)
+
+# --- Streak (W/L) ------------------------------------------------------------
+
+_STREAK_CACHE = {}  # team_id -> (score, txt)
+
+def _team_outcome_for(m, team_name):
+    score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
+    gh = score.get("home"); ga = score.get("away")
+    if gh is None or ga is None:
+        return None
+    ht = (m.get("homeTeam", {}) or {}).get("name", "")
+    is_home = (ht == team_name)
+    if is_home:
+        if gh > ga: return "W"
+        if gh == ga: return "D"
+        return "L"
+    else:
+        if ga > gh: return "W"
+        if ga == gh: return "D"
+        return "L"
+
+def _team_streak(team_id, team_name):
+    if not team_id:
+        return (0.0, "")
+    if team_id in _STREAK_CACHE:
+        return _STREAK_CACHE[team_id]
+    ms = _fd_team_matches(team_id, days=min(FORM_DAYS, 120))
+    if not ms:
+        _STREAK_CACHE[team_id] = (0.0, "")
+        return (0.0, "")
+    streak_char = None
+    count = 0
+    for m in ms:
+        res = _team_outcome_for(m, team_name)
+        if res is None:
+            continue
+        if streak_char is None:
+            streak_char = res
+            if res == "D":
+                count = 0
+                break
+            count = 1
+        else:
+            if res == streak_char:
+                count += 1
+            else:
+                break
+        if count >= 6:
+            break
+    if streak_char == "W":
+        score = min(count, 5) * STREAK_UNIT
+        txt = f"W{count}"
+    elif streak_char == "L":
+        score = -min(count, 5) * STREAK_UNIT
+        txt = f"L{count}"
+    else:
+        score = 0.0
+        txt = "D0"
+    score = max(-STREAK_MAX, min(STREAK_MAX, score))
+    _STREAK_CACHE[team_id] = (score, txt)
+    return (score, txt)
 
 # --- Tahmin/sonuç eşleşme & öğrenme -----------------------------------------
 
@@ -829,7 +947,6 @@ def analyze_and_learn(results):
         mk_id = match_key_from_result(r)
         cand = STATE["pred_store"].get(mk_id)
         if not cand:
-            # isim + ±window eşleştirme
             best_mk = None; best_dt = None; res_dt = r.get("utc_kickoff")
             if res_dt is None:
                 res_dt = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -840,7 +957,7 @@ def analyze_and_learn(results):
                 if norm_team(ent.get("home")) == norm_team(r.get("home")) and norm_team(ent.get("away")) == norm_team(r.get("away")):
                     try:
                         pdt = to_dt_utc(ent.get("utc_kickoff"))
-                        if not pdt: 
+                        if not pdt:
                             continue
                         if abs((pdt - res_dt).total_seconds()) <= PRED_MATCH_WINDOW_HRS*3600:
                             if (best_dt is None) or (abs((pdt-res_dt).total_seconds()) < abs((best_dt-res_dt).total_seconds())):
@@ -869,7 +986,6 @@ def analyze_and_learn(results):
         if (out_idx == 0 and pred_pick=="1") or (out_idx==1 and pred_pick=="X") or (out_idx==2 and pred_pick=="2"):
             correct += 1
 
-        # w_mkt adaptasyonu
         if bs_k is not None and bs_m is not None:
             delta = clamp(bs_m - bs_k, -0.4, 0.4)  # >0 → market daha iyi
             if delta > 0.0:
@@ -878,7 +994,6 @@ def analyze_and_learn(results):
             else:
                 set_w_mkt(get_w_mkt() + LEARN_RATE * delta)
 
-        # Lig gol tabanı ölçek güncelle
         area = r.get("area","Europe")
         lam_sum = safe_float(cand.get("lam_h"), 1.3) + safe_float(cand.get("lam_a"), 1.3)
         lam_sum = max(0.5, lam_sum)
@@ -912,7 +1027,6 @@ def rate_fixture(fix, odds_info):
     area = fix["area"] or "Europe"
     tot  = base_total_goals(area)
 
-    # SPI proxy: ev etkisi (sabit) + isim-uzunluğu 'noise'
     ah    = 1.12
     noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
     lam_h = max(0.2, tot*0.5*ah        + noise)
@@ -950,6 +1064,29 @@ def rate_fixture(fix, odds_info):
     lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
     form_txt = (" | " + " / ".join(form_bits)) if form_bits else ""
 
+    # TableAdj (standings)
+    table_txt = ""
+    if fix.get("competition_id") and fix.get("home_id") and fix.get("away_id"):
+        h_rankpct, h_pos, N = _table_strength(fix["competition_id"], fix["home_id"])
+        a_rankpct, a_pos, _ = _table_strength(fix["competition_id"], fix["away_id"])
+        if (h_rankpct is not None) and (a_rankpct is not None):
+            diff = h_rankpct - a_rankpct  # [-1,1]
+            table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
+            lam_h *= (1.0 + table_adj); lam_a *= (1.0 - table_adj)
+            pct_txt = f"{int(table_adj*100)}%"
+            table_txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {pct_txt})"
+
+    # Streak (W/L)
+    streak_txt = ""
+    if fix.get("home_id") and fix.get("away_id"):
+        hs, hs_txt = _team_streak(fix["home_id"], fix["home"])
+        as_, as_txt = _team_streak(fix["away_id"], fix["away"])
+        net_streak = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
+        lam_h *= (1.0 + net_streak); lam_a *= (1.0 - net_streak)
+        if hs_txt or as_txt:
+            pct_txt = f"{int(net_streak*100)}%"
+            streak_txt = f" | Streak {hs_txt}/{as_txt} (Adj {pct_txt})"
+
     # Model 1X2
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
     model_probs = (m_home, m_draw, m_away)
@@ -980,7 +1117,7 @@ def rate_fixture(fix, odds_info):
 
     wx_txt = f" | {wx}" if wx else ""
     note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
-            f"{wx_txt}{odds_txt}{kk_txt}{form_txt}")
+            f"{wx_txt}{odds_txt}{kk_txt}{form_txt}{table_txt}{streak_txt}")
 
     return {
         "pick": pick, "confidence": conf_pct,
@@ -1044,7 +1181,7 @@ def report_predictions(date_str):
     except Exception as e:
         log(f"form build warn: {e}")
 
-    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + OddsCache + API-Football* + Öğrenme)\n"]
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + Table/Streak + OddsCache + API-Football* + Öğrenme)\n"]
     top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     for fx in fixtures:
@@ -1085,7 +1222,6 @@ def report_predictions(date_str):
     body = "\n".join(lines + [""] + best + hi_block)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
-    # İsteğe bağlı ayrı mail
     if SPLIT_HIGH and hi:
         body2 = "⚡ Yüksek Güven Eşik Üstü (≥{}%) — {}\n\n".format(HIGH_ALERT, date_str) + "\n".join([l for _, l in hi])
         send_mail(f"⚡ Yüksek Güven | {date_str}", body2)
