@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — tek parça mailer.py (GÜNCEL + Elo + OppAdj Form + State)
+Tahmin Botu — tek parça mailer.py (GÜNCEL + Elo + OppAdj Form + State + API-Football ipucu + High-Alert ayrık mail)
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar)  -> X-Auth-Token: FOOTBALL_DATA_TOKEN
 - OpenLigaDB (fallback)                  -> anahtar gerekmez
 - Open-Meteo (hava)                      -> anahtar gerekmez
 - The Odds API (opsiyonel oranlar)       -> ODDS_API_KEY varsa kullanılır
+- API-Football (opsiyonel, free tier)    -> APIFOOTBALL_KEY varsa "kart/korner" için takım istatistiği ipucu
 
 Modlar:
 - MODE=PREDICT  -> 10:00 TR “Günün Tahminleri”
@@ -14,7 +15,7 @@ Modlar:
 
 Zorunlu Secrets: GMAIL_USER, GMAIL_PASS, GMAIL_TO
 Önerilen Secrets: FOOTBALL_DATA_TOKEN
-Opsiyonel Secrets: ODDS_API_KEY, APIFOOTBALL_KEY (şimdilik kullanılmıyor)
+Opsiyonel Secrets: ODDS_API_KEY, APIFOOTBALL_KEY
 
 Opsiyonel ENV (varsayılanlar):
 - TOP_N=5, MIN_CONF=0, HIGH_ALERT=90
@@ -23,9 +24,7 @@ Opsiyonel ENV (varsayılanlar):
 - ELO_K=24, ELO_HOME_ADV=60
 - FORM_LOOKBACK=10, FORM_DAYS=120
 - ALLOW_STATE_FILE=1
-- DRY_RUN=0                           # 1 -> mail atma, sadece logla (test)
-- SEPARATE_HIGH_ALERT_MAIL=0          # 1 -> yüksek güvenli seçimleri ayrı mail at
-- HIGH_ALERT_TO=""                    # ayrı mail alıcısı; boşsa GMAIL_TO kullanılır
+- SPLIT_HIGH_ALERT_MAIL=0
 """
 
 import os, math, time, json, smtplib, traceback
@@ -37,21 +36,15 @@ import requests
 # --- Ortak yardımcılar -------------------------------------------------------
 
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
-HEADERS_JSON = {
-    "Accept": "application/json",
-    "User-Agent": "tahmin-botu/1.0 (+mail)"
-}
+HEADERS_JSON = {"Accept": "application/json"}
 
 def log(msg): print(f"[mailer] {msg}", flush=True)
 
-def http_get(url, headers=None, params=None, timeout=20):
+def http_get(url, headers=None, params=None, timeout=25):
     try:
         r = requests.get(url, headers=headers or {}, params=params or {}, timeout=timeout)
         if r.status_code == 200:
-            ct = (r.headers.get("Content-Type") or "")
-            # bazı uçlar boş body döndürebilir
-            if "application/json" in ct.lower():
-                return r.json()
+            # bazı API'lar boş gövde döndürebilir
             try:
                 return r.json()
             except Exception:
@@ -69,9 +62,19 @@ def to_dt_utc(s):
     except Exception:
         return None
 
-def safe_float(x, default=0.0):
-    try: return float(x)
-    except: return default
+def safe_float(x, default=None):
+    try:
+        if x is None or x == "":
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+def season_for_today():
+    # Avrupa sezonu: Temmuzdan sonra yeni sezon
+    now = datetime.now(TR_TZ)
+    y = now.year
+    return y if now.month >= 7 else (y - 1)
 
 # --- Secrets / ortam ---------------------------------------------------------
 
@@ -80,7 +83,7 @@ GMAIL_PASS = os.getenv("GMAIL_PASS")
 GMAIL_TO   = os.getenv("GMAIL_TO")
 FD_TOKEN   = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY   = os.getenv("ODDS_API_KEY")
-APIFOOT    = os.getenv("APIFOOTBALL_KEY", "").strip()  # ileride kullanacağız
+APIFOOT    = (os.getenv("APIFOOTBALL_KEY") or "").strip()
 MODE_ENV   = (os.getenv("MODE") or "AUTO").upper().strip()
 
 TOP_N        = int(os.getenv("TOP_N", "5"))
@@ -88,18 +91,14 @@ MIN_CONF     = int(os.getenv("MIN_CONF", "0"))
 HIGH_ALERT   = int(os.getenv("HIGH_ALERT", "90"))
 OLD_LEAGUES  = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
+SPLIT_HIGH   = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarları
 ELO_K            = float(os.getenv("ELO_K", "24"))
 ELO_HOME_ADV     = float(os.getenv("ELO_HOME_ADV", "60"))   # puan
 FORM_LOOKBACK    = int(os.getenv("FORM_LOOKBACK", "10"))    # son N maç
 FORM_DAYS        = int(os.getenv("FORM_DAYS", "120"))       # geçmiş gün penceresi
-ALLOW_STATE_FILE = os.getenv("ALLOW_STATE_FILE", "1") == "1"
-
-# Test & ayrı mail
-DRY_RUN                  = os.getenv("DRY_RUN", "0") == "1"
-SEPARATE_HIGH_ALERT_MAIL = os.getenv("SEPARATE_HIGH_ALERT_MAIL", "0") == "1"
-HIGH_ALERT_TO            = (os.getenv("HIGH_ALERT_TO") or "").strip() or None
+ALLOW_STATE_FILE = (os.getenv("ALLOW_STATE_FILE", "1") == "1")
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
@@ -122,7 +121,7 @@ def _state_save(st):
         log("STATE kaydı kapalı (ALLOW_STATE_FILE=0)")
         return
     try:
-        st["last_saved"] = datetime.utcnow().isoformat() + "Z"  # önce set et
+        st["last_saved"] = datetime.utcnow().isoformat() + "Z"
         with open(STATE_PATH, "w", encoding="utf-8") as f:
             json.dump(st, f, ensure_ascii=False, indent=2)
         log(f"state saved -> {STATE_PATH}")
@@ -145,19 +144,15 @@ def elo_set(area, name, val):
     STATE.setdefault("elo", {})[key] = float(val)
 
 def elo_expect(elo_a, elo_b, home_adv=0.0):
-    # 1/(1+10^(-diff/400))
     diff = (elo_a + home_adv) - elo_b
     return 1.0 / (1.0 + 10.0 ** (-diff / 400.0))
 
 def elo_update(area, home_name, away_name, result_hw):
-    # result_hw: 1=home win, 0.5=draw, 0=away win
     Eh = elo_get(area, home_name)
     Ea = elo_get(area, away_name)
     ph = elo_expect(Eh, Ea, ELO_HOME_ADV)
     pa = 1.0 - ph
-    # home
     Eh_new = Eh + ELO_K * (result_hw - ph)
-    # away
     Ea_new = Ea + ELO_K * ((1.0 - result_hw) - pa)
     elo_set(area, home_name, Eh_new)
     elo_set(area, away_name, Ea_new)
@@ -228,8 +223,9 @@ def guess_city_from_team(team_name: str):
 
 def fetch_weather_note(home_team):
     city = guess_city_from_team(home_team)
-    geo = http_get("https://geocoding-api.open-meteo.com/v1/search", params={"name": city, "count": 1, "language": "en"})
-    if not geo or not geo.get("results"): 
+    geo = http_get("https://geocoding-api.open-meteo.com/v1/search",
+                   params={"name": city, "count": 1, "language": "en"})
+    if not geo or not geo.get("results"):
         return None
     lat = geo["results"][0]["latitude"]; lon = geo["results"][0]["longitude"]
     wx = http_get("https://api.open-meteo.com/v1/forecast", params={
@@ -237,7 +233,7 @@ def fetch_weather_note(home_team):
         "hourly": "temperature_2m,precipitation,wind_speed_10m",
         "timezone": "auto"
     })
-    if not wx: 
+    if not wx:
         return None
     try:
         temps = wx["hourly"]["temperature_2m"][:6]
@@ -480,7 +476,7 @@ def blend_model_market(model_probs, market_probs):
     w_mkt = 0.35
     return tuple((1-w_mkt)*m + w_mkt*mk for m, mk in zip(model_probs, market_probs))
 
-# --- Kart / Korner (model tabanlı) -------------------------------------------
+# --- Kart / Korner — lig tabanı + tempo + hava + (opsiyonel) API-Football ----
 
 LEAGUE_CARD_BASE = {
     "Germany": 4.7, "Turkey": 5.1, "England": 4.1, "Spain": 5.0, "Italy": 4.8,
@@ -497,28 +493,165 @@ def base_from_area(area, table, default):
             return v
     return default
 
-def model_cards_corners(area, lam_h, lam_a, wx_text):
+# --- API-Football: opsiyonel istatistik ipucu --------------------------------
+
+APIFOOT_BASE = "https://v3.football.api-sports.io"
+_API_LEAGUE_MAP = {
+    # "Area|Competition" -> league_id (API-Football)
+    "England|Premier League": 39,
+    "England|Championship":   40,
+    "Spain|La Liga":          140,
+    "Italy|Serie A":          135,
+    "France|Ligue 1":         61,
+    "Germany|Bundesliga":     78,
+    "Turkey|Super Lig":       203,
+    "Brazil|Campeonato Brasileiro": 71,
+}
+_apifoot_team_cache = {}   # (search_name.lower()) -> team_id
+_apifoot_stat_cache = {}   # (league_id, season, team_id) -> stats_json (subset)
+
+def _apifoot_get(path, params):
+    if not APIFOOT:
+        return None
+    headers = {"x-apisports-key": APIFOOT}
+    try:
+        data = http_get(f"{APIFOOT_BASE}{path}", headers=headers, params=params)
+        # API-Football genelde {"response":[...]} döndürür
+        return (data or {}).get("response", None)
+    except Exception as e:
+        log(f"apifoot GET err: {e}")
+        return None
+
+def _apifoot_find_team_id(team_name):
+    if not team_name:
+        return None
+    key = (team_name or "").strip().lower()
+    ent = _apifoot_team_cache.get(key)
+    if ent is not None:
+        return ent
+    resp = _apifoot_get("/teams", {"search": team_name})
+    tid = None
+    try:
+        if resp:
+            # ilk uygun eşleşmeyi al
+            tid = ((resp[0] or {}).get("team") or {}).get("id")
+    except Exception:
+        tid = None
+    _apifoot_team_cache[key] = tid
+    return tid
+
+def _apifoot_team_statistics(league_id, season, team_id):
+    if not (league_id and season and team_id):
+        return None
+    cache_key = (league_id, season, team_id)
+    if cache_key in _apifoot_stat_cache:
+        return _apifoot_stat_cache[cache_key]
+    resp = _apifoot_get("/teams/statistics", {
+        "league": league_id, "season": season, "team": team_id
+    })
+    _apifoot_stat_cache[cache_key] = resp[0] if (resp and len(resp)>0) else None
+    return _apifoot_stat_cache[cache_key]
+
+def _apifoot_hint_cards_corners(area, comp, home, away):
+    """Takım başına kart/korner ortalaması için API-Football istatistik ipucu (varsa)."""
+    if not APIFOOT:
+        return None
+    # lig id tahmini
+    lig_key = f"{(area or '').strip()}|{(comp or '').strip()}"
+    lig_id = _API_LEAGUE_MAP.get(lig_key)
+    if not lig_id:
+        return None
+    ssn = season_for_today()
+    try:
+        h_id = _apifoot_find_team_id(home)
+        a_id = _apifoot_find_team_id(away)
+        h_stat = _apifoot_team_statistics(lig_id, ssn, h_id) if h_id else None
+        a_stat = _apifoot_team_statistics(lig_id, ssn, a_id) if a_id else None
+        if not (h_stat or a_stat):
+            return None
+
+        def cards_per_game(stat):
+            if not stat: return None
+            played = (((stat.get("fixtures") or {}).get("played") or {}).get("total")) or 0
+            played = int(played) if played else 0
+            if played <= 0: return None
+            cards = (stat.get("cards") or {})
+            total = 0.0
+            # kartlar dakika aralıklarına göre: {'0-15': {'total':'5','average':'0.2'}, ...}
+            for v in cards.values():
+                t = v.get("total")
+                if t is None: continue
+                t = safe_float(t, None)
+                if t is not None: total += t
+            # bazı liglerde 'total' sezon toplamıdır → maç başına böl
+            return total / played if total > 0 else None
+
+        # Not: corners toplu istatistik endpointinde çoğu planda yok; varsa 'corners' anahtarından yakalarız.
+        def corners_per_game(stat):
+            if not stat: return None
+            played = (((stat.get("fixtures") or {}).get("played") or {}).get("total")) or 0
+            played = int(played) if played else 0
+            if played <= 0: return None
+            corners = (stat.get("corners") or {}).get("total")
+            if corners is None:
+                return None
+            c = safe_float(corners, None)
+            if c is None: return None
+            return c / played
+
+        h_cards = cards_per_game(h_stat)
+        a_cards = cards_per_game(a_stat)
+        h_corners = corners_per_game(h_stat)
+        a_corners = corners_per_game(a_stat)
+
+        out = {}
+        if h_cards or a_cards:
+            vals = [v for v in [h_cards, a_cards] if v]
+            if vals:
+                out["mu_cards_hint"] = sum(vals)/len(vals) * 2.0 * 0.5  # her iki taraf ~ toplam için *2 ama yumuşatılmış
+        if h_corners or a_corners:
+            vals = [v for v in [h_corners, a_corners] if v]
+            if vals:
+                out["mu_corners_hint"] = sum(vals)/len(vals) * 2.0 * 0.5
+        return out if out else None
+    except Exception as e:
+        log(f"apifoot hint err: {e}")
+        return None
+
+def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None):
+    # lig tabanları
     cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
     corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
 
     wind, precip = parse_weather(wx_text)
+    # tempo proxy: toplam gol λ
     tempo_factor = (lam_h + lam_a) / 2.6
     tempo_factor = max(0.7, min(1.4, tempo_factor))
 
+    # başlangıç
     cards   = cards_base
     corners = corner_base * tempo_factor
 
-    if precip is not None:
-        cards   *= 1.00 + min(0.10, 0.02  * precip)
-        corners *= 1.00 - min(0.10, 0.015 * precip)
-    if wind is not None:
-        corners *= 1.00 + min(0.08, 0.003 * wind)
-        cards   *= 1.00 + min(0.05, 0.002 * wind)
+    # API-Football ipucu varsa kademeli harmanla (güvenli ağırlık)
+    if apifoot_hint:
+        if apifoot_hint.get("mu_cards_hint"):
+            cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
+        if apifoot_hint.get("mu_corners_hint"):
+            corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
 
-    p_corners_8_5 = poisson_over_prob(corners, 8.5)
-    p_corners_9_5 = poisson_over_prob(corners, 9.5)
-    p_cards_3_5   = poisson_over_prob(cards,   3.5)
-    p_cards_4_5   = poisson_over_prob(cards,   4.5)
+    # hava etkisi (yumuşak)
+    if precip is not None:
+        cards   *= 1.00 + min(0.10, 0.02  * max(0.0, precip))
+        corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
+    if wind is not None:
+        corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
+        cards   *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
+
+    # O/U olasılıkları (örnek çizgiler)
+    p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
+    p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
+    p_cards_3_5   = poisson_over_prob(max(0.1, cards),   3.5)
+    p_cards_4_5   = poisson_over_prob(max(0.1, cards),   4.5)
 
     return {
         "mu_cards": cards, "mu_corners": corners,
@@ -542,7 +675,6 @@ def _fd_team_matches(team_id, days=120):
     })
     if not data or not data.get("matches"):
         return []
-    # tarihe göre sırala (yeniden eskiye)
     ms = []
     for m in data["matches"]:
         dtp = to_dt_utc(m.get("utcDate"))
@@ -555,7 +687,6 @@ def _fd_team_matches(team_id, days=120):
 _FORM_CACHE = {}  # team_id -> form_adj,info_text
 
 def _form_adjust_from_matches(team_id, area, team_name):
-    # cache
     if team_id in _FORM_CACHE:
         return _FORM_CACHE[team_id]
 
@@ -574,9 +705,9 @@ def _form_adjust_from_matches(team_id, area, team_name):
         gh = score.get("home")
         ga = score.get("away")
         if gh is None or ga is None:
-            continue  # eksik skorları atla
-
+            continue
         gh = int(gh); ga = int(ga)
+
         is_home = (ht == team_name)
         gf = gh if is_home else ga
         ga_ = ga if is_home else gh
@@ -584,7 +715,6 @@ def _form_adjust_from_matches(team_id, area, team_name):
         opp_name = at if is_home else ht
         opp_elo = elo_get(area, opp_name)
 
-        # rakip gücüne göre ağırlık (±0.2 bandı)
         w = 1.0 + max(-0.2, min(0.2, (opp_elo - 1500.0) / 1000.0))
         score_sum += (gf - ga_) * w
         n += 1
@@ -595,7 +725,6 @@ def _form_adjust_from_matches(team_id, area, team_name):
         adj = 0.0
     else:
         avg = score_sum / n
-        # yumuşak sıkıştırma, ±%12 civarı
         adj = max(-0.15, min(0.15, math.tanh(avg / 3.0) * 0.12))
 
     txt = f"FormAdj {('+' if adj>=0 else '')}{int(adj*100)}%"
@@ -603,33 +732,32 @@ def _form_adjust_from_matches(team_id, area, team_name):
     return (adj, txt)
 
 def build_form_cache_for_date(fixtures):
-    # FD kaynaklı fikstürlerde team_id var; onlar için önceden cache oluştur.
     seen = set()
     for fx in fixtures:
         for tid in (fx.get("home_id"), fx.get("away_id")):
             if tid and tid not in seen:
                 seen.add(tid)
                 try:
-                    _form_adjust_from_matches(tid, fx.get("area","Europe"),
-                                              fx.get("home") if tid==fx.get("home_id") else fx.get("away"))
-                    time.sleep(0.05)  # nazik ol
+                    _form_adjust_from_matches(
+                        tid, fx.get("area","Europe"),
+                        fx.get("home") if tid==fx.get("home_id") else fx.get("away")
+                    )
+                    time.sleep(0.05)
                 except Exception as e:
                     log(f"form cache err team_id={tid}: {e}")
 
 # --- Derecelendirme ----------------------------------------------------------
 
 def rate_fixture(fix, odds_info):
-    area = fix.get("area") or "Europe"
+    area = fix["area"] or "Europe"
     tot  = base_total_goals(area)
 
-    # SPI proxy: ev etkisi (sabit) + minik isim-uzunluğu farkı
     ah    = 1.12
-    noise = (len((fix.get("home") or "")) - len((fix.get("away") or ""))) * 0.01
+    noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
     lam_h = max(0.2, tot*0.5*ah        + noise)
     lam_a = max(0.2, tot*0.5*(2 - ah)  - noise)
 
-    # Hava
-    wx = fetch_weather_note(fix.get("home"))
+    wx = fetch_weather_note(fix["home"])
     if wx:
         wind, precip = parse_weather(wx)
         try:
@@ -641,20 +769,20 @@ def rate_fixture(fix, odds_info):
         except Exception:
             pass
 
-    # Elo etkisi (lambda'ya küçük çarpan)
-    Eh = elo_get(area, fix.get("home")); Ea = elo_get(area, fix.get("away"))
+    # Elo etkisi
+    Eh = elo_get(area, fix["home"]); Ea = elo_get(area, fix["away"])
     elo_diff = (Eh + ELO_HOME_ADV) - Ea
-    elo_adj  = max(-0.20, min(0.20, (elo_diff/400.0)*0.15))  # ±%20 sınır
+    elo_adj  = max(-0.20, min(0.20, (elo_diff/400.0)*0.15))
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
 
-    # Opponent-adjusted form (yalnızca FD'de team_id varsa güçlü)
+    # Opp-adjusted form
     form_bits = []
     home_adj = away_adj = 0.0
     if fix.get("home_id"):
-        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix.get("home"))
+        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix["home"])
         form_bits.append(t)
     if fix.get("away_id"):
-        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix.get("away"))
+        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix["away"])
         form_bits.append(t)
     net_form = max(-0.18, min(0.18, home_adj - away_adj))
     lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
@@ -677,8 +805,10 @@ def rate_fixture(fix, odds_info):
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
 
-    # Kart/Korner
-    kk = model_cards_corners(area, lam_h, lam_a, wx)
+    # Kart/Korner — API-Football ipucunu harmanla
+    apihint = _apifoot_hint_cards_corners(fix.get("area"), fix.get("competition"),
+                                          fix.get("home"), fix.get("away"))
+    kk = model_cards_corners(area, lam_h, lam_a, wx, apifoot_hint=apihint)
     kk_txt = (f" | Korner μ≈{kk['mu_corners']:.1f} (Üst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
               f"Üst9.5 {int(kk['p_over_corners_9_5']*100)}%)"
               f" | Kart μ≈{kk['mu_cards']:.1f} (Üst3.5 {int(kk['p_over_cards_3_5']*100)}%)")
@@ -717,28 +847,16 @@ def fetch_fd_results(date_str):
 
 # --- Mail gönderimi ----------------------------------------------------------
 
-def send_mail(subject, body, to=None):
+def send_mail(subject, body):
     body = (body or "").strip()
     if not body:
         body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
-
-    # Test modu
-    if DRY_RUN:
-        log(f"[DRY_RUN] Mail atlanıyor | To={to or GMAIL_TO} | Subject={subject}\n---\n{body}\n---")
-        return
-
-    try:
-        msg = EmailMessage()
-        msg["From"] = GMAIL_USER
-        msg["To"] = to or GMAIL_TO
-        msg["Subject"] = subject
-        msg.set_content(body)
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-            s.login(GMAIL_USER, GMAIL_PASS)
-            s.send_message(msg)
-        log(f"Mail gönderildi: {subject} -> {msg['To']}")
-    except Exception as e:
-        log(f"Mail gönderim hatası: {e}")
+    msg = EmailMessage()
+    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
+    msg.set_content(body)
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+        s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
+    log(f"Mail gönderildi: {subject}")
 
 # --- Raporlar ----------------------------------------------------------------
 
@@ -754,8 +872,8 @@ def report_predictions(date_str):
     except Exception as e:
         log(f"form build warn: {e}")
 
-    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + OddsCache)\n"]
-    top = []
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + OddsCache + API-Football*)\n"]
+    top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     for fx in fixtures:
         odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
@@ -764,7 +882,9 @@ def report_predictions(date_str):
             continue
         ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M")
         line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
-        lines.append(line); top.append((rated["confidence"], line))
+        lines.append(line)
+        bucket = hi if rated["confidence"] >= HIGH_ALERT else top
+        bucket.append((rated["confidence"], line))
 
     if len(lines) == 1:
         lines.append("Filtreler nedeniyle listelenecek maç kalmadı (MIN_CONF yüksek olabilir).")
@@ -772,9 +892,9 @@ def report_predictions(date_str):
     top.sort(reverse=True)
     best = [f"\n⭐ En Güçlü {TOP_N} Seçim:"] + ["  " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
 
-    hi = [x for x in top if x[0] >= HIGH_ALERT]
     hi_block = []
     if hi:
+        hi.sort(reverse=True)
         hi_block.append("\n⚡ Yüksek Güven Seçimler:")
         for c, l in hi:
             hi_block.append("  " + l.replace("- ","").strip())
@@ -782,13 +902,10 @@ def report_predictions(date_str):
     body = "\n".join(lines + [""] + best + hi_block)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
-    # İsteğe bağlı: yüksek güven ayrı mail
-    if SEPARATE_HIGH_ALERT_MAIL and hi:
-        hi_lines = [f"⚡ Yüksek Güven — {date_str}", ""]
-        for c, l in hi:
-            hi_lines.append(l.replace("- ", ""))
-        send_mail(f"⚡ Yüksek Güven Seçimler | {date_str}", "\n".join(hi_lines),
-                  to=(HIGH_ALERT_TO or GMAIL_TO))
+    # İsteğe bağlı ayrı mail
+    if SPLIT_HIGH and hi:
+        body2 = "⚡ Yüksek Güven Eşik Üstü (≥{}%) — {}\n\n".format(HIGH_ALERT, date_str) + "\n".join([l for _, l in hi])
+        send_mail(f"⚡ Yüksek Güven | {date_str}", body2)
 
 def report_results(date_str):
     res = fetch_fd_results(date_str)
@@ -798,22 +915,18 @@ def report_results(date_str):
 
     lines = [f"📊 Günün Sonuçları — {date_str}", ""]
     for r in res:
-        h = r.get("home_goals")
-        a = r.get("away_goals")
-        score = f"{r.get('home')} {h}-{a} {r.get('away')}"
-        lines.append(f"- {score} | {r.get('area')} {r.get('competition')}")
-
-        # Elo güncelle
+        h,a = r["home_goals"], r["away_goals"]
+        score = f"{r['home']} {h}-{a} {r['away']}"
+        lines.append(f"- {score} | {r['area']} {r['competition']}")
         try:
             if h is not None and a is not None:
                 if h > a:    res_hw = 1.0
                 elif h == a: res_hw = 0.5
                 else:        res_hw = 0.0
-                elo_update(r.get("area"), r.get("home"), r.get("away"), res_hw)
+                elo_update(r["area"], r["home"], r["away"], res_hw)
         except Exception as e:
             log(f"Elo update warn: {e}")
 
-    # State kaydet
     try:
         _state_save(STATE)
     except Exception as e:
@@ -840,7 +953,8 @@ def main():
         elif mode == "RESULTS":
             report_results(date_str)
         else:
-            send_mail("Tahmin Botu | Bilgi", "AUTO modu dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS bekleniyor.")
+            send_mail("Tahmin Botu | Bilgi",
+                      "AUTO modu dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS bekleniyor.")
     except Exception:
         tb = traceback.format_exc(); log(tb)
         try: send_mail("Tahmin Botu | Hata", tb)
