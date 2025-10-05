@@ -16,17 +16,23 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: tahmin-botu
+  cancel-in-progress: false
+
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # state push için tam history alınır
+          fetch-depth: 0  # state push için geçmiş gerekir
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
@@ -70,18 +76,19 @@ jobs:
           GMAIL_TO:   ${{ secrets.GMAIL_TO }}
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
           MODE: ${{ steps.pick.outputs.mode }}
-          # --- Opsiyonel ayarlar (repo Variables'a koyarsan geçer; yoksa boş kalır ve kod varsayılanı kullanır)
-          TOP_N: ${{ vars.TOP_N }}
-          MIN_CONF: ${{ vars.MIN_CONF }}
-          HIGH_ALERT: ${{ vars.HIGH_ALERT }}
-          OLD_LEAGUES: ${{ vars.OLD_LEAGUES }}
-          ODDS_TTL_MIN: ${{ vars.ODDS_TTL_MIN }}
-          ELO_K: ${{ vars.ELO_K }}
-          ELO_HOME_ADV: ${{ vars.ELO_HOME_ADV }}
-          FORM_LOOKBACK: ${{ vars.FORM_LOOKBACK }}
-          FORM_DAYS: ${{ vars.FORM_DAYS }}
-          ALLOW_STATE_FILE: ${{ vars.ALLOW_STATE_FILE }}
+          # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
+          TOP_N:          ${{ vars.TOP_N          || '5'  }}
+          MIN_CONF:       ${{ vars.MIN_CONF       || '0'  }}
+          HIGH_ALERT:     ${{ vars.HIGH_ALERT     || '90' }}
+          OLD_LEAGUES:    ${{ vars.OLD_LEAGUES    || 'bundesliga,bundesliga2' }}
+          ODDS_TTL_MIN:   ${{ vars.ODDS_TTL_MIN   || '15' }}
+          ELO_K:          ${{ vars.ELO_K          || '24' }}
+          ELO_HOME_ADV:   ${{ vars.ELO_HOME_ADV   || '60' }}
+          FORM_LOOKBACK:  ${{ vars.FORM_LOOKBACK  || '10' }}
+          FORM_DAYS:      ${{ vars.FORM_DAYS      || '120' }}
+          ALLOW_STATE_FILE: ${{ vars.ALLOW_STATE_FILE || '1' }}
         run: python mailer.py
 
       - name: State’i kalıcılaştır (yalnızca RESULTS)
@@ -89,13 +96,14 @@ jobs:
         run: |
           set -e
           if [ -f model_state.json ] && [ -s model_state.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add model_state.json
-            if ! git diff --cached --quiet; then
-              git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ')"
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            # Değişiklik var mı?
+            if ! git diff --quiet -- model_state.json; then
+              git add model_state.json
+              git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
               git push
-              echo "✔ model_state.json commit edildi."
+              echo "✔ model_state.json commit/push edildi."
             else
               echo "ℹ state’te değişiklik yok."
             fi
