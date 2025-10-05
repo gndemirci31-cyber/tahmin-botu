@@ -334,13 +334,7 @@ def fetch_odds_fixtures(date_str):
     ]
     out = []
     for skey, area, comp in keys:
-        url = f"https://api.the-odds-api.com/v4/sports/{skey}/odds/"
-        data = http_get(url, params={
-            "regions": "eu,uk",
-            "markets": "h2h",
-            "oddsFormat": "decimal",
-            "apiKey": ODDS_KEY,
-        })
+        data = _fetch_odds_sport_cached(skey)  # cache'li
         if not data or not isinstance(data, list):
             continue
         for ev in data:
@@ -485,18 +479,6 @@ def base_from_area(area, table, default):
             return v
     return default
 
-def parse_weather(wx_text):
-    if not wx_text: return (None, None)
-    wind = None; precip = None
-    try:
-        if "rüzgâr" in wx_text:
-            wind = safe_float(wx_text.split("rüzgâr")[1].split("km/s")[0].strip().split()[-1], None)
-        if "yağış" in wx_text:
-            precip = safe_float(wx_text.split("yağış")[1].split("mm")[0].strip().split()[-1], None)
-    except Exception:
-        pass
-    return (wind, precip)
-
 def model_cards_corners(area, lam_h, lam_a, wx_text):
     cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
     corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
@@ -570,16 +552,22 @@ def _form_adjust_from_matches(team_id, area, team_name):
         ht = (m.get("homeTeam", {}) or {}).get("name", "")
         at = (m.get("awayTeam", {}) or {}).get("name", "")
         score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
-        gh, ga = safe_float(score.get("home")), safe_float(score.get("away"))
+
+        gh = score.get("home")
+        ga = score.get("away")
         if gh is None or ga is None:
-            continue
+            continue  # eksik skorları atla
+
+        gh = int(gh); ga = int(ga)
         is_home = (ht == team_name)
         gf = gh if is_home else ga
         ga_ = ga if is_home else gh
+
         opp_name = at if is_home else ht
         opp_elo = elo_get(area, opp_name)
-        # rakip güçlü ise (Elo yüksek) pozitif gol farkına daha fazla ağırlık
-        w = 1.0 + max(-0.2, min(0.2, (opp_elo - 1500.0)/1000.0))
+
+        # rakip gücüne göre ağırlık (±0.2 bandı)
+        w = 1.0 + max(-0.2, min(0.2, (opp_elo - 1500.0) / 1000.0))
         score_sum += (gf - ga_) * w
         n += 1
         if n >= FORM_LOOKBACK:
@@ -589,7 +577,7 @@ def _form_adjust_from_matches(team_id, area, team_name):
         adj = 0.0
     else:
         avg = score_sum / n
-        # yumuşak sıkıştırma
+        # yumuşak sıkıştırma, ±%12 civarı
         adj = max(-0.15, min(0.15, math.tanh(avg / 3.0) * 0.12))
 
     txt = f"FormAdj {('+' if adj>=0 else '')}{int(adj*100)}%"
@@ -641,14 +629,17 @@ def rate_fixture(fix, odds_info):
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
 
     # Opponent-adjusted form (yalnızca FD'de team_id varsa güçlü)
-    form_txt = ""
+    form_bits = []
     home_adj = away_adj = 0.0
     if fix.get("home_id"):
-        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix["home"]);  form_txt += " | " + t
+        home_adj, t = _form_adjust_from_matches(fix["home_id"], area, fix["home"])
+        form_bits.append(t)
     if fix.get("away_id"):
-        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix["away"]);  form_txt += " / " + t
+        away_adj, t = _form_adjust_from_matches(fix["away_id"], area, fix["away"])
+        form_bits.append(t)
     net_form = max(-0.18, min(0.18, home_adj - away_adj))
     lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
+    form_txt = (" | " + " / ".join(form_bits)) if form_bits else ""
 
     # Model 1X2
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
