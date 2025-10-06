@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava)
+Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava + Otomatik Zamanlama)
 (GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail
  + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L)
  + Sadece belirtilen lig/kupaları listeleyen filtre + Akıllı Hava (büyük lig/UEFA/FIFA)
+ + SERVICE modu: TR 10:00 Tahmin, 23:59 Sonuç (tek dosya içinde zamanlayıcı)
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
@@ -13,9 +14,10 @@ Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava)
 - The Odds API (opsiyonel oranlar)                 -> ODDS_API_KEY varsa kullanılır
 
 Modlar:
-- MODE=PREDICT  -> 10:00 TR “Günün Tahminleri”
-- MODE=RESULTS  -> 23:59 TR “Günün Sonuçları”
-- MODE=AUTO     -> Saat 07 UTC ise PREDICT, aksi ise RESULTS
+- MODE=PREDICT  -> Çalıştığı anda “Günün Tahminleri”
+- MODE=RESULTS  -> Çalıştığı anda “Günün Sonuçları”
+- MODE=AUTO     -> Çalıştığı anda saat UTC 07 ise PREDICT, değilse RESULTS
+- MODE=SERVICE  -> Sürekli çalışır; TR 10:00'da Tahmin, TR 23:59'da Sonuç yollar (tekrar etmez)
 """
 
 import os, math, time, json, smtplib, traceback, re
@@ -190,6 +192,11 @@ TABLE_WEIGHT = float(os.getenv("TABLE_WEIGHT", "0.12"))
 STREAK_UNIT  = float(os.getenv("STREAK_UNIT",  "0.02"))
 STREAK_MAX   = float(os.getenv("STREAK_MAX",   "0.08"))
 
+# SERVICE modu zaman ayarları (TR saati)
+PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))
+RESULTS_HOUR    = int(os.getenv("RESULTS_HOUR", "23"))
+RESULTS_MINUTE  = int(os.getenv("RESULTS_MINUTE", "59"))
+
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
 
@@ -208,11 +215,15 @@ def _state_load():
                 st.setdefault("pred_store", {})     # match_key -> tahmin/teşhis
                 st.setdefault("metrics", {})        # kümülatif metrikler (opsiyonel)
                 st.setdefault("last_saved", None)
+                # SERVICE mod için son çalışma günleri
+                st.setdefault("last_pred_date", None)
+                st.setdefault("last_res_date", None)
                 return st
     except Exception as e:
         log(f"state load err: {e}")
     return {"elo": {}, "goal_scale": {}, "w_mkt": W_MKT_INIT,
-            "pred_store": {}, "metrics": {}, "last_saved": None}
+            "pred_store": {}, "metrics": {}, "last_saved": None,
+            "last_pred_date": None, "last_res_date": None}
 
 def _state_save(st):
     if not ALLOW_STATE_FILE:
@@ -371,7 +382,7 @@ def fetch_weather_note(home_team):
         prec  = wx["hourly"]["precipitation"][:6]
         wind  = wx["hourly"]["wind_speed_10m"][:6]
         tavg  = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
-        return f"Hava: {tavg:.0f}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
+        return f"Hava: {tavg:.0}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
     except Exception:
         return None
 
@@ -1244,7 +1255,6 @@ def fetch_results_apifoot(date_str):
         goals = (item.get("goals") or {})
         gh, ga = goals.get("home"), goals.get("away")
         if gh is None or ga is None:
-            # bazı liglerde "score" altında olabilir
             sc = (item.get("score") or {}).get("fulltime") or {}
             gh, ga = sc.get("home"), sc.get("away")
         if gh is None or ga is None:
@@ -1345,7 +1355,6 @@ def report_results(date_str):
             pred = STATE["pred_store"].get(altk)
 
         if not pred:
-            # tahmin penceresi dışında olabilir; rapora yine de satır düş
             lines.append(f"ℹ️ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadı)")
             continue
 
@@ -1389,12 +1398,10 @@ def report_results(date_str):
         old_w = get_w_mkt()
         target = old_w
         if bk_avg is not None:
-            # market daha iyi ise w'yi artır, model daha iyi ise azalt
             if bk_avg + 1e-6 < bm_avg:
                 target = clamp(old_w + LEARN_RATE*0.5, 0.0, 0.8)
             elif bm_avg + 1e-6 < bk_avg:
                 target = clamp(old_w - LEARN_RATE*0.5, 0.0, 0.8)
-        # küçük bir sapma: blend brier hedefi de kullan
         if bb_avg + 1e-6 < bm_avg:
             target = clamp(target + LEARN_RATE*0.2, 0.0, 0.8)
         elif bb_avg > bm_avg + 1e-6:
@@ -1402,7 +1409,6 @@ def report_results(date_str):
 
         set_w_mkt(target)
 
-        # metrikler
         STATE["metrics"]["last_acc_pct"] = acc
         STATE["metrics"]["brier_model"]  = bm_avg
         STATE["metrics"]["brier_market"] = bk_avg
@@ -1413,7 +1419,6 @@ def report_results(date_str):
                      f"{bm_avg:.3f}/{(bk_avg if bk_avg is not None else float('nan')):.3f}/{bb_avg:.3f}")
         lines.append(f"⚙️  w_mkt: {old_w:.2f} → {get_w_mkt():.2f}")
 
-    # goal_scale özet
     if goal_stats:
         lines.append("")
         lines.append("📈 Goal-scale güncellemeleri:")
@@ -1422,6 +1427,53 @@ def report_results(date_str):
 
     _state_save(STATE)
     send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
+
+# --- SERVICE (otomatik zamanlayıcı) ------------------------------------------
+
+def _today_str_tr(dt=None):
+    return (dt or datetime.now(TR_TZ)).strftime("%Y-%m-%d")
+
+def _time_reached_tr(target_h, target_m=0):
+    now = datetime.now(TR_TZ)
+    tgt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
+    return now >= tgt
+
+def run_service_loop():
+    """Sürekli çalışır; TR 10:00'da tahmin, TR 23:59'da sonuç gönderir.
+       Aynı gün içinde tekrarı engellemek için STATE içinde tarih izler."""
+    log(f"SERVICE başlatıldı (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d})")
+    while True:
+        try:
+            now_tr = datetime.now(TR_TZ)
+            today  = _today_str_tr(now_tr)
+
+            # Tahmin: bugün 10:00 veya sonrası ve bugün henüz gönderilmemişse
+            if (STATE.get("last_pred_date") != today) and _time_reached_tr(PREDICTION_HOUR, 0):
+                log("SERVICE: Tahmin zamanı geldi → rapor hazırlanıyor…")
+                report_predictions(today)
+                STATE["last_pred_date"] = today
+                _state_save(STATE)
+
+            # Sonuç: bugün 23:59 veya sonrası ve bugün henüz gönderilmemişse
+            if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
+                log("SERVICE: Sonuç zamanı geldi → rapor hazırlanıyor…")
+                report_results(today)
+                STATE["last_res_date"] = today
+                _state_save(STATE)
+
+            # Gün değişiminde ertesi güne hazırlık (00:10 sonrası flag reset)
+            # Not: STATE tarihleri zaten "bugün yaptıysam bugün" mantığında,
+            # ertesi gün döngüde today değişeceği için reset gerekmez.
+        except Exception:
+            tb = traceback.format_exc()
+            log(tb)
+            try:
+                send_mail("Tahmin Botu | SERVICE Hata", tb)
+            except Exception:
+                pass
+
+        # İnce adımlı uyku: 20 saniye
+        time.sleep(20)
 
 # --- Çalıştırıcı -------------------------------------------------------------
 
@@ -1432,17 +1484,22 @@ def main():
         date_str = tr_now.strftime("%Y-%m-%d")
 
         mode = MODE_ENV
+        log(f"MODE={mode} | TR now={tr_now} | date={date_str} | w_mkt={get_w_mkt():.2f}")
+
+        if mode == "SERVICE":
+            run_service_loop()
+            return
+
         if mode == "AUTO":
             mode = "PREDICT" if now_utc.hour == 7 else "RESULTS"
 
-        log(f"MODE={mode} | TR now={tr_now} | date={date_str} | w_mkt={get_w_mkt():.2f}")
         if mode == "PREDICT":
             report_predictions(date_str)
         elif mode == "RESULTS":
             report_results(date_str)
         else:
             send_mail("Tahmin Botu | Bilgi",
-                      "AUTO modu dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS bekleniyor.")
+                      "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
     except Exception:
         tb = traceback.format_exc(); log(tb)
         try: send_mail("Tahmin Botu | Hata", tb)
