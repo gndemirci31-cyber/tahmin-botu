@@ -6,35 +6,15 @@ Tahmin Botu — tek parça mailer.py
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
+- API-Football (opsiyonel, free tier)              -> APIFOOTBALL_KEY varsa fikstür + ipucu
 - OpenLigaDB (fallback)                            -> anahtar gerekmez
 - Open-Meteo (hava)                                -> anahtar gerekmez
 - The Odds API (opsiyonel oranlar)                 -> ODDS_API_KEY varsa kullanılır
-- API-Football (opsiyonel, free tier)              -> APIFOOTBALL_KEY varsa kart/korner ipucu
 
 Modlar:
 - MODE=PREDICT  -> 10:00 TR “Günün Tahminleri”
 - MODE=RESULTS  -> 23:59 TR “Günün Sonuçları”
 - MODE=AUTO     -> Saat 07 UTC ise PREDICT, aksi ise RESULTS
-
-Zorunlu Secrets: GMAIL_USER, GMAIL_PASS, GMAIL_TO
-Önerilen Secrets: FOOTBALL_DATA_TOKEN
-Opsiyonel Secrets: ODDS_API_KEY, APIFOOTBALL_KEY
-
-Opsiyonel ENV (varsayılanlar):
-- TOP_N=5, MIN_CONF=0, HIGH_ALERT=90
-- OLD_LEAGUES="bundesliga,bundesliga2"
-- ODDS_TTL_MIN=15
-- ELO_K=24, ELO_HOME_ADV=60
-- FORM_LOOKBACK=10, FORM_DAYS=120
-- ALLOW_STATE_FILE=1
-- SPLIT_HIGH_ALERT_MAIL=0
-- W_MKT_INIT=0.35         # model ↔ market harman başlatma
-- LEARN_RATE=0.05         # w_mkt için öğrenme hızı
-- GOAL_LR=0.02            # lig bazlı gol tabanı ölçek learning rate
-- PRED_MATCH_WINDOW_HRS=48  # tahmin-sonuç eşleşme toleransı
-- TABLE_WEIGHT=0.12       # standings etkisi (±%12 sınır)
-- STREAK_UNIT=0.02        # tek W/L adımı etkisi
-- STREAK_MAX=0.08         # W/L toplam mutlak sınır
 """
 
 import os, math, time, json, smtplib, traceback
@@ -301,7 +281,7 @@ def parse_weather(wx_text):
         pass
     return (wind, precip)
 
-# --- Football-Data (fixtures) + OpenLigaDB (fallback) ------------------------
+# --- Football-Data (fixtures) ------------------------------------------------
 
 def fetch_fd_fixtures(date_str):
     if not FD_TOKEN:
@@ -343,6 +323,62 @@ def fetch_fd_fixtures(date_str):
     log(f"FD fixtures (TR={date_str}) -> {len(out)}")
     return out
 
+# --- 2. Fallback: API-Football'dan tarih bazlı fikstür -----------------------
+
+def fetch_apifoot_fixtures(date_str):
+    """
+    APIFOOTBALL_KEY varsa v3/fixtures?date=YYYY-MM-DD ile geniş kapsamlı fikstür çeker.
+    Sadece oynanmamış (NS/PST/TBD/SUSP/1H/HT/2H) maçları listeler.
+    """
+    if not APIFOOT:
+        return []
+
+    headers = {"x-apisports-key": APIFOOT}
+    url = "https://v3.football.api-sports.io/fixtures"
+    data = http_get(url, headers=headers, params={"date": date_str})
+
+    out = []
+    if not data:
+        log(f"APIF fixtures (TR={date_str}) -> 0 (boş/erişilemedi)")
+        return out
+
+    try:
+        for item in (data.get("response") or []):
+            status = (((item.get("fixture") or {}).get("status") or {}).get("short") or "").upper()
+            if status not in ("NS", "TBD", "PST", "SUSP", "1H", "HT", "2H"):
+                continue
+            utc_iso = ((item.get("fixture") or {}).get("date"))
+            dtp = to_dt_utc(utc_iso)
+            if not dtp:
+                continue
+            if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
+                continue
+
+            lg   = (item.get("league") or {})
+            tms  = (item.get("teams") or {})
+            home = (tms.get("home") or {})
+            away = (tms.get("away") or {})
+
+            out.append({
+                "source": "APIF",
+                "utc_kickoff": dtp,
+                "home": home.get("name"),
+                "away": away.get("name"),
+                "home_id": home.get("id"),         # API-Football team id
+                "away_id": away.get("id"),
+                "area": lg.get("country") or "Europe",
+                "competition": lg.get("name") or "",
+                "competition_id": None,            # FD id değil
+                "id": f"apif:{item.get('fixture',{}).get('id')}",
+            })
+    except Exception as e:
+        log(f"APIF fixtures parse err: {e}")
+
+    log(f"APIF fixtures (TR={date_str}) -> {len(out)}")
+    return out
+
+# --- OpenLigaDB fallback -----------------------------------------------------
+
 def fetch_openligadb_day(date_str):
     y, m, d = date_str.split("-")
     leagues = [(lg.strip(), int(y)) for lg in OLD_LEAGUES if lg.strip()]
@@ -374,7 +410,7 @@ def fetch_openligadb_day(date_str):
     log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
     return out
 
-# --- 3. Fallback: The Odds API'den fikstür listesi --------------------------
+# --- 4. Fallback: The Odds API'den event listesi -----------------------------
 
 _odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
 
@@ -428,10 +464,15 @@ def fetch_odds_fixtures(date_str):
     log(f"OddsAPI fixtures (TR={date_str}) -> {len(out)}")
     return out
 
+# --- Fikstür toplayıcı (yeni zincir) ----------------------------------------
+
 def fetch_fixtures(date_str):
     fixtures = fetch_fd_fixtures(date_str)
     if not fixtures:
-        log("FD boş → OpenLigaDB fallback deneniyor…")
+        log("FD boş → API-Football fallback deneniyor…")
+        fixtures = fetch_apifoot_fixtures(date_str)
+    if not fixtures:
+        log("API-Football da boş → OpenLigaDB fallback deneniyor…")
         fixtures = fetch_openligadb_day(date_str)
     if not fixtures:
         log("OpenLigaDB de boş → The Odds API event fallback deneniyor…")
@@ -666,13 +707,12 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         log(f"apifoot hint err: {e}")
         return None
 
-# --- API-Football: Standings/Streak Fallback (YENİ) -------------------------
+# --- API-Football: Standings/Streak Fallback ---------------------------------
 
 _APIF_STANDINGS_CACHE = {}  # (league_id, season) -> {"total_teams":N, "by_id": {team_id: {"position":pos}}}
 _APIF_FIXTURES_CACHE  = {}  # (team_id, league_id, season, limit) -> ["W","D","L",...]
 
 def _apifoot_standings(league_id, season):
-    """/standings -> lig tablosu"""
     if not APIFOOT or not league_id or not season:
         return None
     key = (league_id, season)
@@ -700,7 +740,6 @@ def _apifoot_standings(league_id, season):
     return _APIF_STANDINGS_CACHE[key]
 
 def _apif_get_position_by_name(league_id, season, team_name):
-    """Takım adından pozisyon bul (API-Football team_id araması yapar)."""
     st = _apifoot_standings(league_id, season)
     if not (st and team_name):
         return (None, None)
@@ -713,7 +752,6 @@ def _apif_get_position_by_name(league_id, season, team_name):
     return (row.get("position"), st.get("total_teams"))
 
 def _apif_recent_outcomes(team_id, league_id, season, limit=6):
-    """Takımın son maçlarını çekip W/D/L listesi döndürür (yalnızca ilgili lig)."""
     if not (APIFOOT and team_id and league_id and season):
         return []
     key = (int(team_id), int(league_id), int(season), int(limit))
@@ -744,7 +782,6 @@ def _apif_recent_outcomes(team_id, league_id, season, limit=6):
     return outcomes
 
 def _apif_streak_for_team(team_name, league_id, season):
-    """Takım adıyla W/L streak hesapla (API-Football)."""
     tid = _apifoot_find_team_id(team_name)
     if not tid:
         return (0.0, "")
@@ -752,7 +789,7 @@ def _apif_streak_for_team(team_name, league_id, season):
     if not outs:
         return (0.0, "")
     streak_char = None; count = 0
-    for res in outs:  # son maçtan geri
+    for res in outs:
         if streak_char is None:
             if res == "D":
                 return (0.0, "D0")
@@ -762,8 +799,7 @@ def _apif_streak_for_team(team_name, league_id, season):
                 count += 1
             else:
                 break
-        if count >= 6:
-            break
+        if count >= 6: break
     if streak_char == "W":
         score = min(count, 5) * STREAK_UNIT; txt = f"W{count}"
     elif streak_char == "L":
@@ -772,92 +808,6 @@ def _apif_streak_for_team(team_name, league_id, season):
         score = 0.0; txt = "D0"
     score = clamp(score, -STREAK_MAX, STREAK_MAX)
     return (score, txt)
-
-def _table_adj_from_any(fix):
-    """Önce FD standings, değilse API-Football standings."""
-    # FD ile (varsa)
-    if fix.get("competition_id") and fix.get("home_id") and fix.get("away_id"):
-        h_rankpct, h_pos, N = _table_strength(fix["competition_id"], fix["home_id"])
-        a_rankpct, a_pos, _ = _table_strength(fix["competition_id"], fix["away_id"])
-        if (h_rankpct is not None) and (a_rankpct is not None):
-            diff = h_rankpct - a_rankpct
-            table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
-            txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
-            return table_adj, txt
-
-    # API-Football fallback
-    lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
-    lig_id = _API_LEAGUE_MAP.get(lig_key)
-    if not lig_id:
-        return 0.0, ""
-    ssn = season_for_today()
-    h_pos, N = _apif_get_position_by_name(lig_id, ssn, fix.get("home"))
-    a_pos, _ = _apif_get_position_by_name(lig_id, ssn, fix.get("away"))
-    if h_pos and a_pos and N:
-        h_rankpct = (N - h_pos) / (N - 1) if N > 1 else 0.5
-        a_rankpct = (N - a_pos) / (N - 1) if N > 1 else 0.5
-        diff = h_rankpct - a_rankpct
-        table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
-        txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
-        return table_adj, txt
-    return 0.0, ""
-
-def _streak_from_any(fix):
-    """Önce FD streak, değilse API-Football streak."""
-    # FD ile (varsa)
-    if fix.get("home_id") and fix.get("away_id"):
-        hs, hs_txt  = _team_streak(fix.get("home_id"), fix.get("home"))
-        as_, as_txt = _team_streak(fix.get("away_id"), fix.get("away"))
-        net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
-        if hs_txt or as_txt:
-            return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
-
-    # API-Football fallback
-    lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
-    lig_id = _API_LEAGUE_MAP.get(lig_key)
-    if not lig_id:
-        return 0.0, ""
-    ssn = season_for_today()
-    hs, hs_txt  = _apif_streak_for_team(fix.get("home"), lig_id, ssn)
-    as_, as_txt = _apif_streak_for_team(fix.get("away"), lig_id, ssn)
-    net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
-    if hs_txt or as_txt:
-        return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
-    return 0.0, ""
-
-def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None):
-    cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
-    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
-
-    wind, precip = parse_weather(wx_text)
-    tempo_factor = clamp((lam_h + lam_a) / 2.6, 0.7, 1.4)
-
-    cards   = cards_base
-    corners = corner_base * tempo_factor
-
-    if apifoot_hint:
-        if apifoot_hint.get("mu_cards_hint"):
-            cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
-        if apifoot_hint.get("mu_corners_hint"):
-            corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
-
-    if precip is not None:
-        cards   *= 1.00 + min(0.10, 0.02  * max(0.0, precip))
-        corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
-    if wind is not None:
-        corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
-        cards   *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
-
-    p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
-    p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
-    p_cards_3_5   = poisson_over_prob(max(0.1, cards),   3.5)
-    p_cards_4_5   = poisson_over_prob(max(0.1, cards),   4.5)
-
-    return {
-        "mu_cards": cards, "mu_corners": corners,
-        "p_over_cards_3_5": p_cards_3_5, "p_over_cards_4_5": p_cards_4_5,
-        "p_over_corners_8_5": p_corners_8_5, "p_over_corners_9_5": p_corners_9_5
-    }
 
 # --- Opponent-adjusted form (FD team-id ile) ---------------------------------
 
@@ -988,14 +938,36 @@ def _table_strength(comp_id, team_id):
         return (None, None, None)
     N = st["total_teams"] or 20
     pos = row["position"]
-    if N <= 1:
-        rank_pct = 0.5
-    else:
-        # 1 (lider) -> 1.0, N (son) -> 0.0
-        rank_pct = (N - pos) / (N - 1)
+    rank_pct = (N - pos) / (N - 1) if N > 1 else 0.5
     return (rank_pct, pos, N)
 
-# --- Streak (W/L) ------------------------------------------------------------
+def _table_adj_from_any(fix):
+    if fix.get("competition_id") and fix.get("home_id") and fix.get("away_id"):
+        h_rankpct, h_pos, N = _table_strength(fix["competition_id"], fix["home_id"])
+        a_rankpct, a_pos, _ = _table_strength(fix["competition_id"], fix["away_id"])
+        if (h_rankpct is not None) and (a_rankpct is not None):
+            diff = h_rankpct - a_rankpct
+            table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
+            txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
+            return table_adj, txt
+
+    lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
+    lig_id = _API_LEAGUE_MAP.get(lig_key)
+    if not lig_id:
+        return 0.0, ""
+    ssn = season_for_today()
+    h_pos, N = _apif_get_position_by_name(lig_id, ssn, fix.get("home"))
+    a_pos, _ = _apif_get_position_by_name(lig_id, ssn, fix.get("away"))
+    if h_pos and a_pos and N:
+        h_rankpct = (N - h_pos) / (N - 1) if N > 1 else 0.5
+        a_rankpct = (N - a_pos) / (N - 1) if N > 1 else 0.5
+        diff = h_rankpct - a_rankpct
+        table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
+        txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
+        return table_adj, txt
+    return 0.0, ""
+
+# --- Streak (FD varsa FD, yoksa API-Football) --------------------------------
 
 _STREAK_CACHE = {}  # team_id -> (score, txt)
 
@@ -1055,6 +1027,62 @@ def _team_streak(team_id, team_name):
     score = max(-STREAK_MAX, min(STREAK_MAX, score))
     _STREAK_CACHE[team_id] = (score, txt)
     return (score, txt)
+
+def _streak_from_any(fix):
+    if fix.get("home_id") and fix.get("away_id"):
+        hs, hs_txt  = _team_streak(fix.get("home_id"), fix.get("home"))
+        as_, as_txt = _team_streak(fix.get("away_id"), fix.get("away"))
+        net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
+        if hs_txt or as_txt:
+            return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
+
+    lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
+    lig_id = _API_LEAGUE_MAP.get(lig_key)
+    if not lig_id:
+        return 0.0, ""
+    ssn = season_for_today()
+    hs, hs_txt  = _apif_streak_for_team(fix.get("home"), lig_id, ssn)
+    as_, as_txt = _apif_streak_for_team(fix.get("away"), lig_id, ssn)
+    net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
+    if hs_txt or as_txt:
+        return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
+    return 0.0, ""
+
+# --- Kart/Korner model -------------------------------------------------------
+
+def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None):
+    cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
+    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
+
+    wind, precip = parse_weather(wx_text)
+    tempo_factor = clamp((lam_h + lam_a) / 2.6, 0.7, 1.4)
+
+    cards   = cards_base
+    corners = corner_base * tempo_factor
+
+    if apifoot_hint:
+        if apifoot_hint.get("mu_cards_hint"):
+            cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
+        if apifoot_hint.get("mu_corners_hint"):
+            corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
+
+    if precip is not None:
+        cards   *= 1.00 + min(0.10, 0.02  * max(0.0, precip))
+        corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
+    if wind is not None:
+        corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
+        cards   *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
+
+    p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
+    p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
+    p_cards_3_5   = poisson_over_prob(max(0.1, cards),   3.5)
+    p_cards_4_5   = poisson_over_prob(max(0.1, cards),   4.5)
+
+    return {
+        "mu_cards": cards, "mu_corners": corners,
+        "p_over_cards_3_5": p_cards_3_5, "p_over_cards_4_5": p_cards_4_5,
+        "p_over_corners_8_5": p_corners_8_5, "p_over_corners_9_5": p_corners_9_5
+    }
 
 # --- Tahmin/sonuç eşleşme & öğrenme -----------------------------------------
 
@@ -1155,7 +1183,7 @@ def analyze_and_learn(results):
             correct += 1
 
         if bs_k is not None and bs_m is not None:
-            delta = clamp(bs_m - bs_k, -0.4, 0.4)  # >0 → market daha iyi
+            delta = clamp(bs_m - bs_k, -0.4, 0.4)
             if delta > 0.0:
                 set_w_mkt(get_w_mkt() + LEARN_RATE * delta)
                 market_helped += 1
@@ -1334,14 +1362,13 @@ def report_predictions(date_str):
     except Exception as e:
         log(f"form build warn: {e}")
 
-    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/OLD + Hava + Elo/Form + Table/Streak + OddsCache + API-Football* + Öğrenme)\n"]
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/APIF/OLD + Hava + Elo/Form + Table/Streak + OddsCache + API-Football* + Öğrenme)\n"]
     top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     for fx in fixtures:
         odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
         rated = rate_fixture(fx, odds)
 
-        # Öğrenme için tüm maçları kaydet (listeye eklemesek de)
         record_prediction(
             fx, rated,
             rated["probs_model"],
@@ -1399,7 +1426,6 @@ def report_results(date_str):
         except Exception as e:
             log(f"Elo update warn: {e}")
 
-    # Otomatik öğrenme (w_mkt ve goal_scale)
     learn_summary = ""
     try:
         learn_summary = analyze_and_learn(res)
@@ -1408,7 +1434,6 @@ def report_results(date_str):
     except Exception as e:
         log(f"learn err: {e}")
 
-    # State kaydet
     try:
         _state_save(STATE)
     except Exception as e:
