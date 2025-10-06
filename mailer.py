@@ -544,7 +544,6 @@ def fetch_odds_fixtures(date_str):
         ("soccer_turkey_super_league", "Turkey", "Super Lig"),
         ("soccer_uefa_champs_league", "Europe", "UEFA Champions League"),
         ("soccer_uefa_europa_league", "Europe", "UEFA Europa League"),
-        # Not: The Odds API'de tüm 2. ligler olmayabilir; yine de üst lig/sahne için yeterli.
     ]
     out = []
     for skey, area, comp in keys:
@@ -1001,7 +1000,6 @@ def _streak_from_any(fix):
     hs_pos, N = _apif_get_position_by_name(lig_id, ssn, fix.get("home"))
     as_pos, _ = _apif_get_position_by_name(lig_id, ssn, fix.get("away"))
     if hs_pos and as_pos and N:
-        # tablo/pozisyon bilgisi varsa küçük bir ayarlama yapılmış kabul
         diffpct = ((N - hs_pos) - (N - as_pos)) / max(1, (N - 1))
         net = clamp(diffpct * (STREAK_UNIT*2.5), -STREAK_MAX, STREAK_MAX)
         return net, f" | Streak (pos proxy) {hs_pos}/{N} vs {as_pos}/{N} (Adj {int(net*100)}%)"
@@ -1148,13 +1146,16 @@ def rate_fixture(fix, odds_info):
         "wx_adj": wx_adj, "elo_adj": elo_adj, "net_form": net_form
     }
 
-# --- Tahmin/sonuç eşleşme & öğrenme (kısaltılmış) ----------------------------
+# --- Tahmin/sonuç eşleşme & öğrenme yardımcıları -----------------------------
 
 def match_key_from_fixture(fx):
     if fx.get("id"):
         return f"{fx.get('source','?')}:{fx['id']}"
     dt = (fx.get("utc_kickoff") or datetime.now(timezone.utc)).strftime("%Y%m%d")
     return f"{norm_team(fx.get('home'))}|{norm_team(fx.get('away'))}|{dt}"
+
+def alt_key_from_names(home, away, date_str):
+    return f"{norm_team(home)}|{norm_team(away)}|{date_str.replace('-','')}"
 
 def brier_score(probs, outcome_idx):
     if probs is None: return None
@@ -1163,7 +1164,7 @@ def brier_score(probs, outcome_idx):
 
 def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_adj, elo_adj, net_form):
     mk = match_key_from_fixture(fx)
-    STATE["pred_store"][mk] = {
+    rec = {
         "ts": datetime.utcnow().isoformat() + "Z",
         "area": fx.get("area","Europe"),
         "competition": fx.get("competition",""),
@@ -1178,6 +1179,13 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
         "wx_adj": wx_adj, "elo_adj": elo_adj, "net_form": net_form,
         "w_mkt_used": get_w_mkt()
     }
+    STATE["pred_store"][mk] = rec
+    # İkincil anahtar: isim+tarih
+    altk = alt_key_from_names(fx.get("home"), fx.get("away"),
+                              (fx.get("utc_kickoff") or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%Y-%m-%d"))
+    STATE["pred_store"][altk] = rec
+
+# --- Mail --------------------------------------------------------------------
 
 def send_mail(subject, body):
     body = (body or "").strip()
@@ -1189,6 +1197,75 @@ def send_mail(subject, body):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
         s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
     log(f"Mail gönderildi: {subject}")
+
+# --- Sonuç çekiciler ---------------------------------------------------------
+
+def fetch_results_fd(date_str):
+    if not FD_TOKEN: return []
+    url = "https://api.football-data.org/v4/matches"
+    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
+    data = http_get(url, headers=headers, params={"dateFrom": date_str, "dateTo": date_str})
+    out = []
+    if not data or not data.get("matches"): return out
+    for m in data["matches"]:
+        comp = m.get("competition", {}) or {}
+        area = (comp.get("area", {}) or {}).get("name", "")
+        cname = comp.get("name", "")
+        if not is_allowed_competition(area, cname): continue
+        score_ft = ((m.get("score") or {}).get("fullTime") or {})
+        gh, ga = score_ft.get("home"), score_ft.get("away")
+        if gh is None or ga is None:  # bazen PENS vs, yine de fulltime al
+            continue
+        out.append({
+            "area": area, "competition": cname,
+            "home": (m.get("homeTeam") or {}).get("name"),
+            "away": (m.get("awayTeam") or {}).get("name"),
+            "score_h": int(gh), "score_a": int(ga),
+            "id_key": f"FD:{m.get('id')}"
+        })
+    log(f"FD results {date_str} -> {len(out)}")
+    return out
+
+def fetch_results_apifoot(date_str):
+    if not APIFOOT: return []
+    headers = {"x-apisports-key": APIFOOT}
+    url = "https://v3.football.api-sports.io/fixtures"
+    data = http_get(url, headers=headers, params={"date": date_str})
+    out = []
+    if not data: return out
+    for item in (data.get("response") or []):
+        lg = (item.get("league") or {})
+        area = (lg.get("country") or "Europe")
+        cname = (lg.get("name") or "")
+        if not is_allowed_competition(area, cname): continue
+        st = (((item.get("fixture") or {}).get("status") or {}).get("short") or "").upper()
+        if st not in ("FT","AET","PEN","MATCH_FINISHED"):  # bitmiş say
+            continue
+        goals = (item.get("goals") or {})
+        gh, ga = goals.get("home"), goals.get("away")
+        if gh is None or ga is None:
+            # bazı liglerde "score" altında olabilir
+            sc = (item.get("score") or {}).get("fulltime") or {}
+            gh, ga = sc.get("home"), sc.get("away")
+        if gh is None or ga is None:
+            continue
+        teams = (item.get("teams") or {})
+        out.append({
+            "area": area, "competition": cname,
+            "home": (teams.get("home") or {}).get("name"),
+            "away": (teams.get("away") or {}).get("name"),
+            "score_h": int(gh), "score_a": int(ga),
+            "id_key": f"APIF:apif:{(item.get('fixture') or {}).get('id')}"
+        })
+    log(f"APIF results {date_str} -> {len(out)}")
+    return out
+
+def fetch_results(date_str):
+    r = fetch_results_fd(date_str)
+    if not r:
+        log("FD sonuç yok → API-Football sonuç deneniyor…")
+        r = fetch_results_apifoot(date_str)
+    return r
 
 # --- Raporlar ----------------------------------------------------------------
 
@@ -1236,11 +1313,114 @@ def report_predictions(date_str):
             hi_block.append("  " + l.replace("- ","").strip())
 
     body = "\n".join(lines + [""] + best + hi_block)
+    _state_save(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
 def report_results(date_str):
-    # Minimal sonuç raporu (algoritmanın uzun kısmını atlamadan temel çıktı)
-    lines = [f"📊 Günün Sonuçları — {date_str}", "", "Sonuç raporu modüler kısım bu sürümde sadeleştirildi."]
+    results = fetch_results(date_str)
+    lines = [f"📊 Günün Sonuçları — {date_str}", ""]
+    if not results:
+        lines.append("Bugün için sonuç bulunamadı.")
+        send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
+        return
+
+    total = 0
+    correct = 0
+    brier_model_sum = 0.0
+    brier_market_sum = 0.0
+    brier_blend_sum = 0.0
+    goal_stats = {}  # area -> (sum_goals, n)
+
+    for res in results:
+        gh, ga = res["score_h"], res["score_a"]
+        area = res["area"]
+        outcome_idx = 0 if gh>ga else 1 if gh==ga else 2
+
+        # Eşleşme: önce ID anahtarı, yoksa isim+tarih
+        pred = None
+        if res.get("id_key") and res["id_key"] in STATE["pred_store"]:
+            pred = STATE["pred_store"][res["id_key"]]
+        if not pred:
+            altk = alt_key_from_names(res["home"], res["away"], date_str)
+            pred = STATE["pred_store"].get(altk)
+
+        if not pred:
+            # tahmin penceresi dışında olabilir; rapora yine de satır düş
+            lines.append(f"ℹ️ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadı)")
+            continue
+
+        total += 1
+        pick = {"1":0,"X":1,"2":2}.get(pred["pick"],-1)
+        ok = (pick == outcome_idx)
+        if ok: correct += 1
+
+        # Brier
+        bm = brier_score(pred.get("probs_model"),  outcome_idx) or 0.0
+        bk = brier_score(pred.get("probs_market"), outcome_idx) or 0.0
+        bb = brier_score(pred.get("probs_blend"),  outcome_idx) or 0.0
+        brier_model_sum  += bm
+        brier_market_sum += bk
+        brier_blend_sum  += bb
+
+        # Elo öğrenme
+        result_hw = 1.0 if outcome_idx==0 else 0.0 if outcome_idx==2 else 0.5
+        elo_update(area, res["home"], res["away"], result_hw)
+
+        # goal_scale öğrenme
+        goals = gh + ga
+        cur_scale = get_goal_scale(area)
+        expected_tot = base_total_goals(area)
+        err = (goals - expected_tot) / max(1.0, expected_tot)
+        new_scale = clamp(cur_scale * (1.0 + GOAL_LR * err), 0.7, 1.4)
+        set_goal_scale(area, new_scale)
+        s, n = goal_stats.get(area, (0,0))
+        goal_stats[area] = (s+goals, n+1)
+
+        mark = "✅" if ok else "❌"
+        lines.append(f"{mark} {res['home']} {gh}-{ga} {res['away']}  | Tahmin: {pred['pick']} ({pred['conf_pct']}%)")
+
+    # w_mkt öğrenme (model vs market performansına göre)
+    if total > 0:
+        acc = 100.0 * correct / total
+        bm_avg = brier_model_sum/total
+        bk_avg = brier_market_sum/total if brier_market_sum>0 else None
+        bb_avg = brier_blend_sum/total
+
+        old_w = get_w_mkt()
+        target = old_w
+        if bk_avg is not None:
+            # market daha iyi ise w'yi artır, model daha iyi ise azalt
+            if bk_avg + 1e-6 < bm_avg:
+                target = clamp(old_w + LEARN_RATE*0.5, 0.0, 0.8)
+            elif bm_avg + 1e-6 < bk_avg:
+                target = clamp(old_w - LEARN_RATE*0.5, 0.0, 0.8)
+        # küçük bir sapma: blend brier hedefi de kullan
+        if bb_avg + 1e-6 < bm_avg:
+            target = clamp(target + LEARN_RATE*0.2, 0.0, 0.8)
+        elif bb_avg > bm_avg + 1e-6:
+            target = clamp(target - LEARN_RATE*0.2, 0.0, 0.8)
+
+        set_w_mkt(target)
+
+        # metrikler
+        STATE["metrics"]["last_acc_pct"] = acc
+        STATE["metrics"]["brier_model"]  = bm_avg
+        STATE["metrics"]["brier_market"] = bk_avg
+        STATE["metrics"]["brier_blend"]  = bb_avg
+
+        lines.append("")
+        lines.append(f"🎯 Doğruluk: {acc:.1f}%   | Brier (model/market/blend): "
+                     f"{bm_avg:.3f}/{(bk_avg if bk_avg is not None else float('nan')):.3f}/{bb_avg:.3f}")
+        lines.append(f"⚙️  w_mkt: {old_w:.2f} → {get_w_mkt():.2f}")
+
+    # goal_scale özet
+    if goal_stats:
+        lines.append("")
+        lines.append("📈 Goal-scale güncellemeleri:")
+        for area, (s, n) in goal_stats.items():
+            lines.append(f" - {area}: avg_goals={s/max(1,n):.2f} | goal_scale={get_goal_scale(area):.3f}")
+
+    _state_save(STATE)
     send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
 
 # --- Çalıştırıcı -------------------------------------------------------------
