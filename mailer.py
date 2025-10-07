@@ -4,7 +4,7 @@ Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava + Oto
 (GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail
  + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L)
  + Sadece belirtilen lig/kupaları listeleyen filtre + Akıllı Hava (büyük lig/UEFA/FIFA)
- + SERVICE modu: TR 10:00 Tahmin, 23:59 Sonuç (tek dosya içinde zamanlayıcı)
+ + SERVICE modu: TR 10:00 Tahmin, ertesi gün 04:00 Sonuç (düne ait) — tek dosya içinde zamanlayıcı)
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
@@ -15,9 +15,9 @@ Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava + Oto
 
 Modlar:
 - MODE=PREDICT  -> Çalıştığı anda “Günün Tahminleri”
-- MODE=RESULTS  -> Çalıştığı anda “Günün Sonuçları”
+- MODE=RESULTS  -> Çalıştığı anda **dünün** sonuçları (yeni saat planına uygun)
 - MODE=AUTO     -> Çalıştığı anda saat UTC 07 ise PREDICT, değilse RESULTS
-- MODE=SERVICE  -> Sürekli çalışır; TR 10:00'da Tahmin, TR 23:59'da Sonuç yollar (tekrar etmez)
+- MODE=SERVICE  -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
 import os, math, time, json, smtplib, traceback, re
@@ -194,8 +194,8 @@ STREAK_MAX   = float(os.getenv("STREAK_MAX",   "0.08"))
 
 # SERVICE modu zaman ayarları (TR saati)
 PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))
-RESULTS_HOUR    = int(os.getenv("RESULTS_HOUR", "23"))
-RESULTS_MINUTE  = int(os.getenv("RESULTS_MINUTE", "59"))
+RESULTS_HOUR    = int(os.getenv("RESULTS_HOUR", "4"))   # <— ONAYLI: Ertesi gün 04:00
+RESULTS_MINUTE  = int(os.getenv("RESULTS_MINUTE", "0")) # <— ONAYLI: :00
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
@@ -1433,15 +1433,19 @@ def report_results(date_str):
 def _today_str_tr(dt=None):
     return (dt or datetime.now(TR_TZ)).strftime("%Y-%m-%d")
 
+def _yesterday_str_tr(dt=None):
+    dt = (dt or datetime.now(TR_TZ)) - timedelta(days=1)
+    return dt.strftime("%Y-%m-%d")
+
 def _time_reached_tr(target_h, target_m=0):
     now = datetime.now(TR_TZ)
     tgt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
     return now >= tgt
 
 def run_service_loop():
-    """Sürekli çalışır; TR 10:00'da tahmin, TR 23:59'da sonuç gönderir.
+    """Sürekli çalışır; TR 10:00'da bugünün tahmini, ertesi gün TR 04:00'da DÜNÜN sonuçlarını gönderir.
        Aynı gün içinde tekrarı engellemek için STATE içinde tarih izler."""
-    log(f"SERVICE başlatıldı (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d})")
+    log(f"SERVICE başlatıldı (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve ertesi gün {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d} [düne ait])")
     while True:
         try:
             now_tr = datetime.now(TR_TZ)
@@ -1454,16 +1458,14 @@ def run_service_loop():
                 STATE["last_pred_date"] = today
                 _state_save(STATE)
 
-            # Sonuç: bugün 23:59 veya sonrası ve bugün henüz gönderilmemişse
+            # Sonuç: ertesi gün 04:00'te, dünkü tarihe göre
             if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
-                log("SERVICE: Sonuç zamanı geldi → rapor hazırlanıyor…")
-                report_results(today)
-                STATE["last_res_date"] = today
+                res_date = _yesterday_str_tr(now_tr)  # her zaman DÜN
+                log(f"SERVICE: Sonuç zamanı geldi (dün={res_date}) → rapor hazırlanıyor…")
+                report_results(res_date)
+                STATE["last_res_date"] = today  # bugünü işaretle, tekrarı engelle
                 _state_save(STATE)
 
-            # Gün değişiminde ertesi güne hazırlık (00:10 sonrası flag reset)
-            # Not: STATE tarihleri zaten "bugün yaptıysam bugün" mantığında,
-            # ertesi gün döngüde today değişeceği için reset gerekmez.
         except Exception:
             tb = traceback.format_exc()
             log(tb)
@@ -1496,7 +1498,8 @@ def main():
         if mode == "PREDICT":
             report_predictions(date_str)
         elif mode == "RESULTS":
-            report_results(date_str)
+            # Onaylı politika: RESULTS her zaman DÜN'e bakar
+            report_results(_yesterday_str_tr(tr_now))
         else:
             send_mail("Tahmin Botu | Bilgi",
                       "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
