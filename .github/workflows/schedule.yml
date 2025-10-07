@@ -4,8 +4,8 @@ on:
   schedule:
     # TR 10:00 (UTC 07:00) → Günün Tahminleri
     - cron: "0 7 * * *"
-    # TR 23:59 (UTC 20:59) → Günün Sonuçları
-    - cron: "59 20 * * *"
+    # TR 04:00 (UTC 01:00, ertesi gün) → Dünün Sonuçları & Öğrenme
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -56,7 +56,7 @@ jobs:
           if [ "$SCHEDULE" = "0 7 * * *" ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
             exit 0
-          elif [ "$SCHEDULE" = "59 20 * * *" ]; then
+          elif [ "$SCHEDULE" = "0 1 * * *" ]; then
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -65,7 +65,10 @@ jobs:
           HOUR="$(date -u +%H)"
           if [ "$HOUR" = "07" ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+          elif [ "$HOUR" = "01" ]; then
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
           else
+            # Varsayılan: RESULTS
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
           fi
 
