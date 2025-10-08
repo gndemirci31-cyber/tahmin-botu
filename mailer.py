@@ -232,7 +232,7 @@ def team_similarity(a, b):
     
     return SequenceMatcher(None, a_norm, b_norm).ratio()
 
-def find_closest_team(target_team, team_list, threshold=0.6):
+def find_closest_team(target_team, team_list, threshold=0.75):
     """
     Takım listesinde en benzer takımı bulur
     
@@ -468,7 +468,23 @@ _FIFA_ALLOW_PAT = [
     "club world cup"
 ]
 
+# Kadın liglerini filtreleme için yasaklı kelimeler
+_WOMEN_KEYWORDS = [
+    "women", "feminine", "ladies", "female", "wsl", "frauen", 
+    "femminile", "féminine", "feminino"
+]
+
+def is_women_competition(area_name: str, comp_name: str) -> bool:
+    """Kadın ligi/kupası olup olmadığını kontrol eder"""
+    a, c = (area_name or "").lower(), (comp_name or "").lower()
+    combined = f"{a} {c}"
+    return any(keyword in combined for keyword in _WOMEN_KEYWORDS)
+
 def is_allowed_competition(area_name: str, comp_name: str) -> bool:
+    # Kadın liglerini filtrele
+    if is_women_competition(area_name, comp_name):
+        return False
+        
     a, c = _n(area_name), _n(comp_name)
     if (a, c) in _ALLOWED_PAIRS:
         return True
@@ -586,10 +602,23 @@ def elo_expect(elo_a, elo_b, home_adv=0.0):
     diff = (elo_a + home_adv) - elo_b
     return 1.0 / (1.0 + 10.0 ** (-diff / 400.0))
 
-def elo_update(area, home_name, away_name, result_hw):
+def elo_update(area, home_name, away_name, result_hw, home_advantage=None):
+    """
+    Elo güncellemesi - dinamik ev avantajı desteği
+    
+    Args:
+        area: Lig bölgesi
+        home_name: Ev sahibi takım
+        away_name: Deplasman takımı  
+        result_hw: Sonuç (1.0=ev kazandı, 0.5=berabere, 0.0=deplasman kazandı)
+        home_advantage: Ev avantajı (None ise ELO_HOME_ADV kullanır)
+    """
+    if home_advantage is None:
+        home_advantage = ELO_HOME_ADV
+        
     Eh = elo_get(area, home_name)
     Ea = elo_get(area, away_name)
-    ph = elo_expect(Eh, Ea, ELO_HOME_ADV)
+    ph = elo_expect(Eh, Ea, home_advantage)
     pa = 1.0 - ph
     Eh_new = Eh + ELO_K * (result_hw - ph)
     Ea_new = Ea + ELO_K * ((1.0 - result_hw) - pa)
@@ -962,7 +991,10 @@ def fetch_odds_avg(area, comp, home, away):
         if not comps:
             continue
         t1 = norm(ev.get("home_team")); t2 = norm(ev.get("away_team"))
-        if (t1.startswith(h) and t2.startswith(a)) or (h.startswith(t1) and a.startswith(t2)):
+        # Geliştirilmiş takım eşleştirme - benzerlik kullan
+        h_sim = team_similarity(h, t1)
+        a_sim = team_similarity(a, t2)
+        if h_sim >= 0.75 and a_sim >= 0.75:  # %75 benzerlik eşiği
             prices = {"home":[], "draw":[], "away":[]}
             for bk in comps:
                 for mk in bk.get("markets", []):
@@ -1309,8 +1341,8 @@ def _apifoot_standings(league_id, season):
         total = len(table)
         for row in table:
             tid = ((row.get("team") or {}).get("id"))
-            rank = safe_float(row.get("rank"), None)
-            if tid is not None and rank is not None:
+            rank = safe_float(row.get("rank", 0), 0)
+            if tid is not None and rank > 0:
                 by_id[int(tid)] = {"position": int(rank)}
         if by_id and total:
             _APIF_STANDINGS_CACHE[key] = {"total_teams": total, "by_id": by_id}
@@ -1327,10 +1359,10 @@ def _apif_get_position_by_name(league_id, season, team_name):
         return (None, None)
     tid = _apifoot_find_team_id(team_name)
     if not tid:
-        return (None, st.get("total_teams"))
-    row = st["by_id"].get(int(tid))
+        return (None, st.get("total_teams") if st else None)
+    row = st["by_id"].get(int(tid)) if st and "by_id" in st else None
     if not row:
-        return (None, st.get("total_teams"))
+        return (None, st.get("total_teams") if st else None)
     return (row.get("position"), st.get("total_teams"))
 
 def _fd_recent_streak(team_id, team_name):
@@ -1598,7 +1630,7 @@ def find_prediction_for_result(result):
     if result.get("id_key") and result["id_key"] in STATE["pred_store"]:
         return STATE["pred_store"][result["id_key"]]
     
-    # Yakın isim eşleştirmesi
+    # Yakın isim eşleştirmesi - GELİŞTİRİLMİŞ VERSİYON
     all_pred_keys = list(STATE["pred_store"].keys())
     all_team_pairs = []
     
@@ -1610,34 +1642,37 @@ def find_prediction_for_result(result):
                 if pred_date == date_str.replace("-", ""):
                     all_team_pairs.append((pred_home, pred_away, key))
     
-    # Ev sahibi takım eşleştirmesi
-    home_candidates = []
-    for pred_home, pred_away, key in all_team_pairs:
-        similarity = team_similarity(home, pred_home)
-        if similarity > 0.7:  # %70 benzerlik eşiği
-            home_candidates.append((similarity, pred_home, pred_away, key))
+    # Çift yönlü eşleştirme - GELİŞTİRİLMİŞ
+    best_match = None
+    best_score = 0.0
     
-    if home_candidates:
-        home_candidates.sort(reverse=True)
-        best_home_sim, best_home, best_away, best_key = home_candidates[0]
-        
-        # Deplasman takımı doğrulama
-        away_similarity = team_similarity(away, best_away)
-        if away_similarity > 0.7:
-            log(f"Yakın eşleşme bulundu: {home}/{away} ≈ {best_home}/{best_away} "
-                f"(benzerlik: {best_home_sim:.2f}/{away_similarity:.2f})")
-            return STATE["pred_store"][best_key]
-    
-    # Çift yönlü eşleştirme
     for pred_home, pred_away, key in all_team_pairs:
+        # Normal eşleşme
         home_sim = team_similarity(home, pred_home)
         away_sim = team_similarity(away, pred_away)
-        avg_sim = (home_sim + away_sim) / 2
+        normal_score = (home_sim + away_sim) / 2
         
-        if avg_sim > 0.75:  # Ortalama %75 benzerlik
-            log(f"Çift yönlü eşleşme: {home}/{away} ≈ {pred_home}/{pred_away} "
-                f"(ort. benzerlik: {avg_sim:.2f})")
-            return STATE["pred_store"][key]
+        # Ters eşleşme (API'de home/away şaşmış olabilir)
+        home_sim_rev = team_similarity(home, pred_away)
+        away_sim_rev = team_similarity(away, pred_home)
+        reverse_score = (home_sim_rev + away_sim_rev) / 2
+        
+        # En iyi skoru seç
+        current_score = max(normal_score, reverse_score)
+        
+        if current_score > best_score and current_score >= 0.75:  # %75 benzerlik eşiği
+            best_score = current_score
+            best_match = key
+            
+            if current_score == reverse_score:
+                log(f"Ters eşleşme bulundu: {home}/{away} ≈ {pred_away}/{pred_home} "
+                    f"(benzerlik: {current_score:.2f})")
+            else:
+                log(f"Normal eşleşme bulundu: {home}/{away} ≈ {pred_home}/{pred_away} "
+                    f"(benzerlik: {current_score:.2f})")
+    
+    if best_match:
+        return STATE["pred_store"][best_match]
     
     return None
 
@@ -1845,6 +1880,11 @@ def report_results(date_str):
             lines.append(f"❓ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadı)")
             continue
         
+        # Yakın eşleşme kullanıldıysa işaretle
+        if "🔍" in str(pred.get("note", "")):
+            fuzzy_used = True
+            matched_with_fuzzy += 1
+        
         total += 1
         pick = {"1":0,"X":1,"2":2}.get(pred["pick"],-1)
         ok = (pick == outcome_idx)
@@ -1859,9 +1899,18 @@ def report_results(date_str):
         brier_market_sum += bk
         brier_blend_sum += bb
         
-        # Elo öğrenme
+        # Elo öğrenme - dinamik ev avantajı ile
         result_hw = 1.0 if outcome_idx==0 else 0.0 if outcome_idx==2 else 0.5
-        elo_update(area, res["home"], res["away"], result_hw)
+        
+        # Öncelikle kayıtlı home_advantage değerini kullan
+        home_advantage = pred.get("home_advantage")
+        if home_advantage is None:
+            # Yedek: maç bilgileriyle yeniden hesapla
+            home_advantage = home_adv_effective(
+                area, res.get("competition", ""), res["home"], res["away"]
+            )
+        
+        elo_update(area, res["home"], res["away"], result_hw, home_advantage)
         
         # goal_scale öğrenme
         goals = gh + ga
