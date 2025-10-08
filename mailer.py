@@ -1,36 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava + Otomatik Zamanlama)
-(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail
- + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L)
- + Sadece belirtilen lig/kupaları listeleyen filtre + Akıllı Hava (büyük lig/UEFA/FIFA)
- + SERVICE modu: TR 10:00 Tahmin, ertesi gün 04:00 Sonuç (düne ait) — tek dosya içinde zamanlayıcı)
+Tahmin Botu — tek parça mailer.py (LİG/KUPA FİLTRELİ + Akıllı Hava + Otomatik Zamanlama + Takım Eşleştirme + Kadro Değeri + Dinamik Ev Sahibi Avantajı)
+(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + Sadece belirtilen lig/kupaları listeleyen filtre + Akıllı Hava (büyük lig/UEFA/FIFA) + SERVICE modu: TR 10:00 Tahmin, ertesi gün 04:00 Sonuç (düne ait) — tek dosya içinde zamanlayıcı)
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
-- API-Football (opsiyonel, free tier)              -> APIFOOTBALL_KEY varsa fikstür + ipucu
-- OpenLigaDB (fallback)                            -> anahtar gerekmez
-- Open-Meteo (hava)                                -> anahtar gerekmez
-- The Odds API (opsiyonel oranlar)                 -> ODDS_API_KEY varsa kullanılır
+- API-Football (opsiyonel, free tier) -> APIFOOTBALL_KEY varsa fikstür + ipucu
+- OpenLigaDB (fallback) -> anahtar gerekmez
+- Open-Meteo (hava) -> anahtar gerekmez
+- The Odds API (opsiyonel oranlar) -> ODDS_API_KEY varsa kullanılır
 
 Modlar:
-- MODE=PREDICT  -> Çalıştığı anda “Günün Tahminleri”
-- MODE=RESULTS  -> Çalıştığı anda **dünün** sonuçları (yeni saat planına uygun)
-- MODE=AUTO     -> Çalıştığı anda saat UTC 07 ise PREDICT, değilse RESULTS
-- MODE=SERVICE  -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
+- MODE=PREDICT -> Çalıştığı anda "Günün Tahminleri"
+- MODE=RESULTS -> Çalıştığı anda **dünün** sonuçları (yeni saat planına uygun)
+- MODE=AUTO -> Çalıştığı anda saat UTC 07 ise PREDICT, değilse RESULTS
+- MODE=SERVICE -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
 import os, math, time, json, smtplib, traceback, re
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
+from difflib import SequenceMatcher
 
 # --- Ortak yardımcılar -------------------------------------------------------
-
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
 HEADERS_JSON = {"Accept": "application/json"}
 
-def log(msg): print(f"[mailer] {msg}", flush=True)
+def log(msg):
+    print(f"[mailer] {msg}", flush=True)
 
 def http_get(url, headers=None, params=None, timeout=25):
     try:
@@ -61,29 +59,359 @@ def safe_float(x, default=None):
     except Exception:
         return default
 
-def clamp(x, a, b): return max(a, min(b, x))
-def norm_team(x: str): return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc","").strip()
+def clamp(x, a, b):
+    return max(a, min(b, x))
+
+def norm_team(x: str):
+    return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc","").strip()
 
 def season_for_today():
     now = datetime.now(TR_TZ)
     y = now.year
     return y if now.month >= 7 else (y - 1)
 
+# --- Takım Adı Benzerlik Eşleştirme ------------------------------------------
+def normalize_team_name(name):
+    """Takım adını karşılaştırma için normalize eder"""
+    if not name:
+        return ""
+    
+    # Küçük harfe çevir
+    name = name.lower().strip()
+    
+    # Yaygın takım eklerini kaldır
+    suffixes = [
+        ' fc', ' cf', ' af', ' sf', ' if', ' ff', 
+        ' football club', ' club de foot', ' athletic club',
+        ' sports club', ' united', ' city', ' town', ' fc.',
+        ' real', ' deportivo', ' athletic', ' atletico', ' atlético',
+        ' sporting', ' os ', ' as ', ' us ', ' ac ', ' inter ',
+        ' borussia', ' dynamo', ' sparta', ' rapid', ' ajax'
+    ]
+    
+    for suffix in suffixes:
+        name = name.replace(suffix, '')
+    
+    # Özel karakterleri ve fazla boşlukları temizle
+    name = re.sub(r'[^\w\s]', ' ', name)
+    name = re.sub(r'\s+', ' ', name).strip()
+    
+    # Özel takım ismi düzeltmeleri
+    special_cases = {
+        'psg': 'paris saint germain',
+        'psg paris': 'paris saint germain',
+        'paris sg': 'paris saint germain',
+        'om': 'olympique marseille',
+        'olympique de marseille': 'olympique marseille',
+        'olympique marseille': 'olympique marseille',
+        'man united': 'manchester united',
+        'man utd': 'manchester united',
+        'man city': 'manchester city',
+        'spurs': 'tottenham hotspur',
+        'tottenham': 'tottenham hotspur',
+        'newcastle': 'newcastle united',
+        'west ham': 'west ham united',
+        'leeds': 'leeds united',
+        'leicester': 'leicester city',
+        'wolves': 'wolverhampton wanderers',
+        'wolverhampton': 'wolverhampton wanderers',
+        'brighton': 'brighton and hove albion',
+        'brighton hove': 'brighton and hove albion',
+        'sheffield united': 'sheffield united',
+        'sheffield wednesday': 'sheffield wednesday',
+        'nottingham forest': 'nottingham forest',
+        'norwich': 'norwich city',
+        'derby': 'derby county',
+        'qpr': 'queens park rangers',
+        'mk dons': 'mk dons',
+        'atalanta bc': 'atalanta',
+        'atalanta bergamo': 'atalanta',
+        'as roma': 'roma',
+        'ac milan': 'milan',
+        'inter milan': 'inter',
+        'inter milano': 'inter',
+        'fc bayern munich': 'bayern munich',
+        'bayern munchen': 'bayern munich',
+        'bayer leverkusen': 'leverkusen',
+        'b mönchengladbach': 'borussia monchengladbach',
+        'borussia mgladbach': 'borussia monchengladbach',
+        'borussia dortmund': 'dortmund',
+        'eintracht frankfurt': 'eintracht frankfurt',
+        'tsg hoffenheim': 'hoffenheim',
+        'sc freiburg': 'freiburg',
+        'vfl wolfsburg': 'wolfsburg',
+        '1 fc koln': 'koln',
+        '1 fc köln': 'koln',
+        '1 fc cologne': 'koln',
+        'fc koln': 'koln',
+        'fc schalke 04': 'schalke',
+        'schalke 04': 'schalke',
+        'rcd espanyol': 'espanyol',
+        'real betis': 'betis',
+        'atletico madrid': 'atletico madrid',
+        'atletico de madrid': 'atletico madrid',
+        'athletic bilbao': 'athletic bilbao',
+        'athletic club': 'athletic bilbao',
+        'real sociedad': 'real sociedad',
+        'real sociedad': 'real sociedad',
+        'valencia cf': 'valencia',
+        'villareal': 'villarreal',
+        'cf villareal': 'villarreal',
+        'olympique lyon': 'lyon',
+        'olympique lyonnais': 'lyon',
+        'as monaco': 'monaco',
+        'as monaco fc': 'monaco',
+        'losc lille': 'lille',
+        'stade rennais': 'rennes',
+        'stade de rennes': 'rennes',
+        'ogc nice': 'nice',
+        'fc nantes': 'nantes',
+        'olympique marseille': 'marseille',
+        'besiktas': 'besiktas',
+        'besiktas jk': 'besiktas',
+        'fenerbahce': 'fenerbahce',
+        'fenerbahce sk': 'fenerbahce',
+        'galatasaray': 'galatasaray',
+        'galatasaray sk': 'galatasaray',
+        'trabzonspor': 'trabzonspor',
+        'trabzonspor sk': 'trabzonspor',
+        'basaksehir': 'istanbul basaksehir',
+        'istanbul basaksehir fk': 'istanbul basaksehir',
+        'sivasspor': 'sivasspor',
+        'giresunspor': 'giresunspor',
+        'gaziantep fk': 'gaziantep',
+        'gazisehir gaziantep': 'gaziantep',
+        'hatayspor': 'hatayspor',
+        'kayserispor': 'kayserispor',
+        'konyaspor': 'konyaspor',
+        'kasimpasa': 'kasimpasa',
+        'alanyaspor': 'alanyaspor',
+        'fatih karagumruk': 'karagumruk',
+        'karagumruk sk': 'karagumruk',
+        'goztepe': 'goztepe',
+        'goztepe sk': 'goztepe',
+        'ankaragucu': 'ankaragucu',
+        'ankara guçu': 'ankaragucu',
+        'erzurumspor': 'erzurumspor',
+        'denizlispor': 'denizlispor',
+        'genclerbirligi': 'genclerbirligi',
+        'gencler birligi': 'genclerbirligi',
+        'kayseri': 'kayserispor',
+        'antalyaspor': 'antalyaspor',
+        'antalya spor': 'antalyaspor',
+    }
+    
+    return special_cases.get(name, name)
+
+def team_similarity(a, b):
+    """İki takım adı arasındaki benzerlik skorunu hesaplar (0-1 arası)"""
+    if not a or not b:
+        return 0.0
+    
+    a_norm = normalize_team_name(a)
+    b_norm = normalize_team_name(b)
+    
+    # Tam eşleşme
+    if a_norm == b_norm:
+        return 1.0
+    
+    # Kelime bazlı benzerlik
+    a_words = set(a_norm.split())
+    b_words = set(b_norm.split())
+    
+    if a_words and b_words:
+        # Ortak kelime oranı
+        common_words = a_words.intersection(b_words)
+        word_similarity = len(common_words) / max(len(a_words), len(b_words))
+        
+        # String benzerlik
+        string_similarity = SequenceMatcher(None, a_norm, b_norm).ratio()
+        
+        # Kombine skor (kelime benzerliği daha ağırlıklı)
+        return 0.7 * word_similarity + 0.3 * string_similarity
+    
+    return SequenceMatcher(None, a_norm, b_norm).ratio()
+
+def find_closest_team(target_team, team_list, threshold=0.6):
+    """
+    Takım listesinde en benzer takımı bulur
+    
+    Args:
+        target_team: Aranan takım adı
+        team_list: Arama yapılacak takım listesi
+        threshold: Minimum benzerlik eşiği (0-1 arası)
+    
+    Returns:
+        (en_benzer_takım, benzerlik_skoru) veya (None, 0) eşleşme yoksa
+    """
+    if not target_team or not team_list:
+        return None, 0.0
+    
+    best_match = None
+    best_score = 0.0
+    
+    for team in team_list:
+        if not team:
+            continue
+            
+        score = team_similarity(target_team, team)
+        if score > best_score and score >= threshold:
+            best_score = score
+            best_match = team
+    
+    return best_match, best_score
+
+# --- Kadro Değeri Hesaplama --------------------------------------------------
+TEAM_VALUES_PATH = "team_values.json"
+
+def load_team_values():
+    """Takım değerlerini yükler"""
+    try:
+        if os.path.exists(TEAM_VALUES_PATH):
+            with open(TEAM_VALUES_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        log(f"Takım değerleri yükleme hatası: {e}")
+    return {}
+
+def save_team_values(values):
+    """Takım değerlerini kaydeder"""
+    try:
+        with open(TEAM_VALUES_PATH, "w", encoding="utf-8") as f:
+            json.dump(values, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        log(f"Takım değerleri kaydetme hatası: {e}")
+
+def get_team_value(team_name, area="Europe"):
+    """Takımın kadro değerini getirir (milyon Euro)"""
+    if not team_name:
+        return 50.0  # Varsayılan değer
+    
+    # Önce cache'ten kontrol et
+    team_values = load_team_values()
+    cache_key = f"{area}:{normalize_team_name(team_name)}"
+    
+    if cache_key in team_values:
+        value = team_values[cache_key].get("value", 50.0)
+        timestamp = team_values[cache_key].get("timestamp", 0)
+        
+        # 30 günden eski veriyi yenile
+        if time.time() - timestamp < 30 * 24 * 60 * 60:
+            return value
+    
+    # API'den yeni veri çek
+    try:
+        # tmapi.vercel.app API'si
+        url = f"https://tmapi.vercel.app/api/team/{team_name}"
+        response = http_get(url)
+        
+        if response and response.get("success"):
+            squad_value = response.get("data", {}).get("squad_value", 50.0)
+            
+            # Cache'e kaydet
+            team_values[cache_key] = {
+                "value": squad_value,
+                "timestamp": time.time(),
+                "source": "tmapi"
+            }
+            save_team_values(team_values)
+            
+            log(f"Kadro değeri güncellendi: {team_name} -> {squad_value}M €")
+            return squad_value
+        
+    except Exception as e:
+        log(f"Kadro değeri API hatası {team_name}: {e}")
+    
+    # Fallback: lig bazlı ortalama değerler
+    league_defaults = {
+        "premier league": 180.0,
+        "la liga": 120.0,
+        "serie a": 110.0,
+        "bundesliga": 100.0,
+        "ligue 1": 90.0,
+        "super lig": 40.0,
+        "eredivisie": 50.0,
+        "primeira liga": 45.0,
+        "pro league": 35.0
+    }
+    
+    # Area'dan lig tahmini
+    area_lower = area.lower()
+    for league, value in league_defaults.items():
+        if league in area_lower:
+            return value
+    
+    return 50.0  # Genel varsayılan
+
+def calculate_value_advantage(home_team, away_team, area="Europe"):
+    """Kadro değeri avantajını hesaplar (-1 ile +1 arası)"""
+    home_value = get_team_value(home_team, area)
+    away_value = get_team_value(away_team, area)
+    
+    if home_value + away_value == 0:
+        return 0.0
+    
+    # Değer farkının normalize edilmiş avantaja dönüşümü
+    value_ratio = (home_value - away_value) / (home_value + away_value)
+    return clamp(value_ratio * 0.3, -0.3, 0.3)  # Maksimum %30 etki
+
+# --- Dinamik Ev Sahibi Avantajı ----------------------------------------------
+def home_adv_effective(area, competition, home_team, away_team):
+    """
+    Dinamik ev sahibi avantajı hesaplar
+    
+    Args:
+        area: Lig bölgesi
+        competition: Turnuva adı
+        home_team: Ev sahibi takım
+        away_team: Deplasman takımı
+    
+    Returns:
+        Ev sahibi avantajı (Elo puanı cinsinden)
+    """
+    base_advantage = ELO_HOME_ADV  # Temel avantaj
+    
+    # Lig tipine göre ayarlamalar
+    area_lower = (area or "").lower()
+    comp_lower = (competition or "").lower()
+    
+    # Büyük liglerde daha yüksek avantaj
+    major_leagues = ["premier league", "la liga", "serie a", "bundesliga", "ligue 1"]
+    if any(league in comp_lower for league in major_leagues):
+        base_advantage *= 1.1
+    
+    # UEFA turnuvalarında daha düşük avantaj (nötr saha)
+    uefa_competitions = ["champions league", "europa league", "conference league", "euro"]
+    if any(comp in comp_lower for comp in uefa_competitions):
+        base_advantage *= 0.7
+    
+    # Kadro değeri etkisi - güçlü takımlar daha az ev avantajına ihtiyaç duyar
+    value_advantage = calculate_value_advantage(home_team, away_team, area)
+    value_factor = 1.0 - abs(value_advantage) * 2.0  # Güçlü takımlar için avantaj azalır
+    
+    final_advantage = base_advantage * value_factor
+    
+    log(f"Ev avantajı: {home_team} vs {away_team} -> {final_advantage:.1f} "
+        f"(base: {ELO_HOME_ADV}, value_factor: {value_factor:.2f})")
+    
+    return clamp(final_advantage, 20.0, 100.0)  # Min 20, max 100
+
 # --- LİG/KUPA FİLTRESİ -------------------------------------------------------
 # Kullanıcı isteği: yalnızca şu lig/kupalar:
 # İngiltere: Premier League, Championship
-# İspanya:   La Liga, La Liga 2
-# İtalya:    Serie A, Serie B
-# Almanya:   Bundesliga, 2. Bundesliga
-# Fransa:    Ligue 1, Ligue 2
-# Türkiye:   Süper Lig, 1. Lig
-# Hollanda:  Eredivisie, Eerste Divisie
-# Portekiz:  Primeira Liga, Liga Portugal 2
-# Belçika:   Pro League, Challenger Pro League
+# İspanya: La Liga, La Liga 2
+# İtalya: Serie A, Serie B
+# Almanya: Bundesliga, 2. Bundesliga
+# Fransa: Ligue 1, Ligue 2
+# Türkiye: Süper Lig, 1. Lig
+# Hollanda: Eredivisie, Eerste Divisie
+# Portekiz: Primeira Liga, Liga Portugal 2
+# Belçika: Pro League, Challenger Pro League
 # UEFA: UCL, UEL, UECL, Super Cup, EURO, EURO Elemeleri, Nations League & Finals
 # FIFA: World Cup, Club World Cup
 
-def _n(s):  # normalize for comparisons
+def _n(s):
+    # normalize for comparisons
     s = (s or "").strip().lower()
     s = s.replace("trendyol ", "")
     s = s.replace("division", "división").replace("segunda", "la liga 2")
@@ -104,36 +432,46 @@ _ALLOWED_PAIRS = {
     ("germany", "2. bundesliga"),
     ("france", "ligue 1"),
     ("france", "ligue 2"),
-    ("turkey", "super lig"), ("turkey", "süper lig"), ("turkey", "1. lig"),
+    ("turkey", "super lig"),
+    ("turkey", "süper lig"),
+    ("turkey", "1. lig"),
     ("netherlands", "eredivisie"),
     ("netherlands", "eerste divisie"),
     ("portugal", "primeira liga"),
-    ("portugal", "liga portugal 2"), ("portugal", "segunda liga"),
-    ("belgium", "pro league"), ("belgium", "jupiler pro league"),
+    ("portugal", "liga portugal 2"),
+    ("portugal", "segunda liga"),
+    ("belgium", "pro league"),
+    ("belgium", "jupiler pro league"),
     ("belgium", "challenger pro league"),
 }
 
 # UEFA/FIFA turnuvaları ad bazlı kabul
 _UEFA_ALLOW_PAT = [
-    "champions league", "uefa champions",
-    "europa league", "uefa europa",
-    "conference league", "uefa europa conference",
+    "champions league",
+    "uefa champions",
+    "europa league",
+    "uefa europa",
+    "conference league",
+    "uefa europa conference",
     "super cup",
-    "european championship", "uefa euro",
-    "euro qualifiers", "european qualifiers",
-    "nations league", "nations league finals",
+    "european championship",
+    "uefa euro",
+    "euro qualifiers",
+    "european qualifiers",
+    "nations league",
+    "nations league finals",
 ]
+
 _FIFA_ALLOW_PAT = [
-    "fifa world cup", "world cup",
+    "fifa world cup",
+    "world cup",
     "club world cup"
 ]
 
 def is_allowed_competition(area_name: str, comp_name: str) -> bool:
     a, c = _n(area_name), _n(comp_name)
-
     if (a, c) in _ALLOWED_PAIRS:
         return True
-
     if a in ("turkey", "türkiye") and c in ("super lig", "süper lig", "1. lig"):
         return True
     if a == "germany" and c in ("2. bundesliga", "bundesliga 2"):
@@ -146,62 +484,56 @@ def is_allowed_competition(area_name: str, comp_name: str) -> bool:
         return True
     if a == "netherlands" and c in ("eerste divisie", "keuken kampioen divisie"):
         return True
-
     if any(p in c for p in _UEFA_ALLOW_PAT):
         return True
     if a in ("uefa", "europe") and any(p in c for p in _UEFA_ALLOW_PAT):
         return True
-
     if any(p in c for p in _FIFA_ALLOW_PAT):
         return True
-
     return False
 
 # --- Secrets / ortam ---------------------------------------------------------
-
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
-GMAIL_TO   = os.getenv("GMAIL_TO")
-FD_TOKEN   = os.getenv("FOOTBALL_DATA_TOKEN")
-ODDS_KEY   = os.getenv("ODDS_API_KEY")
-APIFOOT    = (os.getenv("APIFOOTBALL_KEY") or "").strip()
-MODE_ENV   = (os.getenv("MODE") or "AUTO").upper().strip()
-
-TOP_N        = int(os.getenv("TOP_N", "5"))
-MIN_CONF     = int(os.getenv("MIN_CONF", "0"))
-HIGH_ALERT   = int(os.getenv("HIGH_ALERT", "90"))
-OLD_LEAGUES  = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
+GMAIL_TO = os.getenv("GMAIL_TO")
+FD_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
+ODDS_KEY = os.getenv("ODDS_API_KEY")
+APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
+MODE_ENV = (os.getenv("MODE") or "AUTO").upper().strip()
+TOP_N = int(os.getenv("TOP_N", "5"))
+MIN_CONF = int(os.getenv("MIN_CONF", "0"))
+HIGH_ALERT = int(os.getenv("HIGH_ALERT", "90"))
+OLD_LEAGUES = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
-SPLIT_HIGH   = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
+SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarları
-ELO_K            = float(os.getenv("ELO_K", "24"))
-ELO_HOME_ADV     = float(os.getenv("ELO_HOME_ADV", "60"))
-FORM_LOOKBACK    = int(os.getenv("FORM_LOOKBACK", "10"))
-FORM_DAYS        = int(os.getenv("FORM_DAYS", "120"))
+ELO_K = float(os.getenv("ELO_K", "24"))
+ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "60"))
+FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
+FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
 ALLOW_STATE_FILE = (os.getenv("ALLOW_STATE_FILE", "1") == "1")
 
 # Otomatik öğrenme ayarları
-W_MKT_INIT  = float(os.getenv("W_MKT_INIT", "0.35"))
-LEARN_RATE  = float(os.getenv("LEARN_RATE", "0.05"))
-GOAL_LR     = float(os.getenv("GOAL_LR", "0.02"))
+W_MKT_INIT = float(os.getenv("W_MKT_INIT", "0.35"))
+LEARN_RATE = float(os.getenv("LEARN_RATE", "0.05"))
+GOAL_LR = float(os.getenv("GOAL_LR", "0.02"))
 PRED_MATCH_WINDOW_HRS = int(os.getenv("PRED_MATCH_WINDOW_HRS", "48"))
 
 # Table/Streak ayarları
 TABLE_WEIGHT = float(os.getenv("TABLE_WEIGHT", "0.12"))
-STREAK_UNIT  = float(os.getenv("STREAK_UNIT",  "0.02"))
-STREAK_MAX   = float(os.getenv("STREAK_MAX",   "0.08"))
+STREAK_UNIT = float(os.getenv("STREAK_UNIT", "0.02"))
+STREAK_MAX = float(os.getenv("STREAK_MAX", "0.08"))
 
 # SERVICE modu zaman ayarları (TR saati)
 PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))
-RESULTS_HOUR    = int(os.getenv("RESULTS_HOUR", "4"))   # <— ONAYLI: Ertesi gün 04:00
-RESULTS_MINUTE  = int(os.getenv("RESULTS_MINUTE", "0")) # <— ONAYLI: :00
+RESULTS_HOUR = int(os.getenv("RESULTS_HOUR", "4"))  # <— ONAYLI: Ertesi gün 04:00
+RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))  # <— ONAYLI: :00
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
 
 # --- State (kalibrasyon/Elo + Öğrenme) --------------------------------------
-
 STATE_PATH = "model_state.json"
 
 def _state_load():
@@ -209,21 +541,19 @@ def _state_load():
         if os.path.exists(STATE_PATH):
             with open(STATE_PATH, "r", encoding="utf-8") as f:
                 st = json.load(f)
-                st.setdefault("elo", {})
-                st.setdefault("goal_scale", {})     # area -> ölçek (1.0)
-                st.setdefault("w_mkt", W_MKT_INIT)  # harman ağırlık
-                st.setdefault("pred_store", {})     # match_key -> tahmin/teşhis
-                st.setdefault("metrics", {})        # kümülatif metrikler (opsiyonel)
-                st.setdefault("last_saved", None)
-                # SERVICE mod için son çalışma günleri
-                st.setdefault("last_pred_date", None)
-                st.setdefault("last_res_date", None)
-                return st
+            st.setdefault("elo", {})
+            st.setdefault("goal_scale", {})  # area -> ölçek (1.0)
+            st.setdefault("w_mkt", W_MKT_INIT)  # harman ağırlık
+            st.setdefault("pred_store", {})  # match_key -> tahmin/teşhis
+            st.setdefault("metrics", {})  # kümülatif metrikler (opsiyonel)
+            st.setdefault("last_saved", None)
+            # SERVICE mod için son çalışma günleri
+            st.setdefault("last_pred_date", None)
+            st.setdefault("last_res_date", None)
+            return st
     except Exception as e:
         log(f"state load err: {e}")
-    return {"elo": {}, "goal_scale": {}, "w_mkt": W_MKT_INIT,
-            "pred_store": {}, "metrics": {}, "last_saved": None,
-            "last_pred_date": None, "last_res_date": None}
+    return {"elo": {}, "goal_scale": {}, "w_mkt": W_MKT_INIT, "pred_store": {}, "metrics": {}, "last_saved": None, "last_pred_date": None, "last_res_date": None}
 
 def _state_save(st):
     if not ALLOW_STATE_FILE:
@@ -282,7 +612,6 @@ def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
 
 # --- Odds sport-key haritalaması --------------------------------------------
-
 def guess_sport_key(area: str, comp: str):
     a = (area or "").lower()
     c = (comp or "").lower()
@@ -291,26 +620,26 @@ def guess_sport_key(area: str, comp: str):
         # Germany
         "bundesliga 3": "soccer_germany_bundesliga3",
         "bundesliga 2": "soccer_germany_bundesliga2",
-        "bundesliga":   "soccer_germany_bundesliga",
-        "dfb":          "soccer_germany_dfb_pokal",
+        "bundesliga": "soccer_germany_bundesliga",
+        "dfb": "soccer_germany_dfb_pokal",
         # Turkey
-        "super lig":    "soccer_turkey_super_league",
+        "super lig": "soccer_turkey_super_league",
         # England
-        "premier":      "soccer_epl",
+        "premier": "soccer_epl",
         "championship": "soccer_efl_championship",
         # Spain
-        "la liga":      "soccer_spain_la_liga",
+        "la liga": "soccer_spain_la_liga",
         # Italy
-        "serie a":      "soccer_italy_serie_a",
+        "serie a": "soccer_italy_serie_a",
         # France
-        "ligue 1":      "soccer_france_ligue_one",
+        "ligue 1": "soccer_france_ligue_one",
         # UEFA
-        "champions":    "soccer_uefa_champs_league",
-        "europa":       "soccer_uefa_europa_league",
+        "champions": "soccer_uefa_champs_league",
+        "europa": "soccer_uefa_europa_league",
         # Brazil (gerekebilir)
         "campeonato brasileiro": "soccer_brazil_campeonato",
-        "brasileirao":           "soccer_brazil_campeonato",
-        "brasileiro":            "soccer_brazil_campeonato",
+        "brasileirao": "soccer_brazil_campeonato",
+        "brasileiro": "soccer_brazil_campeonato",
     }
     for k, v in mapping.items():
         if k in s:
@@ -320,9 +649,7 @@ def guess_sport_key(area: str, comp: str):
 # --- Akıllı Hava Modu --------------------------------------------------------
 WEATHER_SMART = (os.getenv("WEATHER_SMART", "1") == "1")
 WEATHER_AREAS = set(
-    s.strip().lower()
-    for s in (os.getenv("WEATHER_AREAS", "England,Spain,Italy,Germany,France,Turkey,Netherlands,Portugal,Belgium").split(","))
-    if s.strip()
+    s.strip().lower() for s in (os.getenv("WEATHER_AREAS", "England,Spain,Italy,Germany,France,Turkey,Netherlands,Portugal,Belgium").split(",")) if s.strip()
 )
 
 def weather_enabled(area_name: str, comp_name: str) -> bool:
@@ -335,28 +662,52 @@ def weather_enabled(area_name: str, comp_name: str) -> bool:
         return True
     return False
 
-# --- Hava: takım -> şehir eşleşmesi -----------------------------------------
-
+# --- Hava: takım -> şehir eşleşmesi ------------------------------------------
 def guess_city_from_team(team_name: str):
     t = (team_name or "").lower()
     overrides = {
         # Türkiye
-        "galatasaray": "Istanbul", "fenerbahce": "Istanbul", "beşiktaş": "Istanbul",
-        "besiktas": "Istanbul", "basaksehir": "Istanbul", "trabzonspor": "Trabzon",
+        "galatasaray": "Istanbul",
+        "fenerbahce": "Istanbul",
+        "beşiktaş": "Istanbul",
+        "besiktas": "Istanbul",
+        "basaksehir": "Istanbul",
+        "trabzonspor": "Trabzon",
         # Almanya
-        "bayern": "Munich", "dortmund": "Dortmund", "leipzig": "Leipzig",
-        "leverkusen": "Leverkusen", "schalke": "Gelsenkirchen", "st. pauli": "Hamburg",
+        "bayern": "Munich",
+        "dortmund": "Dortmund",
+        "leipzig": "Leipzig",
+        "leverkusen": "Leverkusen",
+        "schalke": "Gelsenkirchen",
+        "st. pauli": "Hamburg",
         # İspanya
-        "real madrid": "Madrid", "barcelona": "Barcelona", "atlético": "Madrid", "atletico": "Madrid",
+        "real madrid": "Madrid",
+        "barcelona": "Barcelona",
+        "atlético": "Madrid",
+        "atletico": "Madrid",
         # İtalya
-        "juventus": "Turin", "inter": "Milan", "milan": "Milan", "roma": "Rome", "lazio": "Rome", "napoli": "Naples",
+        "juventus": "Turin",
+        "inter": "Milan",
+        "milan": "Milan",
+        "roma": "Rome",
+        "lazio": "Rome",
+        "napoli": "Naples",
         # Fransa
-        "psg": "Paris", "paris saint-germain": "Paris", "lyon": "Lyon", "marseille": "Marseille",
+        "psg": "Paris",
+        "paris saint-germain": "Paris",
+        "lyon": "Lyon",
+        "marseille": "Marseille",
         # Brezilya
-        "corinthians": "Sao Paulo", "palmeiras": "Sao Paulo", "santos": "Santos",
-        "flamengo": "Rio de Janeiro", "fluminense": "Rio de Janeiro", "botafogo": "Rio de Janeiro",
-        "gremio": "Porto Alegre", "grêmio": "Porto Alegre",
-        "internacional": "Porto Alegre", "atletico mineiro": "Belo Horizonte",
+        "corinthians": "Sao Paulo",
+        "palmeiras": "Sao Paulo",
+        "santos": "Santos",
+        "flamengo": "Rio de Janeiro",
+        "fluminense": "Rio de Janeiro",
+        "botafogo": "Rio de Janeiro",
+        "gremio": "Porto Alegre",
+        "grêmio": "Porto Alegre",
+        "internacional": "Porto Alegre",
+        "atletico mineiro": "Belo Horizonte",
     }
     for k, city in overrides.items():
         if k in t:
@@ -365,13 +716,13 @@ def guess_city_from_team(team_name: str):
 
 def fetch_weather_note(home_team):
     city = guess_city_from_team(home_team)
-    geo = http_get("https://geocoding-api.open-meteo.com/v1/search",
-                   params={"name": city, "count": 1, "language": "en"})
+    geo = http_get("https://geocoding-api.open-meteo.com/v1/search", params={"name": city, "count": 1, "language": "en"})
     if not geo or not geo.get("results"):
         return None
     lat = geo["results"][0]["latitude"]; lon = geo["results"][0]["longitude"]
     wx = http_get("https://api.open-meteo.com/v1/forecast", params={
-        "latitude": lat, "longitude": lon,
+        "latitude": lat,
+        "longitude": lon,
         "hourly": "temperature_2m,precipitation,wind_speed_10m",
         "timezone": "auto"
     })
@@ -379,15 +730,16 @@ def fetch_weather_note(home_team):
         return None
     try:
         temps = wx["hourly"]["temperature_2m"][:6]
-        prec  = wx["hourly"]["precipitation"][:6]
-        wind  = wx["hourly"]["wind_speed_10m"][:6]
-        tavg  = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
+        prec = wx["hourly"]["precipitation"][:6]
+        wind = wx["hourly"]["wind_speed_10m"][:6]
+        tavg = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
         return f"Hava: {tavg:.0}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
     except Exception:
         return None
 
 def parse_weather(wx_text):
-    if not wx_text: return (None, None)
+    if not wx_text:
+        return (None, None)
     wind = None; precip = None
     try:
         if "rüzgâr" in wx_text:
@@ -399,17 +751,14 @@ def parse_weather(wx_text):
     return (wind, precip)
 
 # --- Football-Data (fixtures) ------------------------------------------------
-
 def fetch_fd_fixtures(date_str):
     if not FD_TOKEN:
         return []
     url = "https://api.football-data.org/v4/matches"
     headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-
     tr_day = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=TR_TZ)
     from_utc = (tr_day - timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
-    to_utc   = (tr_day + timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
-
+    to_utc = (tr_day + timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
     data = http_get(url, headers=headers, params={"dateFrom": from_utc, "dateTo": to_utc})
     out = []
     if data and data.get("matches"):
@@ -444,7 +793,6 @@ def fetch_fd_fixtures(date_str):
     return out
 
 # --- 2. Fallback: API-Football (tarih bazlı) ---------------------------------
-
 def fetch_apifoot_fixtures(date_str):
     if not APIFOOT:
         return []
@@ -461,20 +809,18 @@ def fetch_apifoot_fixtures(date_str):
             if status not in ("NS", "TBD", "PST", "SUSP", "1H", "HT", "2H"):
                 continue
             dtp = to_dt_utc((item.get("fixture") or {}).get("date"))
-            if not dtp: continue
+            if not dtp:
+                continue
             if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
                 continue
-
-            lg   = (item.get("league") or {})
+            lg = (item.get("league") or {})
             area = (lg.get("country") or "Europe")
             cname = (lg.get("name") or "")
             if not is_allowed_competition(area, cname):
                 continue
-
-            tms  = (item.get("teams") or {})
+            tms = (item.get("teams") or {})
             home = (tms.get("home") or {})
             away = (tms.get("away") or {})
-
             out.append({
                 "source": "APIF",
                 "utc_kickoff": dtp,
@@ -493,7 +839,6 @@ def fetch_apifoot_fixtures(date_str):
     return out
 
 # --- OpenLigaDB fallback (yalnız Almanya alt ligleri) ------------------------
-
 def fetch_openligadb_day(date_str):
     y, m, d = date_str.split("-")
     leagues = [(lg.strip(), int(y)) for lg in OLD_LEAGUES if lg.strip()]
@@ -518,7 +863,8 @@ def fetch_openligadb_day(date_str):
                 "utc_kickoff": dtp,
                 "home": mm.get("Team1",{}).get("TeamName"),
                 "away": mm.get("Team2",{}).get("TeamName"),
-                "home_id": None, "away_id": None,
+                "home_id": None,
+                "away_id": None,
                 "area": "Germany",
                 "competition": comp,
                 "competition_id": None,
@@ -528,7 +874,6 @@ def fetch_openligadb_day(date_str):
     return out
 
 # --- 4. Fallback: The Odds API (cache) ---------------------------------------
-
 _odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
 
 def _fetch_odds_sport_cached(skey):
@@ -572,7 +917,8 @@ def fetch_odds_fixtures(date_str):
                 "utc_kickoff": dtp,
                 "home": ev.get("home_team"),
                 "away": ev.get("away_team"),
-                "home_id": None, "away_id": None,
+                "home_id": None,
+                "away_id": None,
                 "area": area,
                 "competition": comp,
                 "competition_id": None,
@@ -582,7 +928,6 @@ def fetch_odds_fixtures(date_str):
     return out
 
 # --- Fikstür toplayıcı zincir ------------------------------------------------
-
 def fetch_fixtures(date_str):
     fixtures = fetch_fd_fixtures(date_str)
     if not fixtures:
@@ -597,7 +942,6 @@ def fetch_fixtures(date_str):
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
-
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
         return None
@@ -607,7 +951,10 @@ def fetch_odds_avg(area, comp, home, away):
     data = _fetch_odds_sport_cached(skey)
     if not data or not isinstance(data, list):
         return None
-    def norm(x): return (x or "").lower().replace(".", "").replace("-", " ").replace(" fc","").strip()
+    
+    def norm(x):
+        return (x or "").lower().replace(".", "").replace("-", " ").replace(" fc","").strip()
+    
     h, a = norm(home), norm(away)
     best = None
     for ev in data:
@@ -622,9 +969,12 @@ def fetch_odds_avg(area, comp, home, away):
                     for o in mk.get("outcomes", []):
                         nm = (o.get("name") or "").lower()
                         price = safe_float(o.get("price"), 0)
-                        if nm in ("home","1"): prices["home"].append(price)
-                        elif nm in ("draw","x"): prices["draw"].append(price)
-                        elif nm in ("away","2"): prices["away"].append(price)
+                        if nm in ("home","1"):
+                            prices["home"].append(price)
+                        elif nm in ("draw","x"):
+                            prices["draw"].append(price)
+                        elif nm in ("away","2"):
+                            prices["away"].append(price)
             if prices["home"] and prices["draw"] and prices["away"]:
                 best = (
                     sum(prices["home"])/len(prices["home"]),
@@ -640,10 +990,15 @@ def fetch_odds_avg(area, comp, home, away):
     return {"odds": (o1, ox, o2), "probs": (p1, px, p2)}
 
 # --- Poisson + Lig tabanı ----------------------------------------------------
-
 LEAGUE_GOAL_BASE = {
-    "Turkey": 2.60, "England": 2.75, "Spain": 2.50, "Italy": 2.70,
-    "France": 2.55, "Germany": 3.05, "Brazil": 2.35, "Europe": 2.70,
+    "Turkey": 2.60,
+    "England": 2.75,
+    "Spain": 2.50,
+    "Italy": 2.70,
+    "France": 2.55,
+    "Germany": 3.05,
+    "Brazil": 2.35,
+    "Europe": 2.70,
 }
 
 def base_total_goals(area):
@@ -656,15 +1011,19 @@ def base_total_goals(area):
     return clamp(base * scale, 1.5, 3.8)
 
 def poisson_prob(lambda_h, lambda_a):
-    def pois(m, lam): return (lam**m) * math.exp(-lam) / math.factorial(m)
+    def pois(m, lam):
+        return (lam**m) * math.exp(-lam) / math.factorial(m)
     p_home = p_draw = p_away = 0.0
     for gh in range(0, 11):
         ph = pois(gh, lambda_h)
         for ga in range(0, 11):
             pa = pois(ga, lambda_a)
-            if gh > ga:  p_home += ph*pa
-            elif gh == ga: p_draw += ph*pa
-            else:         p_away += ph*pa
+            if gh > ga:
+                p_home += ph*pa
+            elif gh == ga:
+                p_draw += ph*pa
+            else:
+                p_away += ph*pa
     return p_home, p_draw, p_away
 
 def poisson_over_prob(lam, line_int):
@@ -683,14 +1042,26 @@ def blend_model_market(model_probs, market_probs):
     return tuple((1-w)*m + w*mk for m, mk in zip(model_probs, market_probs))
 
 # --- Kart / Korner bazları ---------------------------------------------------
-
 LEAGUE_CARD_BASE = {
-    "Germany": 4.7, "Turkey": 5.1, "England": 4.1, "Spain": 5.0, "Italy": 4.8,
-    "France": 4.3, "Brazil": 5.2, "Europe": 4.6
+    "Germany": 4.7,
+    "Turkey": 5.1,
+    "England": 4.1,
+    "Spain": 5.0,
+    "Italy": 4.8,
+    "France": 4.3,
+    "Brazil": 5.2,
+    "Europe": 4.6
 }
+
 LEAGUE_CORNER_BASE = {
-    "Germany": 9.4, "Turkey": 9.2, "England": 10.1, "Spain": 9.1, "Italy": 9.5,
-    "France": 9.0, "Brazil": 8.7, "Europe": 9.2
+    "Germany": 9.4,
+    "Turkey": 9.2,
+    "England": 10.1,
+    "Spain": 9.1,
+    "Italy": 9.5,
+    "France": 9.0,
+    "Brazil": 8.7,
+    "Europe": 9.2
 }
 
 def base_from_area(area, table, default):
@@ -700,24 +1071,24 @@ def base_from_area(area, table, default):
     return default
 
 # --- API-Football: opsiyonel istatistik ipucu --------------------------------
-
 APIFOOT_BASE = "https://v3.football.api-sports.io"
 _API_LEAGUE_MAP = {
     "England|Premier League": 39,
-    "England|Championship":   40,
-    "Spain|La Liga":          140,
-    "Spain|La Liga 2":        141,
-    "Italy|Serie A":          135,
-    "Italy|Serie B":          136,
-    "France|Ligue 1":         61,
-    "France|Ligue 2":         62,
-    "Germany|Bundesliga":     78,
-    "Germany|2. Bundesliga":  79,
-    "Turkey|Super Lig":       203,
-    "Turkey|1. Lig":          204,
+    "England|Championship": 40,
+    "Spain|La Liga": 140,
+    "Spain|La Liga 2": 141,
+    "Italy|Serie A": 135,
+    "Italy|Serie B": 136,
+    "France|Ligue 1": 61,
+    "France|Ligue 2": 62,
+    "Germany|Bundesliga": 78,
+    "Germany|2. Bundesliga": 79,
+    "Turkey|Super Lig": 203,
+    "Turkey|1. Lig": 204,
 }
-_apifoot_team_cache = {}   # search_name.lower() -> team_id
-_apifoot_stat_cache = {}   # (league_id, season, team_id) -> stats_json
+
+_apifoot_team_cache = {}  # search_name.lower() -> team_id
+_apifoot_stat_cache = {}  # (league_id, season, team_id) -> stats_json
 
 def _apifoot_get(path, params):
     if not APIFOOT:
@@ -754,7 +1125,9 @@ def _apifoot_team_statistics(league_id, season, team_id):
     if cache_key in _apifoot_stat_cache:
         return _apifoot_stat_cache[cache_key]
     resp = _apifoot_get("/teams/statistics", {
-        "league": league_id, "season": season, "team": team_id
+        "league": league_id,
+        "season": season,
+        "team": team_id
     })
     _apifoot_stat_cache[cache_key] = resp[0] if (resp and len(resp)>0) else None
     return _apifoot_stat_cache[cache_key]
@@ -772,37 +1145,45 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         a_id = _apifoot_find_team_id(away)
         h_stat = _apifoot_team_statistics(lig_id, ssn, h_id) if h_id else None
         a_stat = _apifoot_team_statistics(lig_id, ssn, a_id) if a_id else None
-
+        
         def cards_per_game(stat):
-            if not stat: return None
+            if not stat:
+                return None
             played = (((stat.get("fixtures") or {}).get("played") or {}).get("total")) or 0
             played = int(played) if played else 0
-            if played <= 0: return None
+            if played <= 0:
+                return None
             cards = (stat.get("cards") or {})
             total = 0.0
             for v in cards.values():
                 t = v.get("total")
-                if t is None: continue
+                if t is None:
+                    continue
                 t = safe_float(t, None)
-                if t is not None: total += t
+                if t is not None:
+                    total += t
             return total / played if total > 0 else None
-
+        
         def corners_per_game(stat):
-            if not stat: return None
+            if not stat:
+                return None
             played = (((stat.get("fixtures") or {}).get("played") or {}).get("total")) or 0
             played = int(played) if played else 0
-            if played <= 0: return None
+            if played <= 0:
+                return None
             corners = (stat.get("corners") or {}).get("total")
-            if corners is None: return None
+            if corners is None:
+                return None
             c = safe_float(corners, None)
-            if c is None: return None
+            if c is None:
+                return None
             return c / played
-
+        
         h_cards = cards_per_game(h_stat)
         a_cards = cards_per_game(a_stat)
         h_corners = corners_per_game(h_stat)
         a_corners = corners_per_game(a_stat)
-
+        
         out = {}
         if h_cards or a_cards:
             vals = [v for v in [h_cards, a_cards] if v]
@@ -818,17 +1199,16 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         return None
 
 # --- Standings/Streak (FD varsa FD, yoksa APIF) ------------------------------
-
 _STANDINGS_CACHE = {}
 _STREAK_CACHE = {}
 _APIF_STANDINGS_CACHE = {}
-_APIF_FIXTURES_CACHE  = {}
+_APIF_FIXTURES_CACHE = {}
 
 def _fd_team_matches(team_id, days=120):
     if not (FD_TOKEN and team_id):
         return []
     headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-    to_dt   = datetime.utcnow().date()
+    to_dt = datetime.utcnow().date()
     from_dt = to_dt - timedelta(days=days)
     url = f"https://api.football-data.org/v4/teams/{team_id}/matches"
     data = http_get(url, headers=headers, params={
@@ -891,8 +1271,8 @@ def _fd_competition_standings(comp_id):
             total_teams = len(table)
             for row in table:
                 team = (row.get("team") or {})
-                tid  = team.get("id")
-                pos  = safe_float(row.get("position"), None)
+                tid = team.get("id")
+                pos = safe_float(row.get("position"), None)
                 if tid is not None:
                     by_id[int(tid)] = {"position": int(pos) if pos else None}
         if by_id and total_teams:
@@ -928,7 +1308,7 @@ def _apifoot_standings(league_id, season):
         table = groups[0] if groups else []
         total = len(table)
         for row in table:
-            tid  = ((row.get("team") or {}).get("id"))
+            tid = ((row.get("team") or {}).get("id"))
             rank = safe_float(row.get("rank"), None)
             if tid is not None and rank is not None:
                 by_id[int(tid)] = {"position": int(rank)}
@@ -962,29 +1342,37 @@ def _fd_recent_streak(team_id, team_name):
     if not ms:
         _STREAK_CACHE[team_id] = (0.0, "")
         return (0.0, "")
+    
     def outcome(m, team_name):
         score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
         gh = score.get("home"); ga = score.get("away")
-        if gh is None or ga is None: return None
+        if gh is None or ga is None:
+            return None
         ht = (m.get("homeTeam", {}) or {}).get("name", "")
         is_home = (ht == team_name)
         if is_home:
             return "W" if gh>ga else "D" if gh==ga else "L"
         else:
             return "W" if ga>gh else "D" if ga==gh else "L"
+    
     streak_char = None; count = 0
     for m in ms:
         res = outcome(m, team_name)
-        if res is None: continue
+        if res is None:
+            continue
         if streak_char is None:
             streak_char = res
             if res == "D":
                 count = 0; break
             count = 1
         else:
-            if res == streak_char: count += 1
-            else: break
-        if count >= 6: break
+            if res == streak_char:
+                count += 1
+            else:
+                break
+        if count >= 6:
+            break
+    
     if streak_char == "W":
         score = min(count, 5) * STREAK_UNIT; txt = f"W{count}"
     elif streak_char == "L":
@@ -997,12 +1385,12 @@ def _fd_recent_streak(team_id, team_name):
 
 def _streak_from_any(fix):
     if fix.get("home_id") and fix.get("away_id"):
-        hs, hs_txt  = _fd_recent_streak(fix.get("home_id"), fix.get("home"))
+        hs, hs_txt = _fd_recent_streak(fix.get("home_id"), fix.get("home"))
         as_, as_txt = _fd_recent_streak(fix.get("away_id"), fix.get("away"))
         net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
         if hs_txt or as_txt:
             return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
-
+    
     lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
     lig_id = _API_LEAGUE_MAP.get(lig_key)
     if not lig_id:
@@ -1017,16 +1405,18 @@ def _streak_from_any(fix):
     return 0.0, ""
 
 # --- Derecelendirme ----------------------------------------------------------
-
 def rate_fixture(fix, odds_info):
     area = fix["area"] or "Europe"
-    tot  = base_total_goals(area)
-
-    ah    = 1.12
+    tot = base_total_goals(area)
+    
+    # Dinamik ev sahibi avantajı
+    home_advantage = home_adv_effective(area, fix.get("competition",""), fix["home"], fix["away"])
+    
+    ah = 1.12
     noise = (len((fix["home"] or "")) - len((fix["away"] or ""))) * 0.01
-    lam_h = max(0.2, tot*0.5*ah        + noise)
-    lam_a = max(0.2, tot*0.5*(2 - ah)  - noise)
-
+    lam_h = max(0.2, tot*0.5*ah + noise)
+    lam_a = max(0.2, tot*0.5*(2 - ah) - noise)
+    
     # Hava (Akıllı Mod)
     wx = None
     if (not WEATHER_SMART) or weather_enabled(area, fix.get("competition","")):
@@ -1035,19 +1425,25 @@ def rate_fixture(fix, odds_info):
     if wx:
         wind, precip = parse_weather(wx)
         try:
-            if wind   is not None: wx_adj -= min(0.08, 0.003 * wind)
-            if precip is not None: wx_adj -= min(0.08, 0.01  * precip)
+            if wind is not None:
+                wx_adj -= min(0.08, 0.003 * wind)
+            if precip is not None:
+                wx_adj -= min(0.08, 0.01 * precip)
             wx_adj = clamp(wx_adj, 0.8, 1.0)
             lam_h *= wx_adj; lam_a *= wx_adj
         except Exception:
             pass
-
+    
     # Elo etkisi
     Eh = elo_get(area, fix["home"]); Ea = elo_get(area, fix["away"])
-    elo_diff = (Eh + ELO_HOME_ADV) - Ea
-    elo_adj  = clamp((elo_diff/400.0)*0.15, -0.20, 0.20)
+    elo_diff = (Eh + home_advantage) - Ea  # Dinamik ev avantajı kullanılıyor
+    elo_adj = clamp((elo_diff/400.0)*0.15, -0.20, 0.20)
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
-
+    
+    # Kadro değeri avantajı
+    value_advantage = calculate_value_advantage(fix["home"], fix["away"], area)
+    lam_h *= (1.0 + value_advantage); lam_a *= (1.0 - value_advantage)
+    
     # Opp-adjusted form
     form_bits = []
     home_adj = away_adj = 0.0
@@ -1060,7 +1456,7 @@ def rate_fixture(fix, odds_info):
     net_form = clamp(home_adj - away_adj, -0.18, 0.18)
     lam_h *= (1.0 + net_form); lam_a *= (1.0 - net_form)
     form_txt = (" | " + " / ".join(form_bits)) if form_bits else ""
-
+    
     # TableAdj
     table_adj, table_txt = (0.0, "")
     if fix.get("competition_id") and fix.get("home_id") and fix.get("away_id"):
@@ -1083,17 +1479,16 @@ def rate_fixture(fix, odds_info):
                 diff = h_rankpct - a_rankpct
                 table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
                 table_txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
-
     lam_h *= (1.0 + table_adj); lam_a *= (1.0 - table_adj)
-
+    
     # Streak
     net_streak, streak_txt = _streak_from_any(fix)
     lam_h *= (1.0 + net_streak); lam_a *= (1.0 - net_streak)
-
+    
     # Model 1X2
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
     model_probs = (m_home, m_draw, m_away)
-
+    
     # Market karışımı
     market_probs = None
     odds_txt = ""
@@ -1102,63 +1497,85 @@ def rate_fixture(fix, odds_info):
         p1,px,p2 = odds_info["probs"]
         market_probs = (p1,px,p2)
         odds_txt = f" | Odds(avg) 1/X/2: {o1:.2f}/{oX:.2f}/{o2:.2f}"
-
+    
     p_home, p_draw, p_away = blend_model_market(model_probs, market_probs)
     blended_probs = (p_home, p_draw, p_away)
-
+    
     picks = [("1", p_home), ("X", p_draw), ("2", p_away)]
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
-
+    
     # Kart/Korner — API-Football ipucunu harmanla
-    apihint = _apifoot_hint_cards_corners(fix.get("area"), fix.get("competition"),
-                                          fix.get("home"), fix.get("away"))
+    apihint = _apifoot_hint_cards_corners(fix.get("area"), fix.get("competition"), fix.get("home"), fix.get("away"))
+    
     def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None):
-        cards_base  = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
+        cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
+        
         wind, precip = parse_weather(wx_text) if wx_text else (None, None)
         tempo_factor = clamp((lam_h + lam_a) / 2.6, 0.7, 1.4)
-        cards   = cards_base
+        
+        cards = cards_base
         corners = corner_base * tempo_factor
+        
         if apifoot_hint:
             if apifoot_hint.get("mu_cards_hint"):
                 cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
             if apifoot_hint.get("mu_corners_hint"):
                 corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
+        
         if precip is not None:
-            cards   *= 1.00 + min(0.10, 0.02  * max(0.0, precip))
+            cards *= 1.00 + min(0.10, 0.02 * max(0.0, precip))
             corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
         if wind is not None:
             corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
-            cards   *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
+            cards *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
+        
         p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
         p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
-        p_cards_3_5   = poisson_over_prob(max(0.1, cards),   3.5)
-        p_cards_4_5   = poisson_over_prob(max(0.1, cards),   4.5)
+        p_cards_3_5 = poisson_over_prob(max(0.1, cards), 3.5)
+        p_cards_4_5 = poisson_over_prob(max(0.1, cards), 4.5)
+        
         return {
-            "mu_cards": cards, "mu_corners": corners,
-            "p_over_cards_3_5": p_cards_3_5, "p_over_cards_4_5": p_cards_4_5,
-            "p_over_corners_8_5": p_corners_8_5, "p_over_corners_9_5": p_corners_9_5
+            "mu_cards": cards,
+            "mu_corners": corners,
+            "p_over_cards_3_5": p_cards_3_5,
+            "p_over_cards_4_5": p_cards_4_5,
+            "p_over_corners_8_5": p_corners_8_5,
+            "p_over_corners_9_5": p_corners_9_5
         }
-
+    
     kk = model_cards_corners(area, lam_h, lam_a, wx, apifoot_hint=apihint)
     kk_txt = (f" | Korner μ≈{kk['mu_corners']:.1f} (Üst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
               f"Üst9.5 {int(kk['p_over_corners_9_5']*100)}%)"
               f" | Kart μ≈{kk['mu_cards']:.1f} (Üst3.5 {int(kk['p_over_cards_3_5']*100)}%)")
-
+    
+    # Kadro değeri bilgisi
+    home_value = get_team_value(fix["home"], area)
+    away_value = get_team_value(fix["away"], area)
+    value_txt = f" | Kadro: {home_value:.0f}M€ vs {away_value:.0f}M€"
+    
     wx_txt = f" | {wx}" if wx else ""
     note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
-            f"{wx_txt}{odds_txt}{kk_txt}{form_txt}{table_txt}{streak_txt}")
-
+            f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}")
+    
     return {
-        "pick": pick, "confidence": conf_pct,
-        "lambda_h": lam_h, "lambda_a": lam_a, "note": note,
-        "probs_model": model_probs, "probs_market": market_probs, "probs_blend": blended_probs,
-        "wx_adj": wx_adj, "elo_adj": elo_adj, "net_form": net_form
+        "pick": pick,
+        "confidence": conf_pct,
+        "lambda_h": lam_h,
+        "lambda_a": lam_a,
+        "note": note,
+        "probs_model": model_probs,
+        "probs_market": market_probs,
+        "probs_blend": blended_probs,
+        "wx_adj": wx_adj,
+        "elo_adj": elo_adj,
+        "net_form": net_form,
+        "home_advantage": home_advantage,
+        "value_advantage": value_advantage
     }
 
 # --- Tahmin/sonuç eşleşme & öğrenme yardımcıları -----------------------------
-
 def match_key_from_fixture(fx):
     if fx.get("id"):
         return f"{fx.get('source','?')}:{fx['id']}"
@@ -1168,8 +1585,65 @@ def match_key_from_fixture(fx):
 def alt_key_from_names(home, away, date_str):
     return f"{norm_team(home)}|{norm_team(away)}|{date_str.replace('-','')}"
 
+def find_prediction_for_result(result):
+    """Sonuç için tahmin bulur (yakın isim eşleştirmeli)"""
+    home, away, date_str = result["home"], result["away"], result.get("date", "")
+    
+    # Önce tam eşleşme dene
+    altk = alt_key_from_names(home, away, date_str)
+    if altk in STATE["pred_store"]:
+        return STATE["pred_store"][altk]
+    
+    # ID bazlı eşleşme
+    if result.get("id_key") and result["id_key"] in STATE["pred_store"]:
+        return STATE["pred_store"][result["id_key"]]
+    
+    # Yakın isim eşleştirmesi
+    all_pred_keys = list(STATE["pred_store"].keys())
+    all_team_pairs = []
+    
+    for key in all_pred_keys:
+        if "|" in key and key.count("|") == 2:
+            parts = key.split("|")
+            if len(parts) == 3:
+                pred_home, pred_away, pred_date = parts
+                if pred_date == date_str.replace("-", ""):
+                    all_team_pairs.append((pred_home, pred_away, key))
+    
+    # Ev sahibi takım eşleştirmesi
+    home_candidates = []
+    for pred_home, pred_away, key in all_team_pairs:
+        similarity = team_similarity(home, pred_home)
+        if similarity > 0.7:  # %70 benzerlik eşiği
+            home_candidates.append((similarity, pred_home, pred_away, key))
+    
+    if home_candidates:
+        home_candidates.sort(reverse=True)
+        best_home_sim, best_home, best_away, best_key = home_candidates[0]
+        
+        # Deplasman takımı doğrulama
+        away_similarity = team_similarity(away, best_away)
+        if away_similarity > 0.7:
+            log(f"Yakın eşleşme bulundu: {home}/{away} ≈ {best_home}/{best_away} "
+                f"(benzerlik: {best_home_sim:.2f}/{away_similarity:.2f})")
+            return STATE["pred_store"][best_key]
+    
+    # Çift yönlü eşleştirme
+    for pred_home, pred_away, key in all_team_pairs:
+        home_sim = team_similarity(home, pred_home)
+        away_sim = team_similarity(away, pred_away)
+        avg_sim = (home_sim + away_sim) / 2
+        
+        if avg_sim > 0.75:  # Ortalama %75 benzerlik
+            log(f"Çift yönlü eşleşme: {home}/{away} ≈ {pred_home}/{pred_away} "
+                f"(ort. benzerlik: {avg_sim:.2f})")
+            return STATE["pred_store"][key]
+    
+    return None
+
 def brier_score(probs, outcome_idx):
-    if probs is None: return None
+    if probs is None:
+        return None
     y = [0.0, 0.0, 0.0]; y[outcome_idx] = 1.0
     return sum((p - t)**2 for p, t in zip(probs, y)) / 3.0
 
@@ -1179,25 +1653,30 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
         "ts": datetime.utcnow().isoformat() + "Z",
         "area": fx.get("area","Europe"),
         "competition": fx.get("competition",""),
-        "home": fx.get("home"), "away": fx.get("away"),
+        "home": fx.get("home"),
+        "away": fx.get("away"),
         "utc_kickoff": (fx.get("utc_kickoff") or datetime.now(timezone.utc)).isoformat(),
         "probs_model": model_probs,
         "probs_market": market_probs,
         "probs_blend": blended_probs,
         "pick": rated["pick"],
         "conf_pct": rated["confidence"],
-        "lam_h": rated["lambda_h"], "lam_a": rated["lambda_a"],
-        "wx_adj": wx_adj, "elo_adj": elo_adj, "net_form": net_form,
-        "w_mkt_used": get_w_mkt()
+        "lam_h": rated["lambda_h"],
+        "lam_a": rated["lambda_a"],
+        "wx_adj": wx_adj,
+        "elo_adj": elo_adj,
+        "net_form": net_form,
+        "w_mkt_used": get_w_mkt(),
+        "home_advantage": rated.get("home_advantage", ELO_HOME_ADV),
+        "value_advantage": rated.get("value_advantage", 0.0)
     }
     STATE["pred_store"][mk] = rec
+    
     # İkincil anahtar: isim+tarih
-    altk = alt_key_from_names(fx.get("home"), fx.get("away"),
-                              (fx.get("utc_kickoff") or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%Y-%m-%d"))
+    altk = alt_key_from_names(fx.get("home"), fx.get("away"), (fx.get("utc_kickoff") or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%Y-%m-%d"))
     STATE["pred_store"][altk] = rec
 
 # --- Mail --------------------------------------------------------------------
-
 def send_mail(subject, body):
     body = (body or "").strip()
     if not body:
@@ -1210,62 +1689,75 @@ def send_mail(subject, body):
     log(f"Mail gönderildi: {subject}")
 
 # --- Sonuç çekiciler ---------------------------------------------------------
-
 def fetch_results_fd(date_str):
-    if not FD_TOKEN: return []
+    if not FD_TOKEN:
+        return []
     url = "https://api.football-data.org/v4/matches"
     headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
     data = http_get(url, headers=headers, params={"dateFrom": date_str, "dateTo": date_str})
     out = []
-    if not data or not data.get("matches"): return out
+    if not data or not data.get("matches"):
+        return out
     for m in data["matches"]:
         comp = m.get("competition", {}) or {}
         area = (comp.get("area", {}) or {}).get("name", "")
         cname = comp.get("name", "")
-        if not is_allowed_competition(area, cname): continue
+        if not is_allowed_competition(area, cname):
+            continue
         score_ft = ((m.get("score") or {}).get("fullTime") or {})
         gh, ga = score_ft.get("home"), score_ft.get("away")
-        if gh is None or ga is None:  # bazen PENS vs, yine de fulltime al
+        if gh is None or ga is None:
+            # bazen PENS vs, yine de fulltime al
             continue
         out.append({
-            "area": area, "competition": cname,
+            "area": area,
+            "competition": cname,
             "home": (m.get("homeTeam") or {}).get("name"),
             "away": (m.get("awayTeam") or {}).get("name"),
-            "score_h": int(gh), "score_a": int(ga),
-            "id_key": f"FD:{m.get('id')}"
+            "score_h": int(gh),
+            "score_a": int(ga),
+            "id_key": f"FD:{m.get('id')}",
+            "date": date_str
         })
     log(f"FD results {date_str} -> {len(out)}")
     return out
 
 def fetch_results_apifoot(date_str):
-    if not APIFOOT: return []
+    if not APIFOOT:
+        return []
     headers = {"x-apisports-key": APIFOOT}
     url = "https://v3.football.api-sports.io/fixtures"
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
-    if not data: return out
+    if not data:
+        return out
     for item in (data.get("response") or []):
         lg = (item.get("league") or {})
         area = (lg.get("country") or "Europe")
         cname = (lg.get("name") or "")
-        if not is_allowed_competition(area, cname): continue
+        if not is_allowed_competition(area, cname):
+            continue
         st = (((item.get("fixture") or {}).get("status") or {}).get("short") or "").upper()
-        if st not in ("FT","AET","PEN","MATCH_FINISHED"):  # bitmiş say
+        if st not in ("FT","AET","PEN","MATCH_FINISHED"):
+            # bitmiş say
             continue
         goals = (item.get("goals") or {})
         gh, ga = goals.get("home"), goals.get("away")
         if gh is None or ga is None:
             sc = (item.get("score") or {}).get("fulltime") or {}
             gh, ga = sc.get("home"), sc.get("away")
-        if gh is None or ga is None:
-            continue
+            if gh is None or ga is None:
+                continue
         teams = (item.get("teams") or {})
         out.append({
-            "area": area, "competition": cname,
+            "area": area,
+            "competition": cname,
             "home": (teams.get("home") or {}).get("name"),
             "away": (teams.get("away") or {}).get("name"),
-            "score_h": int(gh), "score_a": int(ga),
-            "id_key": f"APIF:apif:{(item.get('fixture') or {}).get('id')}"
+            "score_h": int(gh),
+            "score_a": int(ga),
+            "id_key": f"APIF:apif:{(item.get('fixture') or {}).get('id')}",
+            "date": date_str
         })
     log(f"APIF results {date_str} -> {len(out)}")
     return out
@@ -1278,50 +1770,47 @@ def fetch_results(date_str):
     return r
 
 # --- Raporlar ----------------------------------------------------------------
-
 def report_predictions(date_str):
     fixtures = fetch_fixtures(date_str)
     if not fixtures:
         send_mail(f"Günün Tahminleri | {date_str}", "Bugün için tahmin çıkarılacak maç bulunamadı.")
         return
-
-    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/APIF/OLD + Hava(akıllı) + Elo/Form + Table/Streak + OddsCache + API-Football* + Öğrenme)\n"]
+    
+    lines = [f"⚽ Günün Tahminleri — {date_str} (FD/APIF/OLD + Hava(akıllı) + Elo/Form + Table/Streak + OddsCache + API-Football* + Öğrenme + TakımEşleştirme + KadroDeğeri + DinamikEvAvantajı)\n"]
     top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
+    
     for fx in fixtures:
         odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
         rated = rate_fixture(fx, odds)
-
         record_prediction(
-            fx, rated,
-            rated["probs_model"],
-            rated["probs_market"],
-            rated["probs_blend"],
+            fx, rated, rated["probs_model"], rated["probs_market"], rated["probs_blend"],
             rated["wx_adj"], rated["elo_adj"], rated["net_form"]
         )
-
+        
         if rated["confidence"] < MIN_CONF:
             continue
-
+            
         ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M")
         line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
         lines.append(line)
+        
         bucket = hi if rated["confidence"] >= HIGH_ALERT else top
         bucket.append((rated["confidence"], line))
-
+    
     if len(lines) == 1:
         lines.append("Filtreler nedeniyle listelenecek maç kalmadı (MIN_CONF yüksek olabilir).")
-
+    
     top.sort(reverse=True)
-    best = [f"\n⭐ En Güçlü {TOP_N} Seçim:"] + ["  " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
-
+    best = [f"\n🏆 En Güçlü {TOP_N} Seçim:"] + [" " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
+    
     hi_block = []
     if hi:
         hi.sort(reverse=True)
-        hi_block.append("\n⚡ Yüksek Güven Seçimler:")
+        hi_block.append("\n🔔 Yüksek Güven Seçimler:")
         for c, l in hi:
-            hi_block.append("  " + l.replace("- ","").strip())
-
+            hi_block.append(" " + l.replace("- ","").strip())
+    
     body = "\n".join(lines + [""] + best + hi_block)
     _state_save(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
@@ -1329,52 +1818,51 @@ def report_predictions(date_str):
 def report_results(date_str):
     results = fetch_results(date_str)
     lines = [f"📊 Günün Sonuçları — {date_str}", ""]
+    
     if not results:
         lines.append("Bugün için sonuç bulunamadı.")
         send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
         return
-
+    
     total = 0
     correct = 0
     brier_model_sum = 0.0
     brier_market_sum = 0.0
     brier_blend_sum = 0.0
     goal_stats = {}  # area -> (sum_goals, n)
-
+    matched_with_fuzzy = 0
+    
     for res in results:
         gh, ga = res["score_h"], res["score_a"]
         area = res["area"]
         outcome_idx = 0 if gh>ga else 1 if gh==ga else 2
-
-        # Eşleşme: önce ID anahtarı, yoksa isim+tarih
-        pred = None
-        if res.get("id_key") and res["id_key"] in STATE["pred_store"]:
-            pred = STATE["pred_store"][res["id_key"]]
+        
+        # Geliştirilmiş tahmin bulma
+        pred = find_prediction_for_result(res)
+        fuzzy_used = False
+        
         if not pred:
-            altk = alt_key_from_names(res["home"], res["away"], date_str)
-            pred = STATE["pred_store"].get(altk)
-
-        if not pred:
-            lines.append(f"ℹ️ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadı)")
+            lines.append(f"❓ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadı)")
             continue
-
+        
         total += 1
         pick = {"1":0,"X":1,"2":2}.get(pred["pick"],-1)
         ok = (pick == outcome_idx)
-        if ok: correct += 1
-
+        if ok:
+            correct += 1
+        
         # Brier
-        bm = brier_score(pred.get("probs_model"),  outcome_idx) or 0.0
+        bm = brier_score(pred.get("probs_model"), outcome_idx) or 0.0
         bk = brier_score(pred.get("probs_market"), outcome_idx) or 0.0
-        bb = brier_score(pred.get("probs_blend"),  outcome_idx) or 0.0
-        brier_model_sum  += bm
+        bb = brier_score(pred.get("probs_blend"), outcome_idx) or 0.0
+        brier_model_sum += bm
         brier_market_sum += bk
-        brier_blend_sum  += bb
-
+        brier_blend_sum += bb
+        
         # Elo öğrenme
         result_hw = 1.0 if outcome_idx==0 else 0.0 if outcome_idx==2 else 0.5
         elo_update(area, res["home"], res["away"], result_hw)
-
+        
         # goal_scale öğrenme
         goals = gh + ga
         cur_scale = get_goal_scale(area)
@@ -1382,19 +1870,21 @@ def report_results(date_str):
         err = (goals - expected_tot) / max(1.0, expected_tot)
         new_scale = clamp(cur_scale * (1.0 + GOAL_LR * err), 0.7, 1.4)
         set_goal_scale(area, new_scale)
+        
         s, n = goal_stats.get(area, (0,0))
         goal_stats[area] = (s+goals, n+1)
-
+        
         mark = "✅" if ok else "❌"
-        lines.append(f"{mark} {res['home']} {gh}-{ga} {res['away']}  | Tahmin: {pred['pick']} ({pred['conf_pct']}%)")
-
+        fuzzy_indicator = " 🔍" if fuzzy_used else ""
+        lines.append(f"{mark}{fuzzy_indicator} {res['home']} {gh}-{ga} {res['away']} | Tahmin: {pred['pick']} ({pred['conf_pct']}%)")
+    
     # w_mkt öğrenme (model vs market performansına göre)
     if total > 0:
         acc = 100.0 * correct / total
         bm_avg = brier_model_sum/total
         bk_avg = brier_market_sum/total if brier_market_sum>0 else None
         bb_avg = brier_blend_sum/total
-
+        
         old_w = get_w_mkt()
         target = old_w
         if bk_avg is not None:
@@ -1402,34 +1892,35 @@ def report_results(date_str):
                 target = clamp(old_w + LEARN_RATE*0.5, 0.0, 0.8)
             elif bm_avg + 1e-6 < bk_avg:
                 target = clamp(old_w - LEARN_RATE*0.5, 0.0, 0.8)
-        if bb_avg + 1e-6 < bm_avg:
-            target = clamp(target + LEARN_RATE*0.2, 0.0, 0.8)
-        elif bb_avg > bm_avg + 1e-6:
-            target = clamp(target - LEARN_RATE*0.2, 0.0, 0.8)
-
+            if bb_avg + 1e-6 < bm_avg:
+                target = clamp(target + LEARN_RATE*0.2, 0.0, 0.8)
+            elif bb_avg > bm_avg + 1e-6:
+                target = clamp(target - LEARN_RATE*0.2, 0.0, 0.8)
         set_w_mkt(target)
-
+        
         STATE["metrics"]["last_acc_pct"] = acc
-        STATE["metrics"]["brier_model"]  = bm_avg
+        STATE["metrics"]["brier_model"] = bm_avg
         STATE["metrics"]["brier_market"] = bk_avg
-        STATE["metrics"]["brier_blend"]  = bb_avg
-
+        STATE["metrics"]["brier_blend"] = bb_avg
+        
         lines.append("")
-        lines.append(f"🎯 Doğruluk: {acc:.1f}%   | Brier (model/market/blend): "
-                     f"{bm_avg:.3f}/{(bk_avg if bk_avg is not None else float('nan')):.3f}/{bb_avg:.3f}")
-        lines.append(f"⚙️  w_mkt: {old_w:.2f} → {get_w_mkt():.2f}")
-
+        lines.append(f"🎯 Doğruluk: {acc:.1f}% | Brier (model/market/blend): "
+                    f"{bm_avg:.3f}/{(bk_avg if bk_avg is not None else float('nan')):.3f}/{bb_avg:.3f}")
+        lines.append(f"⚖️ w_mkt: {old_w:.2f} → {get_w_mkt():.2f}")
+        
+        if matched_with_fuzzy > 0:
+            lines.append(f"🔍 {matched_with_fuzzy} maç yakın eşleştirme ile bulundu")
+    
     if goal_stats:
         lines.append("")
         lines.append("📈 Goal-scale güncellemeleri:")
         for area, (s, n) in goal_stats.items():
             lines.append(f" - {area}: avg_goals={s/max(1,n):.2f} | goal_scale={get_goal_scale(area):.3f}")
-
+    
     _state_save(STATE)
     send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
 
 # --- SERVICE (otomatik zamanlayıcı) ------------------------------------------
-
 def _today_str_tr(dt=None):
     return (dt or datetime.now(TR_TZ)).strftime("%Y-%m-%d")
 
@@ -1443,21 +1934,20 @@ def _time_reached_tr(target_h, target_m=0):
     return now >= tgt
 
 def run_service_loop():
-    """Sürekli çalışır; TR 10:00'da bugünün tahmini, ertesi gün TR 04:00'da DÜNÜN sonuçlarını gönderir.
-       Aynı gün içinde tekrarı engellemek için STATE içinde tarih izler."""
+    """Sürekli çalışır; TR 10:00'da bugünün tahmini, ertesi gün TR 04:00'da DÜNÜN sonuçlarını gönderir. Aynı gün içinde tekrarı engellemek için STATE içinde tarih izler."""
     log(f"SERVICE başlatıldı (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve ertesi gün {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d} [düne ait])")
     while True:
         try:
             now_tr = datetime.now(TR_TZ)
-            today  = _today_str_tr(now_tr)
-
+            today = _today_str_tr(now_tr)
+            
             # Tahmin: bugün 10:00 veya sonrası ve bugün henüz gönderilmemişse
             if (STATE.get("last_pred_date") != today) and _time_reached_tr(PREDICTION_HOUR, 0):
                 log("SERVICE: Tahmin zamanı geldi → rapor hazırlanıyor…")
                 report_predictions(today)
                 STATE["last_pred_date"] = today
                 _state_save(STATE)
-
+            
             # Sonuç: ertesi gün 04:00'te, dünkü tarihe göre
             if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
                 res_date = _yesterday_str_tr(now_tr)  # her zaman DÜN
@@ -1465,7 +1955,7 @@ def run_service_loop():
                 report_results(res_date)
                 STATE["last_res_date"] = today  # bugünü işaretle, tekrarı engelle
                 _state_save(STATE)
-
+                
         except Exception:
             tb = traceback.format_exc()
             log(tb)
@@ -1473,40 +1963,41 @@ def run_service_loop():
                 send_mail("Tahmin Botu | SERVICE Hata", tb)
             except Exception:
                 pass
-
+        
         # İnce adımlı uyku: 20 saniye
         time.sleep(20)
 
 # --- Çalıştırıcı -------------------------------------------------------------
-
 def main():
     try:
         now_utc = datetime.now(timezone.utc)
-        tr_now  = now_utc.astimezone(TR_TZ)
+        tr_now = now_utc.astimezone(TR_TZ)
         date_str = tr_now.strftime("%Y-%m-%d")
-
         mode = MODE_ENV
+        
         log(f"MODE={mode} | TR now={tr_now} | date={date_str} | w_mkt={get_w_mkt():.2f}")
-
+        
         if mode == "SERVICE":
             run_service_loop()
             return
-
+        
         if mode == "AUTO":
             mode = "PREDICT" if now_utc.hour == 7 else "RESULTS"
-
+        
         if mode == "PREDICT":
             report_predictions(date_str)
         elif mode == "RESULTS":
             # Onaylı politika: RESULTS her zaman DÜN'e bakar
             report_results(_yesterday_str_tr(tr_now))
         else:
-            send_mail("Tahmin Botu | Bilgi",
-                      "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
+            send_mail("Tahmin Botu | Bilgi", "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
+            
     except Exception:
         tb = traceback.format_exc(); log(tb)
-        try: send_mail("Tahmin Botu | Hata", tb)
-        except Exception: pass
+        try:
+            send_mail("Tahmin Botu | Hata", tb)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
