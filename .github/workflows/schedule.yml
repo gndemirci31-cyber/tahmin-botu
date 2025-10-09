@@ -35,11 +35,7 @@ jobs:
           cache: "pip"
 
       - name: Bağımlılıkları yükle
-        run: |
-          pip install numpy pandas scipy
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
+        run: pip install -r requirements.txt
 
       - name: Sabah/Gece seçimi (cron'a göre)
         id: pick
