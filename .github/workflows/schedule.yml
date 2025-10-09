@@ -36,14 +36,13 @@ jobs:
 
       - name: Bağımlılıkları yükle
         run: |
-          pip install numpy pandas
+          pip install numpy pandas scipy
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
 
       - name: Sabah/Gece seçimi (cron'a göre)
         id: pick
-        # ... bu kısım aynı kalacak ...
         env:
           SCHEDULE: ${{ github.event.schedule }}
           INPUT_MODE: ${{ github.event.inputs.mode }}
