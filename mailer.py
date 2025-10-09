@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GÜNCELLENMİŞ (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme)
-(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LİG/KUPA FİLTRESİ + Akıllı Hava + SERVICE modu + Transfermarkt + Milli Takım Elo + Çoklu Fallback Sistemi + Kaynak Etiketleme)
+Tahmin Botu — GÜNCELLENMİŞ (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ)
+(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LİG/KUPA FİLTRESİ + Akıllı Hava + SERVICE modu + Transfermarkt + Milli Takım Elo + Çoklu Fallback Sistemi + Kaynak Etiketleme + Ev Sahibi Dengeleme)
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
@@ -20,7 +20,7 @@ Modlar:
 - MODE=SERVICE -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
-import os, math, time, json, smtplib, traceback, re
+import os, math, time, json, smtplib, traceback, re, urllib.parse
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
@@ -202,6 +202,18 @@ def normalize_team_name(name):
         'kayseri': 'kayserispor',
         'antalyaspor': 'antalyaspor',
         'antalya spor': 'antalyaspor',
+        # Milli takım düzeltmeleri
+        'equatorial guinea': 'equatorial guinea',
+        'estuarial guinea': 'equatorial guinea',
+        'namaia': 'namibia',
+        'bosna hareke': 'bosnia herzegovina',
+        'farko asiatın': 'faroe islands',
+        'karadağ': 'montenegro',
+        'danimaria': 'denmark',
+        'rusla': 'russia',
+        'holanda': 'netherlands',
+        'evl cumhuriyeti': 'czech republic',
+        'himalistan': 'iceland',
     }
     
     return special_cases.get(name, name)
@@ -286,56 +298,77 @@ def save_team_values(values):
         log(f"Takım değerleri kaydetme hatası: {e}")
 
 def get_team_value_tmapi(team_name, area="Europe"):
-    """Transfermarkt API'sinden kadro değerini getirir"""
+    """Transfermarkt API'sinden kadro değerini getirir - GÜNCELLENDİ"""
     if not team_name:
         return None, None
     
     try:
-        # tmapi.vercel.app API'si
-        url = f"https://tmapi.vercel.app/api/team/{team_name}"
-        response = http_get(url)
+        # Önce takım ismini normalize et
+        normalized_name = normalize_team_name(team_name)
+        
+        # tmapi.vercel.app API'si - URL encode ekle
+        encoded_name = urllib.parse.quote(normalized_name)
+        url = f"https://tmapi.vercel.app/api/team/{encoded_name}"
+        
+        response = http_get(url, timeout=15)
         
         if response and response.get("success"):
             squad_value = response.get("data", {}).get("squad_value", None)
-            if squad_value:
+            if squad_value and squad_value > 0:
+                log(f"✅ TMAPI başarılı: {team_name} -> {squad_value}M €")
                 return squad_value, "TMAPI"
+            else:
+                log(f"⚠️ TMAPI değer bulunamadı: {team_name}")
+        else:
+            log(f"❌ TMAPI hata: {team_name} - {response}")
+            
     except Exception as e:
-        log(f"Transfermarkt API hatası {team_name}: {e}")
+        log(f"❌ Transfermarkt API hatası {team_name}: {e}")
     
     return None, None
 
 def get_team_value_cies_fallback(team_name, area="Europe"):
-    """CIES/FootyStats fallback - lig ortalamaları"""
-    # Lig bazlı ortalama değerler (CIES/FootyStats verilerine göre)
+    """CIES/FootyStats fallback - GELİŞTİRİLMİŞ"""
+    # Milli takımlar için özel değerler
+    national_teams = {
+        # Afrika
+        "mozambique": 15.0, "guinea": 25.0, "botswana": 12.0, "uganda": 18.0,
+        "malawi": 10.0, "equatorial guinea": 20.0, "liberia": 14.0, "namibia": 16.0,
+        # Avrupa
+        "finland": 45.0, "lithuania": 20.0, "scotland": 80.0, "greece": 65.0,
+        "austria": 70.0, "san marino": 5.0, "cyprus": 25.0, "bosnia": 60.0,
+        "faroe islands": 8.0, "montenegro": 35.0, "belarus": 30.0, "denmark": 120.0,
+        "russia": 90.0, "netherlands": 150.0, "czech republic": 85.0, "iceland": 40.0
+    }
+    
+    team_lower = normalize_team_name(team_name)
+    
+    # Önce milli takım kontrolü
+    for nat_team, value in national_teams.items():
+        if nat_team in team_lower:
+            return value, "CIES_NATIONAL"
+    
+    # Lig bazlı ortalama değerler
     league_defaults = {
-        "premier league": 180.0,
-        "la liga": 120.0,
-        "serie a": 110.0,
-        "bundesliga": 100.0,
-        "ligue 1": 90.0,
-        "super lig": 40.0,
-        "eredivisie": 50.0,
-        "primeira liga": 45.0,
-        "pro league": 35.0,
-        "championship": 25.0,
-        "serie b": 15.0,
-        "ligue 2": 12.0,
-        "2. bundesliga": 18.0,
-        "la liga 2": 20.0
+        "premier league": 180.0, "la liga": 120.0, "serie a": 110.0, 
+        "bundesliga": 100.0, "ligue 1": 90.0, "super lig": 40.0,
+        "eredivisie": 50.0, "primeira liga": 45.0, "pro league": 35.0,
+        "championship": 25.0, "serie b": 15.0, "ligue 2": 12.0,
+        "2. bundesliga": 18.0, "la liga 2": 20.0
     }
     
     # Area'dan lig tahmini
     area_lower = area.lower()
     for league, value in league_defaults.items():
         if league in area_lower:
-            return value, "CIES"
+            return value, "CIES_LEAGUE"
     
-    return 50.0, "CIES"  # Genel varsayılan
+    return 30.0, "CIES_DEFAULT"  # Daha düşük genel varsayılan
 
 def get_team_value(team_name, area="Europe"):
     """Geliştirilmiş kadro değeri sistemi - zincirli fallback"""
     if not team_name:
-        return 50.0, "DEFAULT"
+        return 30.0, "DEFAULT"
     
     # Önce cache'ten kontrol et
     team_values = load_team_values()
@@ -343,7 +376,7 @@ def get_team_value(team_name, area="Europe"):
     
     if cache_key in team_values:
         value_data = team_values[cache_key]
-        value = value_data.get("value", 50.0)
+        value = value_data.get("value", 30.0)
         source = value_data.get("source", "CACHE")
         timestamp = value_data.get("timestamp", 0)
         
@@ -408,59 +441,37 @@ def save_national_elo(values):
         log(f"Milli takım Elo kaydetme hatası: {e}")
 
 def get_national_elo_proxy(team_name, area="Europe"):
-    """Milli takımlar için Elo proxy değeri hesaplar"""
+    """Milli takımlar için Elo proxy değeri - ACİL DÜZELTME"""
     if not team_name:
         return 1500.0, "DEFAULT"
     
-    # Milli takım kontrolü
-    national_indicators = ["national", "milli", "country", "olympics"]
+    # ÖNEMLİ: Önce kulüp takımı kontrolü - milli takım değilse None dön
+    national_indicators = ["national", "milli", "country", "olympics", "world cup", "euro", "qualification"]
     team_lower = team_name.lower()
     
     is_national = any(indicator in team_lower for indicator in national_indicators)
     if not is_national:
         return None, None  # Kulüp takımı
     
-    # Önce cache'ten kontrol et
-    national_elo = load_national_elo()
-    cache_key = f"{area}:{normalize_team_name(team_name)}"
-    
-    if cache_key in national_elo:
-        elo_data = national_elo[cache_key]
-        elo_value = elo_data.get("elo", 1500.0)
-        timestamp = elo_data.get("timestamp", 0)
-        
-        # 7 günden eski veriyi yenile
-        if time.time() - timestamp < 7 * 24 * 60 * 60:
-            return elo_value, "ELO_CACHE"
-    
-    # Kadro değerine göre Elo proxy hesapla
-    team_value, value_source = get_team_value(team_name, area)
-    
-    # Kadro değerini Elo'ya dönüştür (basit lineer mapping)
-    # 10M € = 1500 Elo, 100M € = 1800 Elo, 500M € = 2100 Elo
-    base_elo = 1500.0
-    if team_value <= 10:
-        elo_value = base_elo
-    elif team_value <= 100:
-        # 10-100M arası lineer artış
-        elo_value = base_elo + (team_value - 10) * (300 / 90)
-    else:
-        # 100M+ için daha yavaş artış
-        elo_value = 1800 + min((team_value - 100) * (300 / 400), 300)
-    
-    elo_value = clamp(elo_value, 1200, 2200)
-    
-    # Cache'e kaydet
-    national_elo[cache_key] = {
-        "elo": elo_value,
-        "source": f"ELO_PROXY({value_source})",
-        "timestamp": time.time(),
-        "team_value": team_value
+    # Milli takım Elo değerleri (FIFA sıralaması bazlı)
+    national_elo_values = {
+        # Afrika
+        "mozambique": 1300, "guinea": 1400, "botswana": 1250, "uganda": 1350,
+        "malawi": 1280, "equatorial guinea": 1320, "liberia": 1270, "namibia": 1290,
+        # Avrupa  
+        "finland": 1450, "lithuania": 1300, "scotland": 1550, "greece": 1500,
+        "austria": 1520, "san marino": 1000, "cyprus": 1350, "bosnia": 1480,
+        "faroe islands": 1200, "montenegro": 1420, "belarus": 1380, "denmark": 1600,
+        "russia": 1550, "netherlands": 1650, "czech republic": 1520, "iceland": 1450
     }
-    save_national_elo(national_elo)
     
-    log(f"Milli takım Elo güncellendi: {team_name} -> {elo_value:.0f} (Değer: {team_value}M €)")
-    return elo_value, f"ELO_PROXY({value_source})"
+    team_normalized = normalize_team_name(team_name)
+    
+    for nat_team, elo in national_elo_values.items():
+        if nat_team in team_normalized:
+            return elo, "ELO_NATIONAL"
+    
+    return 1400.0, "ELO_DEFAULT"  # Varsayılan milli takım Elo'su
 
 # --- GELİŞMİŞ KART/KORNER SİSTEMİ (Çoklu Kaynak) ----------------------------
 def get_cards_corners_apifootball(area, comp, home_team, away_team):
@@ -543,46 +554,35 @@ def get_cards_corners_advanced(area, comp, home_team, away_team):
         "mu_corners_hint": corner_base
     }, "DEFAULT"
 
-# --- Dinamik Ev Sahibi Avantajı ----------------------------------------------
+# --- DENGELENMİŞ EV SAHİBİ AVANTAJI -----------------------------------------
 def home_adv_effective(area, competition, home_team, away_team):
     """
-    Dinamik ev sahibi avantajı hesaplar
-    
-    Args:
-        area: Lig bölgesi
-        competition: Turnuva adı
-        home_team: Ev sahibi takım
-        away_team: Deplasman takımı
-    
-    Returns:
-        Ev sahibi avantajı (Elo puanı cinsinden)
+    Dinamik ev sahibi avantajı hesaplar - DENGELENMİŞ
     """
-    base_advantage = ELO_HOME_ADV  # Temel avantaj
+    base_advantage = ELO_HOME_ADV
     
-    # Lig tipine göre ayarlamalar
-    area_lower = (area or "").lower()
+    # Milli takım maçlarında ev avantajını azalt
     comp_lower = (competition or "").lower()
+    if "world cup" in comp_lower or "euro" in comp_lower or "qualification" in comp_lower:
+        base_advantage *= 0.6  # %40 azalt
+        log(f"⚽ Milli takım maçı - ev avantajı azaltıldı: {base_advantage:.1f}")
     
-    # Büyük liglerde daha yüksek avantaj
-    major_leagues = ["premier league", "la liga", "serie a", "bundesliga", "ligue 1"]
-    if any(league in comp_lower for league in major_leagues):
-        base_advantage *= 1.1
-    
-    # UEFA turnuvalarında daha düşük avantaj (nötr saha)
-    uefa_competitions = ["champions league", "europa league", "conference league", "euro"]
-    if any(comp in comp_lower for comp in uefa_competitions):
-        base_advantage *= 0.7
-    
-    # Kadro değeri etkisi - güçlü takımlar daha az ev avantajına ihtiyaç duyar
+    # Kadro değeri etkisi
     value_advantage, value_source = calculate_value_advantage(home_team, away_team, area)
-    value_factor = 1.0 - abs(value_advantage) * 2.0  # Güçlü takımlar için avantaj azalır
+    
+    # Eğer her iki takım da default değerdeyse, ev avantajını sıfırla
+    if "DEFAULT" in value_source or "CIES_DEFAULT" in value_source:
+        value_factor = 0.5  # %50 azalt
+        log(f"⚖️ Default değerler - ev avantajı azaltıldı")
+    else:
+        value_factor = 1.0 - abs(value_advantage) * 2.0
     
     final_advantage = base_advantage * value_factor
     
     log(f"Ev avantajı: {home_team} vs {away_team} -> {final_advantage:.1f} "
-        f"(base: {ELO_HOME_ADV}, value_factor: {value_factor:.2f}, source: {value_source})")
+        f"(base: {ELO_HOME_ADV}, value_factor: {value_factor:.2f})")
     
-    return clamp(final_advantage, 20.0, 100.0)  # Min 20, max 100
+    return clamp(final_advantage, 10.0, 80.0)  # Min 10, max 80
 
 # --- LİG/KUPA FİLTRESİ -------------------------------------------------------
 # Kullanıcı isteği: yalnızca şu lig/kupalar:
@@ -713,13 +713,13 @@ SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarları
 ELO_K = float(os.getenv("ELO_K", "24"))
-ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "60"))
+ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÜŞÜRÜLDÜ: 60 -> 40
 FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
 FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
 ALLOW_STATE_FILE = (os.getenv("ALLOW_STATE_FILE", "1") == "1")
 
 # Otomatik öğrenme ayarları
-W_MKT_INIT = float(os.getenv("W_MKT_INIT", "0.35"))
+W_MKT_INIT = float(os.getenv("W_MKT_INIT", "0.45"))  # ARTIRILDI: 0.35 -> 0.45
 LEARN_RATE = float(os.getenv("LEARN_RATE", "0.05"))
 GOAL_LR = float(os.getenv("GOAL_LR", "0.02"))
 PRED_MATCH_WINDOW_HRS = int(os.getenv("PRED_MATCH_WINDOW_HRS", "48"))
@@ -932,6 +932,18 @@ def guess_city_from_team(team_name: str):
         "grêmio": "Porto Alegre",
         "internacional": "Porto Alegre",
         "atletico mineiro": "Belo Horizonte",
+        # Milli takımlar
+        "finland": "Helsinki",
+        "lithuania": "Vilnius", 
+        "scotland": "Glasgow",
+        "greece": "Athens",
+        "austria": "Vienna",
+        "bosnia": "Sarajevo",
+        "denmark": "Copenhagen",
+        "russia": "Moscow",
+        "netherlands": "Amsterdam",
+        "czech": "Prague",
+        "iceland": "Reykjavik"
     }
     for k, city in overrides.items():
         if k in t:
@@ -1636,7 +1648,7 @@ def rate_fixture(fx, odds_info):
     area = fx["area"] or "Europe"
     tot = base_total_goals(area)
     
-    # Dinamik ev sahibi avantajı
+    # Dinamik ev sahibi avantajı - DENGELENMİŞ
     home_advantage = home_adv_effective(area, fx.get("competition",""), fx["home"], fx["away"])
     
     ah = 1.12
@@ -2013,7 +2025,7 @@ def report_predictions(date_str):
         send_mail(f"Günün Tahminleri | {date_str}", "Bugün için tahmin çıkarılacak maç bulunamadı.")
         return
     
-    lines = [f"⚽ Günün Tahminleri — {date_str} (Transfermarkt + Milli Takım Elo + CIES/FootyStats + API-Football + TotalCorner + Kaynak Etiketleme)\n"]
+    lines = [f"⚽ Günün Tahminleri — {date_str} (Transfermarkt + Milli Takım Elo + CIES/FootyStats + API-Football + TotalCorner + Kaynak Etiketleme + Ev Sahibi Dengeleme)\n"]
     top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     
