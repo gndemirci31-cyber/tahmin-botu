@@ -35,7 +35,7 @@ Modlar:
 - MODE=SERVICE -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
-import os, math, time, json, smtplib, traceback, re, urllib.parse, random
+import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
@@ -121,7 +121,7 @@ def _ensure_dir(p: Path) -> bool:
         p.mkdir(parents=True, exist_ok=True)
         return True
     except Exception as e:
-        logging.error(f"[FS] Klasör oluşturulamadı / Directory creation failed: {p} | {e}")
+        log(f"[FS] Klasör oluşturulamadı / Directory creation failed: {p} | {e}")
         return False
 
 def save_snapshot(predictions: Dict, date: Optional[str] = None) -> None:
@@ -687,7 +687,7 @@ def save_national_elo(values):
 def get_national_elo_proxy(team_name, area="Europe"):
     """Milli takımlar için Elo proxy değeri - ACİL DÜZELTME"""
     if not team_name:
-        return 1500.0, "DEFAULT"
+        return None, None
     
     # ÖNEMLİ: Önce kulüp takımı kontrolü - milli takım değilse None dön
     national_indicators = ["national", "milli", "country", "olympics", "world cup", "euro", "qualification"]
@@ -2383,7 +2383,7 @@ def report_predictions(date_str):
             hi_block.append(" " + l.replace("- ","").strip())
     
     body = "\n".join(lines + [""] + best + hi_block)
-    _state_save(STATE)
+    save_state(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
 def report_results(date_str):
@@ -2502,7 +2502,7 @@ def report_results(date_str):
         for area, (s, n) in goal_stats.items():
             lines.append(f" - {area}: avg_goals={s/max(1,n):.2f} | goal_scale={get_goal_scale(area):.3f}")
     
-    _state_save(STATE)
+    save_state(STATE)
     send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
 
 # --- SERVICE (otomatik zamanlayıcı) ------------------------------------------
@@ -2531,7 +2531,7 @@ def run_service_loop():
                 log("SERVICE: Tahmin zamanı geldi → rapor hazırlanıyor…")
                 report_predictions(today)
                 STATE["last_pred_date"] = today
-                _state_save(STATE)
+                save_state(STATE)
             
             # Sonuç: ertesi gün 04:00'te, dünkü tarihe göre
             if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
@@ -2539,7 +2539,7 @@ def run_service_loop():
                 log(f"SERVICE: Sonuç zamanı geldi (dün={res_date}) → rapor hazırlanıyor…")
                 report_results(res_date)
                 STATE["last_res_date"] = today  # bugünü işaretle, tekrarı engelle
-                _state_save(STATE)
+                save_state(STATE)
                 
         except Exception:
             tb = traceback.format_exc()
