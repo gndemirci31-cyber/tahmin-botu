@@ -35,10 +35,15 @@ jobs:
           cache: "pip"
 
       - name: Bağımlılıkları yükle
-        run: pip install -r requirements.txt
+        run: |
+          pip install numpy pandas
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
       - name: Sabah/Gece seçimi (cron'a göre)
         id: pick
+        # ... bu kısım aynı kalacak ...
         env:
           SCHEDULE: ${{ github.event.schedule }}
           INPUT_MODE: ${{ github.event.inputs.mode }}
@@ -109,7 +114,7 @@ jobs:
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
         run: python mailer.py
 
-      - name: State’i kalıcılaştır (yalnızca RESULTS)
+      - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
         run: |
           set -e
@@ -123,7 +128,7 @@ jobs:
               git push
               echo "✔ model_state.json commit/push edildi."
             else
-              echo "ℹ state’te değişiklik yok."
+              echo "ℹ state'te değişiklik yok."
             fi
           else
             echo "ℹ model_state.json bulunamadı veya boş."
