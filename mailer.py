@@ -797,7 +797,7 @@ class DixonColesModel:
         # Dixon-Coles düzeltmesi / Dixon-Coles correction
         if GOAL_MODEL == "DC":
             # Beraberlik olasılığı iyileştirmesi / Draw probability improvement
-            draw_bias = 1.0 + self.rhorho
+            draw_bias = 1.0 + self.rho
             lambda_home *= draw_bias
             lambda_away *= draw_bias
         
@@ -859,7 +859,7 @@ class HierarchicalGoalModel:
     def predict_goals(self, home_team: str, away_team: str, league: str) -> Tuple[float, float]:
         """Gol tahmini / Goal prediction"""
         # Lig bazlı prior + takım regularizasyon / League-based prior + team regularization
-        home_prior = getattr(self, 'home_prior', 1.0)league_priors.get(league, 1.0)
+        home_prior = self.league_priors.get(league, 1.0)
         away_prior = self.league_priors.get(league, 1.0)
         home_attack = self.team_offense.get(home_team, home_prior)
         away_attack = self.team_offense.get(away_team, away_prior)
