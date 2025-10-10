@@ -1,3 +1,18 @@
+def _ensure_state_defaults(state: dict) -> dict:
+    try:
+        state.setdefault("elo", {})
+        state.setdefault("goal_scale", {})
+        state.setdefault("w_mkt", 0.45)
+        state.setdefault("pred_store", {})
+        state.setdefault("metrics", {})
+        state.setdefault("last_saved", None)
+        state.setdefault("last_pred_date", None)
+        state.setdefault("last_res_date", None)
+    except Exception:
+        state = {"elo": {}, "goal_scale": {}, "w_mkt": 0.45, "pred_store": {}, "metrics": {},
+                 "last_saved": None, "last_pred_date": None, "last_res_date": None}
+    return state
+
 # -*- coding: utf-8 -*-
 """
 Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER)
@@ -458,6 +473,7 @@ def save_state(state: Dict) -> None:
 
 STATE = load_state()
 
+STATE = _ensure_state_defaults(STATE)
 def _team_key(area, name):
     a = (area or "Europe").strip().lower()
     n = (name or "").strip().lower()
@@ -817,7 +833,7 @@ class MarketCalibrator:
     """Piyasa olasılık kalibrasyonu / Market probability calibration"""
     def __init__(self):
         self.isotonic_model = IsotonicRegression(out_of_bounds='clip')
-        self.is_fitted = False
+        self.is_fitted = True
     
     def calibrate_probabilities(self, raw_probs: np.ndarray, actual_results: np.ndarray) -> np.ndarray:
         """Olasılıkları kalibre eder / Calibrates probabilities"""
@@ -1500,6 +1516,28 @@ def fetch_fixtures(date_str):
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
+
+# --- Guess sport key for The Odds API --------------------------------------
+def guess_sport_key(area, comp):
+    area_l = (area or "").lower()
+    comp_l = (comp or "").lower()
+    mapping = {
+        ("england", "premier league"): "soccer_epl",
+        ("england", "championship"): "soccer_efl_championship",
+        ("spain", "la liga"): "soccer_spain_la_liga",
+        ("italy", "serie a"): "soccer_italy_serie_a",
+        ("germany", "bundesliga"): "soccer_germany_bundesliga",
+        ("france", "ligue 1"): "soccer_france_ligue_one",
+        ("turkey", "super lig"): "soccer_turkey_super_league",
+        ("europe", "uefa champions league"): "soccer_uefa_champs_league",
+        ("europe", "uefa europa league"): "soccer_uefa_europa_league",
+    }
+    for (a, c), skey in mapping.items():
+        if a in area_l and c in comp_l:
+            return skey
+    return None
+
+
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
         return None
