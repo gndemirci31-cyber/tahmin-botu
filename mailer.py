@@ -2292,7 +2292,7 @@ def send_mail(subject, body):
         body = "(Bu e-postada iÃ§erik Ã¼retilemedi / maÃ§ bulunamadÄ±.)"
     msg = EmailMessage()
     msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
-    msg.set_content(body)
+    msg.set_content(body, subtype="plain", charset="utf-8")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
         s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
     log(f"Mail gÃ¶nderildi: {subject}")
