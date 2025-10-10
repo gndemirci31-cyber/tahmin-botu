@@ -2289,22 +2289,21 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 
 # --- Mail --------------------------------------------------------------------
 def send_mail(subject, body):
-    body = (body or "").strip()
-    if not body:
-        body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
-    msg = EmailMessage()
-    # UTF-8 güvenli başlıklar
-    msg["From"] = formataddr((str(Header("Tahmin Botu", "utf-8")), GMAIL_USER))
-    msg["To"] = GMAIL_TO
-    msg["Subject"] = str(Header(subject, "utf-8"))
-    # Gövdeyi UTF-8 gönder
-    msg.set_content(body, subtype="plain", charset="utf-8")
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-        s.login(GMAIL_USER, GMAIL_PASS)
-        s.send_message(msg)
-    log("Mail gönderildi: %s → %s" % (subject, GMAIL_TO))f"Mail gönderildi: {subject}")
-
-# --- Sonuç çekiciler ---------------------------------------------------------
+    try:
+        body = (body or "").strip()
+        msg = EmailMessage()
+        msg["From"] = formataddr((str(Header("Tahmin Botu", "utf-8")), GMAIL_USER))
+        msg["To"] = GMAIL_TO
+        msg["Subject"] = str(Header(subject, "utf-8"))
+        msg.set_content(body, subtype="plain", charset="utf-8")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
+            s.login(GMAIL_USER, GMAIL_PASS)
+            s.send_message(msg)
+        log(f"Mail gönderildi: {subject}")
+        return True
+    except Exception as e:
+        log(f"Mail gönderme hatası: {e}")
+        return False
 def fetch_results_fd(date_str):
     if not FD_TOKEN:
         return []
