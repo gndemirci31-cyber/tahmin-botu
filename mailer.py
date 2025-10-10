@@ -1,18 +1,3 @@
-def _ensure_state_defaults(state: dict) -> dict:
-    try:
-        state.setdefault("elo", {})
-        state.setdefault("goal_scale", {})
-        state.setdefault("w_mkt", 0.45)
-        state.setdefault("pred_store", {})
-        state.setdefault("metrics", {})
-        state.setdefault("last_saved", None)
-        state.setdefault("last_pred_date", None)
-        state.setdefault("last_res_date", None)
-    except Exception:
-        state = {"elo": {}, "goal_scale": {}, "w_mkt": 0.45, "pred_store": {}, "metrics": {},
-                 "last_saved": None, "last_pred_date": None, "last_res_date": None}
-    return state
-
 # -*- coding: utf-8 -*-
 """
 Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER)
@@ -84,6 +69,9 @@ ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 # --- Ortak yardımcılar -------------------------------------------------------
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
 HEADERS_JSON = {"Accept": "application/json"}
+
+# EKSİK TANIM DÜZELTMESİ: ELO_K değişkeni eklendi
+ELO_K = float(os.getenv("ELO_K", "24"))
 
 def log(msg):
     print(f"[mailer] {msg}", flush=True)
@@ -436,15 +424,19 @@ def load_state() -> Dict:
     if not ALLOW_STATE_FILE or not Path(STATE_PATH).exists():
         log("[STATE] Dosya yok/kapalı. Snapshot'tan okunacak / File missing/disabled. Loading from snapshot.")
         _filter_counters["snapshot_used"] += 1
-        return load_snapshot()
+        snapshot_data = load_snapshot()
+        # EKSİK KEY DÜZELTMESİ: pred_store her zaman var olacak
+        snapshot_data.setdefault("pred_store", {})
+        return snapshot_data
     
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             state = json.load(f)
+        # EKSİK KEY DÜZELTMESİ: Tüm gerekli key'ler garanti ediliyor
         state.setdefault("elo", {})
         state.setdefault("goal_scale", {})
         state.setdefault("w_mkt", W_MKT_INIT)
-        state.setdefault("pred_store", {})
+        state.setdefault("pred_store", {})  # KRİTİK DÜZELTME: pred_store eklendi
         state.setdefault("metrics", {})
         state.setdefault("last_saved", None)
         state.setdefault("last_pred_date", None)
@@ -453,7 +445,9 @@ def load_state() -> Dict:
     except Exception as e:
         log(f"[STATE] Yükleme hatası / Load error: {e}. Snapshot'a düşülüyor / Falling back to snapshot.")
         _filter_counters["snapshot_used"] += 1
-        return load_snapshot()
+        snapshot_data = load_snapshot()
+        snapshot_data.setdefault("pred_store", {})
+        return snapshot_data
 
 def save_state(state: Dict) -> None:
     """State'i kaydeder / Saves state"""
@@ -473,7 +467,6 @@ def save_state(state: Dict) -> None:
 
 STATE = load_state()
 
-STATE = _ensure_state_defaults(STATE)
 def _team_key(area, name):
     a = (area or "Europe").strip().lower()
     n = (name or "").strip().lower()
@@ -833,7 +826,7 @@ class MarketCalibrator:
     """Piyasa olasılık kalibrasyonu / Market probability calibration"""
     def __init__(self):
         self.isotonic_model = IsotonicRegression(out_of_bounds='clip')
-        self.is_fitted = True
+        self.is_fitted = False
     
     def calibrate_probabilities(self, raw_probs: np.ndarray, actual_results: np.ndarray) -> np.ndarray:
         """Olasılıkları kalibre eder / Calibrates probabilities"""
@@ -1183,7 +1176,7 @@ ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarları
-ELO_K = float(os.getenv("ELO_K", "24"))
+ELO_K = float(os.getenv("ELO_K", "24"))  # TANIMLANDI
 ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÜŞÜRÜLDÜ: 60 -> 40
 FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
 FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
@@ -1447,6 +1440,39 @@ def fetch_openligadb_day(date_str):
     log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
     return out
 
+# --- EKSİK FONKSİYON: guess_sport_key EKLENDİ --------------------------------
+def guess_sport_key(area, comp):
+    """
+    Area ve competition'dan sport key tahmini - EKSİK FONKSİYON EKLENDİ
+    """
+    key_map = {
+        ("England", "Premier League"): "soccer_epl",
+        ("England", "Championship"): "soccer_efl_championship",
+        ("Spain", "La Liga"): "soccer_spain_la_liga", 
+        ("Italy", "Serie A"): "soccer_italy_serie_a",
+        ("France", "Ligue 1"): "soccer_france_ligue_one",
+        ("Germany", "Bundesliga"): "soccer_germany_bundesliga",
+        ("Turkey", "Super Lig"): "soccer_turkey_super_league",
+        ("Europe", "UEFA Champions League"): "soccer_uefa_champs_league",
+        ("Europe", "UEFA Europa League"): "soccer_uefa_europa_league",
+    }
+    
+    # Tam eşleşme
+    exact_key = key_map.get((area, comp))
+    if exact_key:
+        return exact_key
+    
+    # Kısmi eşleşme
+    area_lower = (area or "").lower()
+    comp_lower = (comp or "").lower()
+    
+    for (map_area, map_comp), sport_key in key_map.items():
+        if (map_area.lower() in area_lower and 
+            map_comp.lower() in comp_lower):
+            return sport_key
+    
+    return None
+
 # --- 4. Fallback: The Odds API (cache) ---------------------------------------
 _odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
 
@@ -1516,32 +1542,10 @@ def fetch_fixtures(date_str):
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
-
-# --- Guess sport key for The Odds API --------------------------------------
-def guess_sport_key(area, comp):
-    area_l = (area or "").lower()
-    comp_l = (comp or "").lower()
-    mapping = {
-        ("england", "premier league"): "soccer_epl",
-        ("england", "championship"): "soccer_efl_championship",
-        ("spain", "la liga"): "soccer_spain_la_liga",
-        ("italy", "serie a"): "soccer_italy_serie_a",
-        ("germany", "bundesliga"): "soccer_germany_bundesliga",
-        ("france", "ligue 1"): "soccer_france_ligue_one",
-        ("turkey", "super lig"): "soccer_turkey_super_league",
-        ("europe", "uefa champions league"): "soccer_uefa_champs_league",
-        ("europe", "uefa europa league"): "soccer_uefa_europa_league",
-    }
-    for (a, c), skey in mapping.items():
-        if a in area_l and c in comp_l:
-            return skey
-    return None
-
-
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
         return None
-    skey = guess_sport_key(area, comp)
+    skey = guess_sport_key(area, comp)  # ARTIK TANIMLI
     if not skey:
         return None
     data = _fetch_odds_sport_cached(skey)
