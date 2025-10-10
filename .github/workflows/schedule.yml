@@ -107,7 +107,9 @@ jobs:
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
-        run: python mailer.py
+        run: |
+          mkdir -p snapshots                         # ✅ 1) klasörü garanti et
+          python mailer.py --mode "${{ steps.pick.outputs.mode }}"  # ✅ 2) argümanı da ver
 
       - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
