@@ -1,18 +1,3 @@
-def _ensure_state_defaults(state: dict) -> dict:
-    try:
-        state.setdefault("elo", {})
-        state.setdefault("goal_scale", {})
-        state.setdefault("w_mkt", 0.45)
-        state.setdefault("pred_store", {})
-        state.setdefault("metrics", {})
-        state.setdefault("last_saved", None)
-        state.setdefault("last_pred_date", None)
-        state.setdefault("last_res_date", None)
-    except Exception:
-        state = {"elo": {}, "goal_scale": {}, "w_mkt": 0.45, "pred_store": {}, "metrics": {},
-                 "last_saved": None, "last_pred_date": None, "last_res_date": None}
-    return state
-
 # -*- coding: utf-8 -*-
 """
 Tahmin Botu â€” GELÄ°ÅMÄ°Å FÄ°NAL SÃœRÃœM (Transfermarkt + Milli TakÄ±m Elo + CIES/FootyStats Fallback + API-Football Ã–ncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHÄ°BÄ° DENGESÄ° + YENÄ° Ã–ZELLÄ°KLER)
@@ -61,89 +46,6 @@ from typing import Dict, List, Optional, Tuple
 from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
 
-
-import math
-
-def _nz(x, default=None):
-    if x is None:
-        return default
-    try:
-        import math as _m
-        if isinstance(x, float) and _m.isnan(x):
-            return default
-    except Exception:
-        pass
-    return x
-
-def _norm_clip(x, lo, hi, default=0.5):
-    x = _nz(x, None)
-    if x is None or hi <= lo:
-        return default
-    return min(1.0, max(0.0, (x - lo) / (hi - lo)))
-
-def _rank_to_score(rank, max_rank=200):
-    r = _nz(rank, None)
-    if r is None:
-        return 0.5
-    r = max(1, min(max_rank, int(r)))
-    return 1.0 - (r - 1) / (max_rank - 1)
-
-def _log_value_score(eur_value):
-    v = _nz(eur_value, None)
-    if v is None or v <= 0:
-        return 0.5
-    import math as _m
-    lv = _m.log10(v)
-    return _norm_clip(lv, 5.5, 9.5, 0.5)
-
-def _blend_score(ctx_side):
-    import os as _os
-    w_value  = float(_os.environ.get("W_VALUE",   "0.25"))
-    w_rank   = float(_os.environ.get("W_RANK",    "0.25"))
-    w_form   = float(_os.environ.get("W_FORM",    "0.20"))
-    w_elo    = float(_os.environ.get("W_ELO",     "0.20"))
-    w_market = float(_os.environ.get("W_MARKET",  "0.10"))
-
-    s_value  = _log_value_score(ctx_side.get("squad_value"))
-    if ctx_side.get("rank_fifa") is not None:
-        s_rank = _rank_to_score(ctx_side.get("rank_fifa"), 250)
-    elif ctx_side.get("rank_uefa") is not None:
-        s_rank = _rank_to_score(ctx_side.get("rank_uefa"), 55)
-    else:
-        s_rank = 0.5
-
-    s_form   = _norm_clip(ctx_side.get("form_pts"), 0.5, 2.5, 0.5)
-    s_elo    = _norm_clip(ctx_side.get("elo"), 1200, 2000, 0.5)
-    s_mkt    = _norm_clip(ctx_side.get("market_prob"), 0.40, 0.70, 0.5)
-
-    w_sum = w_value + w_rank + w_form + w_elo + w_market
-    if w_sum <= 0:
-        w_value = w_rank = w_form = w_elo = w_market = 1.0
-        w_sum = 5.0
-
-    score = (w_value*s_value + w_rank*s_rank + w_form*s_form + w_elo*s_elo + w_market*s_mkt) / w_sum
-    return score
-
-def _home_advantage(is_neutral: bool) -> float:
-    import os as _os
-    base = float(_os.environ.get("HOME_ADV_BASE", "0.05"))
-    return 0.0 if is_neutral else base
-
-def decide_pick(ctx_home: dict, ctx_away: dict, is_neutral: bool=False):
-    import math as _m
-    s_home = _blend_score(ctx_home)
-    s_away = _blend_score(ctx_away)
-    adv = _home_advantage(is_neutral=is_neutral)
-    k = float(os.environ.get("LOGIT_STEEPNESS", "4.0"))
-    delta = (s_home - s_away) + adv
-    p_home = 1.0 / (1.0 + _m.exp(-k * delta))
-    p_away = 1.0 - p_home
-    margin = float(os.environ.get("TIE_MARGIN", "0.05"))
-    if abs(p_home - p_away) < margin:
-        return 0, p_home, p_away, "Skorlar Ã§ok yakÄ±n"
-    pick = 1 if p_home > p_away else 2
-    reason = "DeÄŸer/sÄ±ra/form/elo/pazar karÄ±ÅŸÄ±mÄ±"
-    return pick, p_home, p_away, reason
 # ==================== AYARLAR / SETTINGS ====================
 STATE_PATH = os.getenv("STATE_PATH", "model_state.json")
 SNAPSHOT_DIR = os.getenv("SNAPSHOT_DIR", "snapshots")
@@ -167,6 +69,9 @@ ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 # --- Ortak yardÄ±mcÄ±lar -------------------------------------------------------
 TR_TZ = timezone(timedelta(hours=3))  # TÃ¼rkiye
 HEADERS_JSON = {"Accept": "application/json"}
+
+# EKSÄ°K TANIM DÃœZELTMESÄ°: ELO_K deÄŸiÅŸkeni eklendi
+ELO_K = float(os.getenv("ELO_K", "24"))
 
 def log(msg):
     print(f"[mailer] {msg}", flush=True)
@@ -519,15 +424,19 @@ def load_state() -> Dict:
     if not ALLOW_STATE_FILE or not Path(STATE_PATH).exists():
         log("[STATE] Dosya yok/kapalÄ±. Snapshot'tan okunacak / File missing/disabled. Loading from snapshot.")
         _filter_counters["snapshot_used"] += 1
-        return load_snapshot()
+        snapshot_data = load_snapshot()
+        # EKSÄ°K KEY DÃœZELTMESÄ°: pred_store her zaman var olacak
+        snapshot_data.setdefault("pred_store", {})
+        return snapshot_data
     
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             state = json.load(f)
+        # EKSÄ°K KEY DÃœZELTMESÄ°: TÃ¼m gerekli key'ler garanti ediliyor
         state.setdefault("elo", {})
         state.setdefault("goal_scale", {})
         state.setdefault("w_mkt", W_MKT_INIT)
-        state.setdefault("pred_store", {})
+        state.setdefault("pred_store", {})  # KRÄ°TÄ°K DÃœZELTME: pred_store eklendi
         state.setdefault("metrics", {})
         state.setdefault("last_saved", None)
         state.setdefault("last_pred_date", None)
@@ -536,7 +445,9 @@ def load_state() -> Dict:
     except Exception as e:
         log(f"[STATE] YÃ¼kleme hatasÄ± / Load error: {e}. Snapshot'a dÃ¼ÅŸÃ¼lÃ¼yor / Falling back to snapshot.")
         _filter_counters["snapshot_used"] += 1
-        return load_snapshot()
+        snapshot_data = load_snapshot()
+        snapshot_data.setdefault("pred_store", {})
+        return snapshot_data
 
 def save_state(state: Dict) -> None:
     """State'i kaydeder / Saves state"""
@@ -556,7 +467,6 @@ def save_state(state: Dict) -> None:
 
 STATE = load_state()
 
-STATE = _ensure_state_defaults(STATE)
 def _team_key(area, name):
     a = (area or "Europe").strip().lower()
     n = (name or "").strip().lower()
@@ -916,7 +826,7 @@ class MarketCalibrator:
     """Piyasa olasÄ±lÄ±k kalibrasyonu / Market probability calibration"""
     def __init__(self):
         self.isotonic_model = IsotonicRegression(out_of_bounds='clip')
-        self.is_fitted = True
+        self.is_fitted = False
     
     def calibrate_probabilities(self, raw_probs: np.ndarray, actual_results: np.ndarray) -> np.ndarray:
         """OlasÄ±lÄ±klarÄ± kalibre eder / Calibrates probabilities"""
@@ -1266,7 +1176,7 @@ ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarlarÄ±
-ELO_K = float(os.getenv("ELO_K", "24"))
+ELO_K = float(os.getenv("ELO_K", "24"))  # TANIMLANDI
 ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÃœÅÃœRÃœLDÃœ: 60 -> 40
 FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
 FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
@@ -1530,6 +1440,39 @@ def fetch_openligadb_day(date_str):
     log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
     return out
 
+# --- EKSÄ°K FONKSÄ°YON: guess_sport_key EKLENDÄ° --------------------------------
+def guess_sport_key(area, comp):
+    """
+    Area ve competition'dan sport key tahmini - EKSÄ°K FONKSÄ°YON EKLENDÄ°
+    """
+    key_map = {
+        ("England", "Premier League"): "soccer_epl",
+        ("England", "Championship"): "soccer_efl_championship",
+        ("Spain", "La Liga"): "soccer_spain_la_liga", 
+        ("Italy", "Serie A"): "soccer_italy_serie_a",
+        ("France", "Ligue 1"): "soccer_france_ligue_one",
+        ("Germany", "Bundesliga"): "soccer_germany_bundesliga",
+        ("Turkey", "Super Lig"): "soccer_turkey_super_league",
+        ("Europe", "UEFA Champions League"): "soccer_uefa_champs_league",
+        ("Europe", "UEFA Europa League"): "soccer_uefa_europa_league",
+    }
+    
+    # Tam eÅŸleÅŸme
+    exact_key = key_map.get((area, comp))
+    if exact_key:
+        return exact_key
+    
+    # KÄ±smi eÅŸleÅŸme
+    area_lower = (area or "").lower()
+    comp_lower = (comp or "").lower()
+    
+    for (map_area, map_comp), sport_key in key_map.items():
+        if (map_area.lower() in area_lower and 
+            map_comp.lower() in comp_lower):
+            return sport_key
+    
+    return None
+
 # --- 4. Fallback: The Odds API (cache) ---------------------------------------
 _odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
 
@@ -1599,32 +1542,10 @@ def fetch_fixtures(date_str):
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
-
-# --- Guess sport key for The Odds API --------------------------------------
-def guess_sport_key(area, comp):
-    area_l = (area or "").lower()
-    comp_l = (comp or "").lower()
-    mapping = {
-        ("england", "premier league"): "soccer_epl",
-        ("england", "championship"): "soccer_efl_championship",
-        ("spain", "la liga"): "soccer_spain_la_liga",
-        ("italy", "serie a"): "soccer_italy_serie_a",
-        ("germany", "bundesliga"): "soccer_germany_bundesliga",
-        ("france", "ligue 1"): "soccer_france_ligue_one",
-        ("turkey", "super lig"): "soccer_turkey_super_league",
-        ("europe", "uefa champions league"): "soccer_uefa_champs_league",
-        ("europe", "uefa europa league"): "soccer_uefa_europa_league",
-    }
-    for (a, c), skey in mapping.items():
-        if a in area_l and c in comp_l:
-            return skey
-    return None
-
-
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
         return None
-    skey = guess_sport_key(area, comp)
+    skey = guess_sport_key(area, comp)  # ARTIK TANIMLI
     if not skey:
         return None
     data = _fetch_odds_sport_cached(skey)
@@ -2219,50 +2140,112 @@ def rate_fixture(fx, odds_info):
         odds_txt = f" | Odds(avg) 1/X/2: {o1:.2f}/{oX:.2f}/{o2:.2f}"
     
     p_home, p_draw, p_away = blend_model_market(model_probs, market_probs)
-
-    # --- Karar katmanÄ± (ev-sahibi yanlÄ±lÄ±ÄŸÄ±nÄ± azalt) ---
-    market_ph = None
-    try:
-        market_ph = market_probs[0] if market_probs else None
-    except Exception:
-        market_ph = None
-    try:
-        Eh = elo_get(area, fx["home"]); Ea = elo_get(area, fx["away"])
-    except Exception:
-        Eh = Ea = None
-    try:
-        hv, _hs = get_team_value(fx["home"], area); av, _as = get_team_value(fx["away"], area)
-        if hv is not None and hv < 1e5: hv = hv * 1e6
-        if av is not None and av < 1e5: av = av * 1e6
-    except Exception:
-        hv = av = None
-    try:
-        form_h = 1.5 + max(-0.9, min(0.9, net_form))
-        form_a = 1.5 - max(-0.9, min(0.9, net_form))
-    except Exception:
-        form_h = form_a = None
-    ctx_home = {"squad_value": hv, "rank_fifa": None, "rank_uefa": None,
-                "form_pts": form_h, "elo": Eh, "market_prob": market_ph}
-    ctx_away = {"squad_value": av, "rank_fifa": None, "rank_uefa": None,
-                "form_pts": form_a, "elo": Ea, "market_prob": (1.0 - market_ph) if market_ph is not None else None}
-    _pick_b, _ph, _pa, _why = decide_pick(ctx_home, ctx_away, is_neutral=False)
-    if _pick_b == 1:
-        pick = "1"; conf = _ph
-    elif _pick_b == 2:
-        pick = "2"; conf = _pa
-    else:
-        pick = "0"; conf = max(_ph, _pa)
-    conf_pct = int(round(conf*100))
     blended_probs = (p_home, p_draw, p_away)
     
+    picks = [("1", p_home), ("X", p_draw), ("2", p_away)]
+    picks.sort(key=lambda x: x[1], reverse=True)
+    pick, conf = picks[0]; conf_pct = int(round(conf*100))
     
-    # (orijinal picks blok kaldÄ±rÄ±ldÄ±)
+    # GELÄ°ÅMÄ°Å Kart/Korner â€” Ã‡oklu Kaynak Fallback
+    apihint, kk_source = get_cards_corners_advanced(fx.get("area"), fx.get("competition"), fx.get("home"), fx.get("away"))
     
-    if best_match:
-        return STATE["pred_store"][best_match]
+    kk = model_cards_corners(area, lam_h, lam_a, wx, apifoot_hint=apihint, source_info=kk_source)
     
-    return None
+    # Kaynak etiketli Ã§Ä±ktÄ±
+    kk_txt = (f" | Korner Î¼â‰ˆ{kk['mu_corners']:.1f} (Ãœst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
+              f"Ãœst9.5 {int(kk['p_over_corners_9_5']*100)}%) [{kk['source']}]"
+              f" | Kart Î¼â‰ˆ{kk['mu_cards']:.1f} (Ãœst3.5 {int(kk['p_over_cards_3_5']*100)}%) [{kk['source']}]")
+    
+    # Kadro deÄŸeri bilgisi (kaynak etiketli)
+    home_value, home_source = get_team_value(fx["home"], area)
+    away_value, away_source = get_team_value(fx["away"], area)
+    value_txt = f" | Kadro: {home_value:.0f}Mâ‚¬ [{home_source}] vs {away_value:.0f}Mâ‚¬ [{away_source}]"
+    
+    wx_txt = f" | {wx}" if wx else ""
+    note = (f"SeÃ§im: {pick} | GÃ¼ven: {conf_pct}% | Î»_h/Î»_a: {lam_h:.2f}/{lam_a:.2f}"
+            f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}")
+    
+    return {
+        "pick": pick,
+        "confidence": conf_pct,
+        "lambda_h": lam_h,
+        "lambda_a": lam_a,
+        "note": note,
+        "probs_model": model_probs,
+        "probs_market": market_probs,
+        "probs_blend": blended_probs,
+        "wx_adj": wx_adj,
+        "elo_adj": elo_adj,
+        "net_form": net_form,
+        "home_advantage": home_advantage,
+        "value_advantage": value_advantage,
+        "value_source": value_source,
+        "kk_source": kk_source
+    }
 
+# --- Tahmin/sonuÃ§ eÅŸleÅŸme & Ã¶ÄŸrenme yardÄ±mcÄ±larÄ± -----------------------------
+def match_key_from_fixture(fx):
+    if fx.get("id"):
+        return f"{fx.get('source','?')}:{fx['id']}"
+    dt = (fx.get("utc_kickoff") or datetime.now(timezone.utc)).strftime("%Y%m%d")
+    return f"{norm_team(fx.get('home'))}|{norm_team(fx.get('away'))}|{dt}"
+
+def alt_key_from_names(home, away, date_str):
+    return f"{norm_team(home)}|{norm_team(away)}|{date_str.replace('-','')}"
+
+def find_prediction_for_result(result):
+    """SonuÃ§ iÃ§in tahmin bulur (yakÄ±n isim eÅŸleÅŸtirmeli)"""
+    home, away, date_str = result["home"], result["away"], result.get("date", "")
+    
+    # Ã–nce tam eÅŸleÅŸme dene
+    altk = alt_key_from_names(home, away, date_str)
+    if altk in STATE["pred_store"]:
+        return STATE["pred_store"][altk]
+    
+    # ID bazlÄ± eÅŸleÅŸme
+    if result.get("id_key") and result["id_key"] in STATE["pred_store"]:
+        return STATE["pred_store"][result["id_key"]]
+    
+    # YakÄ±n isim eÅŸleÅŸtirmesi - GELÄ°ÅTÄ°RÄ°LMÄ°Å VERSÄ°YON
+    all_pred_keys = list(STATE["pred_store"].keys())
+    all_team_pairs = []
+    
+    for key in all_pred_keys:
+        if "|" in key and key.count("|") == 2:
+            parts = key.split("|")
+            if len(parts) == 3:
+                pred_home, pred_away, pred_date = parts
+                if pred_date == date_str.replace("-", ""):
+                    all_team_pairs.append((pred_home, pred_away, key))
+    
+    # Ã‡ift yÃ¶nlÃ¼ eÅŸleÅŸtirme - GELÄ°ÅTÄ°RÄ°LMÄ°Å
+    best_match = None
+    best_score = 0.0
+    
+    for pred_home, pred_away, key in all_team_pairs:
+        # Normal eÅŸleÅŸme
+        home_sim = team_similarity(home, pred_home)
+        away_sim = team_similarity(away, pred_away)
+        normal_score = (home_sim + away_sim) / 2
+        
+        # Ters eÅŸleÅŸme (API'de home/away ÅŸaÅŸmÄ±ÅŸ olabilir)
+        home_sim_rev = team_similarity(home, pred_away)
+        away_sim_rev = team_similarity(away, pred_home)
+        reverse_score = (home_sim_rev + away_sim_rev) / 2
+        
+        # En iyi skoru seÃ§
+        current_score = max(normal_score, reverse_score)
+        
+        if current_score > best_score and current_score >= 0.75:  # %75 benzerlik eÅŸiÄŸi
+            best_score = current_score
+            best_match = key
+            
+            if current_score == reverse_score:
+                log(f"Ters eÅŸleÅŸme bulundu: {home}/{away} â‰ˆ {pred_away}/{pred_home} "
+                    f"(benzerlik: {current_score:.2f})")
+            else:
+                log(f"Normal eÅŸleÅŸme bulundu: {home}/{away} â‰ˆ {pred_home}/{pred_away} "
+                    f"(benzerlik: {current_score:.2f})")
 def brier_score(probs, outcome_idx):
     if probs is None:
         return None
@@ -2301,24 +2284,50 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
     STATE["pred_store"][altk] = rec
 
 # --- Mail --------------------------------------------------------------------
-
 def send_mail(subject, body):
-    """Gmail ile UTF-8 TÃ¼rkÃ§e gÃ¶nderim (mojibake engellenir)."""
-    user = GMAIL_USER
-    pwd  = GMAIL_PASS
-    to_addr = GMAIL_TO
-    body = (body or "").strip() or "(Bu e-postada iÃ§erik Ã¼retilemedi / maÃ§ bulunamadÄ±.)"
-    msg = MIMEMultipart()
-    msg['From'] = formataddr((str(Header('Tahmin Botu', 'utf-8')), user))
-    msg['To'] = to_addr
-    msg['Subject'] = Header(subject, 'utf-8')
-    msg['Message-Id'] = make_msgid()
-    msg.attach(MIMEText(body, 'plain', 'utf-8'))
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(user, pwd)
-        smtp.sendmail(user, [to_addr], msg.as_string())
+    body = (body or "").strip()
+    if not body:
+        body = "(Bu e-postada iÃ§erik Ã¼retilemedi / maÃ§ bulunamadÄ±.)"
+    msg = EmailMessage()
+    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
+    msg.set_content(body)
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+        s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
     log(f"Mail gÃ¶nderildi: {subject}")
 
+# --- SonuÃ§ Ã§ekiciler ---------------------------------------------------------
+def fetch_results_fd(date_str):
+    if not FD_TOKEN:
+        return []
+    url = "https://api.football-data.org/v4/matches"
+    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
+    data = http_get(url, headers=headers, params={"dateFrom": date_str, "dateTo": date_str})
+    out = []
+    if not data or not data.get("matches"):
+        return out
+    for m in data["matches"]:
+        comp = m.get("competition", {}) or {}
+        area = (comp.get("area", {}) or {}).get("name", "")
+        cname = comp.get("name", "")
+        if not is_allowed_competition(area, cname):
+            continue
+        score_ft = ((m.get("score") or {}).get("fullTime") or {})
+        gh, ga = score_ft.get("home"), score_ft.get("away")
+        if gh is None or ga is None:
+            # bazen PENS vs, yine de fulltime al
+            continue
+        out.append({
+            "area": area,
+            "competition": cname,
+            "home": (m.get("homeTeam") or {}).get("name"),
+            "away": (m.get("awayTeam") or {}).get("name"),
+            "score_h": int(gh),
+            "score_a": int(ga),
+            "id_key": f"FD:{m.get('id')}",
+            "date": date_str
+        })
+    log(f"FD results {date_str} -> {len(out)}")
+    return out
 
 def fetch_results_apifoot(date_str):
     if not APIFOOT:
@@ -2613,25 +2622,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# --- Dinlenme (Rest) Etkisi ---
-def calculate_rest_effect(days_home, days_away):
-    """
-    Pozitif deÄŸer = avantaj, negatif = dezavantaj.
-    Basit sezgisel:
-      <2 gÃ¼n: -0.15   |   2-3 gÃ¼n: -0.10   |   4-6 gÃ¼n: 0.00   |   >6 gÃ¼n: +0.05
-    """
-    def f(d):
-        try:
-            d = float(d)
-        except Exception:
-            return 0.0
-        if d < 2:
-            return -0.15
-        if d < 3:
-            return -0.10
-        if d > 6:
-            return 0.05
-        return 0.0
-    return {"home": f(days_home), "away": f(days_away)}
