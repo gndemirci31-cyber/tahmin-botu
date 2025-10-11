@@ -61,6 +61,12 @@ from typing import Dict, List, Optional, Tuple
 from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
 
+
+# --- Model/version & retention ---
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.11-a")
+STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
+FREEZE_MINUTES = int(os.getenv("FREEZE_MINUTES", "60"))
+
 # ==================== AYARLAR / SETTINGS ====================
 STATE_PATH = os.getenv("STATE_PATH", "model_state.json")
 SNAPSHOT_DIR = os.getenv("SNAPSHOT_DIR", "snapshots")
@@ -2287,7 +2293,14 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 
 # --- Mail --------------------------------------------------------------------
 def send_mail(subject, body):
-    body = (body or "").strip()
+
+    # Sürüm etiketi ve zaman damgası
+    try:
+        stamp = datetime.now(TR_TZ).strftime("%Y-%m-%d %H:%M")
+        subject = f"{subject} · {MODEL_VERSION} · {stamp}"
+    except Exception:
+        pass
+        body = (body or "").strip()
     if not body:
         body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
     msg = EmailMessage()
