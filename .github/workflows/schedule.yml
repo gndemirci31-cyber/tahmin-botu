@@ -72,16 +72,17 @@ jobs:
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
           fi
 
-      # === EKLENEN TANI ADIMLARI ===
+      # === TANILAMA ADIMLARI (Botu çalıştır'dan hemen önce) ===
       - name: Çalışma dizinini ve dosyayı göster
         run: |
           pwd
           ls -la
 
       - name: mailer.py parmak izi ve MODEL_VERSION kontrolü
+        shell: bash
         run: |
           python - <<'PY'
-import hashlib, pathlib, re
+import hashlib, pathlib, re, os
 p = pathlib.Path('mailer.py')
 print('exists mailer.py:', p.exists(), 'size:', p.stat().st_size if p.exists() else None)
 if p.exists():
@@ -90,9 +91,9 @@ if p.exists():
     print('SHA1(mailer.py)=', hashlib.sha1(data).hexdigest()[:12])
     m = re.search(r"MODEL_VERSION\s*=\s*os\.getenv\(\s*['\"]MODEL_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)", txt)
     print('MODEL_VERSION in file:', m.group(1) if m else None)
-    print('has ΔElo tag:', 'ΔElo' in txt)
+    print('has-DElo-tag:', 'ΔElo' in txt)
 PY
-      # === /EKLENEN TANI ADIMLARI ===
+      # === /TANILAMA ADIMLARI ===
 
       - name: Botu çalıştır
         env:
