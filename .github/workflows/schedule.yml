@@ -24,6 +24,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,7 +36,13 @@ jobs:
           cache: "pip"
 
       - name: Bağımlılıkları yükle
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install numpy scipy scikit-learn requests
+          fi
 
       - name: Sabah/Gece seçimi (cron'a göre)
         id: pick
@@ -45,13 +52,11 @@ jobs:
         run: |
           set -e
           echo "::notice::event.schedule='$SCHEDULE' input.mode='$INPUT_MODE'"
-
           # Manuel mod verilmişse onu kullan
           if [ "$INPUT_MODE" = "PREDICT" ] || [ "$INPUT_MODE" = "RESULTS" ]; then
             echo "mode=$INPUT_MODE" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           # Zamanlayıcıdan geldiyse cron değerine göre karar ver
           if [ "$SCHEDULE" = "0 7 * * *" ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
@@ -60,7 +65,6 @@ jobs:
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           # Güvenlik: beklenmeyen durumda UTC saate göre
           HOUR="$(date -u +%H)"
           if [ "$HOUR" = "07" ]; then
@@ -74,18 +78,23 @@ jobs:
 
       - name: Botu çalıştır
         env:
+          # Mail bilgileri (Actions Secrets'tan)
           GMAIL_USER:            ${{ secrets.GMAIL_USER }}
           GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
           GMAIL_TO:              ${{ secrets.GMAIL_TO }}
-          FOOTBALL_DATA_TOKEN:   ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
+
+          # Zorunlu kaynak: API-Football (FD'yi bilerek boş bırakıyoruz)
           APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
-          # Fallback veri kaynakları (CSV/JSON linkleri)
+
+          # İsteğe bağlı: The Odds API (oranlar)
+          ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
+
+          # Fallback veri kaynakları (CSV/JSON linkleri - opsiyonel)
           CARDS_URLS:            ${{ secrets.CARDS_URLS }}
           CORNERS_URLS:          ${{ secrets.CORNERS_URLS }}
           RESULTS_URLS:          ${{ secrets.RESULTS_URLS }}
-          # Opsiyonel: kullanıyorsan
           FOOTYSTATS_API_KEY:    ${{ secrets.FOOTYSTATS_API_KEY }}
+
           # Çalışma modu
           MODE:                  ${{ steps.pick.outputs.mode }}
 
@@ -99,24 +108,26 @@ jobs:
           ODDS_TTL_MIN:          ${{ vars.ODDS_TTL_MIN          || '15'  }}
 
           ELO_K:                 ${{ vars.ELO_K                 || '24'  }}
-          ELO_HOME_ADV:          ${{ vars.ELO_HOME_ADV          || '60'  }}
+          ELO_HOME_ADV:          ${{ vars.ELO_HOME_ADV          || '40'  }}
           FORM_LOOKBACK:         ${{ vars.FORM_LOOKBACK         || '10'  }}
           FORM_DAYS:             ${{ vars.FORM_DAYS             || '120' }}
           ALLOW_STATE_FILE:      ${{ vars.ALLOW_STATE_FILE      || '1'   }}
 
           # Otomatik öğrenme & eşleştirme
-          W_MKT_INIT:            ${{ vars.W_MKT_INIT            || '0.35' }}
+          W_MKT_INIT:            ${{ vars.W_MKT_INIT            || '0.45' }}
           LEARN_RATE:            ${{ vars.LEARN_RATE            || '0.05' }}
-          GOAL_LR:               ${{ vars.GOAL_LR               || '0.02' }}
-          PRED_MATCH_WINDOW_HRS: ${{ vars.PRED_MATCH_WINDOW_HRS || '48'   }}
+          GOAL_LR:               ${{ vars.GOAL_LR               || '0.02'  }}
+          PRED_MATCH_WINDOW_HRS: ${{ vars.PRED_MATCH_WINDOW_HRS || '48'    }}
 
           # Table/Streak ayarları
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
         run: |
+          set -e
           mkdir -p snapshots
-          python mailer.py --mode "${{ steps.pick.outputs.mode }}"
+          # FOOTBALL_DATA_TOKEN bilerek YOK; APIFootball kullanılacak
+          python sorunsuz_olan_mailer.py
 
       - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
