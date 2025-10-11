@@ -53,6 +53,7 @@ Modlar:
 import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
+from email.header import Header
 import requests
 from difflib import SequenceMatcher
 import numpy as np
@@ -2362,8 +2363,8 @@ def send_mail(subject, body):
     if not body:
         body = "(Bu e-postada iÃ§erik Ã¼retilemedi / maÃ§ bulunamadÄ±.)"
     msg = EmailMessage()
-    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
-    msg.set_content(body)
+    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = Header(subject, "utf-8")
+    msg.set_content(body, subtype="plain", charset="utf-8")
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
         s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
     log(f"Mail gÃ¶nderildi: {subject}")
