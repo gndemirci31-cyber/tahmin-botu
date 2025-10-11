@@ -2257,10 +2257,6 @@ def rate_fixture(fx, odds_info):
     
     
     # (orijinal picks blok kaldÄ±rÄ±ldÄ±)
-erlik: {current_score:.2f})")
-            else:
-                log(f"Normal eÅŸleÅŸme bulundu: {home}/{away} â‰ˆ {pred_home}/{pred_away} "
-                    f"(benzerlik: {current_score:.2f})")
     
     if best_match:
         return STATE["pred_store"][best_match]
