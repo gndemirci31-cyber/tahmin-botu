@@ -79,7 +79,7 @@ ALLOW_WOMEN = int(os.getenv("ALLOW_WOMEN", "0"))
 ALLOW_U21 = int(os.getenv("ALLOW_U21", "0"))
 
 # Model sabitleri / Model constants
-ELO_HOME_ADV = 40
+ELO_HOME_ADV = 30
 W_MKT_INIT = 0.45
 MIN_QUALITY = int(os.getenv("MIN_QUALITY", "0"))
 
@@ -1190,7 +1190,7 @@ SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
 # Elo / Form ayarları
 ELO_K = float(os.getenv("ELO_K", "24"))
-ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÜŞÜRÜLDÜ: 60 -> 40
+ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "30"))  # DÜŞÜRÜLDÜ: 60 -> 40
 FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
 FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
 ALLOW_STATE_FILE = (os.getenv("ALLOW_STATE_FILE", "1") == "1")
@@ -2300,7 +2300,7 @@ def send_mail(subject, body):
         subject = f"{subject} · {MODEL_VERSION} · {stamp}"
     except Exception:
         pass
-        body = (body or "").strip()
+
     if not body:
         body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
     msg = EmailMessage()
