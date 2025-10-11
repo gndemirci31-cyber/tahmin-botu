@@ -15,39 +15,39 @@ def _ensure_state_defaults(state: dict) -> dict:
 
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu â€” GELÄ°ÅMÄ°Å FÄ°NAL SÃœRÃœM (Transfermarkt + Milli TakÄ±m Elo + CIES/FootyStats Fallback + API-Football Ã–ncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHÄ°BÄ° DENGESÄ° + YENÄ° Ã–ZELLÄ°KLER)
+Tahmin Botu Ã¢â‚¬â€ GELÃ„Â°Ã…ÂMÃ„Â°Ã…Â FÃ„Â°NAL SÃƒÅ“RÃƒÅ“M (Transfermarkt + Milli TakÃ„Â±m Elo + CIES/FootyStats Fallback + API-Football Ãƒâ€“ncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHÃ„Â°BÃ„Â° DENGESÃ„Â° + YENÃ„Â° Ãƒâ€“ZELLÃ„Â°KLER)
 
-GÃœNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrÄ± mail + Otomatik Ã–ÄŸrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LÄ°G/KUPA FÄ°LTRESÄ° + AkÄ±llÄ± Hava + SERVICE modu + Transfermarkt + Milli TakÄ±m Elo + Ã‡oklu Fallback Sistemi + Kaynak Etiketleme + Ev Sahibi Dengeleme + YENÄ° Ã–ZELLÄ°KLER
+GÃƒÅ“NCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrÃ„Â± mail + Otomatik Ãƒâ€“Ã„Å¸renme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LÃ„Â°G/KUPA FÃ„Â°LTRESÃ„Â° + AkÃ„Â±llÃ„Â± Hava + SERVICE modu + Transfermarkt + Milli TakÃ„Â±m Elo + Ãƒâ€¡oklu Fallback Sistemi + Kaynak Etiketleme + Ev Sahibi Dengeleme + YENÃ„Â° Ãƒâ€“ZELLÃ„Â°KLER
 
-YENÄ° Ã–ZELLÄ°KLER:
+YENÃ„Â° Ãƒâ€“ZELLÃ„Â°KLER:
 - Dixon-Coles Modeli
-- Ã‡ift Elo Sistemi (Attack/Defense)
-- KapanÄ±ÅŸ OranÄ± Drift
+- Ãƒâ€¡ift Elo Sistemi (Attack/Defense)
+- KapanÃ„Â±Ã…Å¸ OranÃ„Â± Drift
 - Hakem/Dinlenme Etkisi
-- SÄ±ralama Decay
+- SÃ„Â±ralama Decay
 - Market Kalibrasyonu
-- KÄ±rmÄ±zÄ± Kart Riski
-- HiyerarÅŸik Gol Modeli
+- KÃ„Â±rmÃ„Â±zÃ„Â± Kart Riski
+- HiyerarÃ…Å¸ik Gol Modeli
 - xG-Proxy Modeli
 - Kadro Etkisi
 - Multi-market Konsistensi
-- GeliÅŸmiÅŸ Kalite Skoru
+- GeliÃ…Å¸miÃ…Å¸ Kalite Skoru
 
-Ãœcretsiz kaynaklar:
-- football-data.org (Fixtures/sonuÃ§lar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
-- API-Football (opsiyonel, free tier) -> APIFOOTBALL_KEY varsa fikstÃ¼r + ipucu
+ÃƒÅ“cretsiz kaynaklar:
+- football-data.org (Fixtures/sonuÃƒÂ§lar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
+- API-Football (opsiyonel, free tier) -> APIFOOTBALL_KEY varsa fikstÃƒÂ¼r + ipucu
 - OpenLigaDB (fallback) -> anahtar gerekmez
 - Open-Meteo (hava) -> anahtar gerekmez
-- The Odds API (opsiyonel oranlar) -> ODDS_API_KEY varsa kullanÄ±lÄ±r
-- Transfermarkt (tmapi) -> Kadro deÄŸerleri
-- TotalCorner -> KÃ¶ÅŸe korner verisi
-- FootyStats -> Kart/korner lig ortalamalarÄ±
+- The Odds API (opsiyonel oranlar) -> ODDS_API_KEY varsa kullanÃ„Â±lÃ„Â±r
+- Transfermarkt (tmapi) -> Kadro deÃ„Å¸erleri
+- TotalCorner -> KÃƒÂ¶Ã…Å¸e korner verisi
+- FootyStats -> Kart/korner lig ortalamalarÃ„Â±
 
 Modlar:
-- MODE=PREDICT -> Ã‡alÄ±ÅŸtÄ±ÄŸÄ± anda "GÃ¼nÃ¼n Tahminleri"
-- MODE=RESULTS -> Ã‡alÄ±ÅŸtÄ±ÄŸÄ± anda **dÃ¼nÃ¼n** sonuÃ§larÄ± (yeni saat planÄ±na uygun)
-- MODE=AUTO -> Ã‡alÄ±ÅŸtÄ±ÄŸÄ± anda saat UTC 07 ise PREDICT, deÄŸilse RESULTS
-- MODE=SERVICE -> SÃ¼rekli Ã§alÄ±ÅŸÄ±r; TR 10:00'da Tahmin, ertesi gÃ¼n TR 04:00'da DÃœNÃœN SonuÃ§larÄ±nÄ± yollar (tekrar etmez)
+- MODE=PREDICT -> Ãƒâ€¡alÃ„Â±Ã…Å¸tÃ„Â±Ã„Å¸Ã„Â± anda "GÃƒÂ¼nÃƒÂ¼n Tahminleri"
+- MODE=RESULTS -> Ãƒâ€¡alÃ„Â±Ã…Å¸tÃ„Â±Ã„Å¸Ã„Â± anda **dÃƒÂ¼nÃƒÂ¼n** sonuÃƒÂ§larÃ„Â± (yeni saat planÃ„Â±na uygun)
+- MODE=AUTO -> Ãƒâ€¡alÃ„Â±Ã…Å¸tÃ„Â±Ã„Å¸Ã„Â± anda saat UTC 07 ise PREDICT, deÃ„Å¸ilse RESULTS
+- MODE=SERVICE -> SÃƒÂ¼rekli ÃƒÂ§alÃ„Â±Ã…Å¸Ã„Â±r; TR 10:00'da Tahmin, ertesi gÃƒÂ¼n TR 04:00'da DÃƒÅ“NÃƒÅ“N SonuÃƒÂ§larÃ„Â±nÃ„Â± yollar (tekrar etmez)
 """
 
 import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
@@ -65,10 +65,10 @@ from sklearn.isotonic import IsotonicRegression
 STATE_PATH = os.getenv("STATE_PATH", "model_state.json")
 SNAPSHOT_DIR = os.getenv("SNAPSHOT_DIR", "snapshots")
 
-# Dosya yazma izinleri (1: aÃ§Ä±k, 0: kapalÄ±) / File write permissions (1: on, 0: off)
+# Dosya yazma izinleri (1: aÃƒÂ§Ã„Â±k, 0: kapalÃ„Â±) / File write permissions (1: on, 0: off)
 ALLOW_STATE_FILE = int(os.getenv("ALLOW_STATE_FILE", "1"))
 
-# KadÄ±n ve U-yaÅŸ maÃ§larÄ±nÄ± dahil etme bayraklarÄ± / Women and U-age matches inclusion flags
+# KadÃ„Â±n ve U-yaÃ…Å¸ maÃƒÂ§larÃ„Â±nÃ„Â± dahil etme bayraklarÃ„Â± / Women and U-age matches inclusion flags
 ALLOW_WOMEN = int(os.getenv("ALLOW_WOMEN", "0"))
 ALLOW_U21 = int(os.getenv("ALLOW_U21", "0"))
 
@@ -77,12 +77,12 @@ ELO_HOME_ADV = 40
 W_MKT_INIT = 0.45
 MIN_QUALITY = int(os.getenv("MIN_QUALITY", "0"))
 
-# Yeni Ã¶zellik bayraklarÄ± / New feature flags
+# Yeni ÃƒÂ¶zellik bayraklarÃ„Â± / New feature flags
 GOAL_MODEL = os.getenv("GOAL_MODEL", "POISSON")  # DC|POISSON|HIER
 ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 
-# --- Ortak yardÄ±mcÄ±lar -------------------------------------------------------
-TR_TZ = timezone(timedelta(hours=3))  # TÃ¼rkiye
+# --- Ortak yardÃ„Â±mcÃ„Â±lar -------------------------------------------------------
+TR_TZ = timezone(timedelta(hours=3))  # TÃƒÂ¼rkiye
 HEADERS_JSON = {"Accept": "application/json"}
 
 def log(msg):
@@ -131,20 +131,20 @@ def season_for_today():
 # ==================== YARDIMCILAR / HELPERS ====================
 
 def _ensure_dir(p: Path) -> bool:
-    """KlasÃ¶r oluÅŸturur - gÃ¼venli versiyon / Create directory - safe version"""
+    """KlasÃƒÂ¶r oluÃ…Å¸turur - gÃƒÂ¼venli versiyon / Create directory - safe version"""
     try:
         p.mkdir(parents=True, exist_ok=True)
         return True
     except Exception as e:
-        log(f"[FS] KlasÃ¶r oluÅŸturulamadÄ± / Directory creation failed: {p} | {e}")
+        log(f"[FS] KlasÃƒÂ¶r oluÃ…Å¸turulamadÃ„Â± / Directory creation failed: {p} | {e}")
         return False
 
 def save_snapshot(predictions: Dict, date: Optional[str] = None) -> None:
-    """Tahmin snapshot'Ä±nÄ± kaydeder / Saves prediction snapshot"""
+    """Tahmin snapshot'Ã„Â±nÃ„Â± kaydeder / Saves prediction snapshot"""
     date = date or datetime.now().strftime("%Y-%m-%d")
     snap_dir = Path(SNAPSHOT_DIR)
     if not _ensure_dir(snap_dir):
-        log("[Snapshot] KayÄ±t YAPILAMADI (klasÃ¶r aÃ§Ä±lamadÄ±) / Save FAILED (directory error)")
+        log("[Snapshot] KayÃ„Â±t YAPILAMADI (klasÃƒÂ¶r aÃƒÂ§Ã„Â±lamadÃ„Â±) / Save FAILED (directory error)")
         return
     path = snap_dir / f"pred_{date}.json"
     try:
@@ -152,10 +152,10 @@ def save_snapshot(predictions: Dict, date: Optional[str] = None) -> None:
             json.dump(predictions, f, ensure_ascii=False, indent=2)
         log(f"[Snapshot] Kaydedildi / Saved: {path}")
     except Exception as e:
-        log(f"[Snapshot] Kaydetme hatasÄ± / Save error: {e}")
+        log(f"[Snapshot] Kaydetme hatasÃ„Â± / Save error: {e}")
 
 def load_snapshot(date: Optional[str] = None) -> Dict:
-    """Tahmin snapshot'Ä±nÄ± yÃ¼kler / Loads prediction snapshot"""
+    """Tahmin snapshot'Ã„Â±nÃ„Â± yÃƒÂ¼kler / Loads prediction snapshot"""
     date = date or datetime.now().strftime("%Y-%m-%d")
     path = Path(SNAPSHOT_DIR) / f"pred_{date}.json"
     if not path.exists():
@@ -163,22 +163,22 @@ def load_snapshot(date: Optional[str] = None) -> Dict:
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        log(f"[Snapshot] YÃ¼klendi / Loaded: {path}")
+        log(f"[Snapshot] YÃƒÂ¼klendi / Loaded: {path}")
         return data
     except Exception as e:
-        log(f"[Snapshot] YÃ¼kleme hatasÄ± / Load error: {e}")
+        log(f"[Snapshot] YÃƒÂ¼kleme hatasÃ„Â± / Load error: {e}")
         return {}
 
-# ==================== FÄ°LTRELER / FILTERS ====================
+# ==================== FÃ„Â°LTRELER / FILTERS ====================
 
 _WOMEN_TOKENS = {
-    "women","woman","female","ladies","wsl", "fÃ©minine","feminine","feminino","femenina","femenino","femminile",
-    "frauen","damas","dames","mulheres","kobiet","vrouwen","donna","dziewczÄ…t"
+    "women","woman","female","ladies","wsl", "fÃƒÂ©minine","feminine","feminino","femenina","femenino","femminile",
+    "frauen","damas","dames","mulheres","kobiet","vrouwen","donna","dziewczÃ„â€¦t"
 }
 
 _WOMEN_HINTS = {
     "liga mx femenil", "liga f", "liga iberdrola", "primera femenina", "frauen-bundesliga", "frauen bundesliga",
-    "serie a femminile", "division 1 fÃ©minine", "national women's",
+    "serie a femminile", "division 1 fÃƒÂ©minine", "national women's",
 }
 
 _U_TOKENS = {
@@ -188,23 +188,23 @@ _U_TOKENS = {
 def _norm(s: str) -> str:
     return (s or "").strip().lower()
 
-# Log sayaÃ§larÄ± / Log counters
+# Log sayaÃƒÂ§larÃ„Â± / Log counters
 _filter_counters = {"women": 0, "u21": 0, "snapshot_used": 0}
 
 def is_women_competition(area_name: str, comp_name: str) -> bool:
-    """KadÄ±n ligi/kupasÄ± olup olmadÄ±ÄŸÄ±nÄ± kontrol eder"""
+    """KadÃ„Â±n ligi/kupasÃ„Â± olup olmadÃ„Â±Ã„Å¸Ã„Â±nÃ„Â± kontrol eder"""
     if ALLOW_WOMEN == 1:
         return False
     
     a, c = (area_name or "").lower(), (comp_name or "").lower()
     combined = f"{a} {c}"
     
-    # Token kontrolÃ¼
+    # Token kontrolÃƒÂ¼
     if any(token in combined for token in _WOMEN_TOKENS):
         _filter_counters["women"] += 1
         return True
     
-    # Hint kontrolÃ¼
+    # Hint kontrolÃƒÂ¼
     if any(hint in combined for hint in _WOMEN_HINTS):
         _filter_counters["women"] += 1
         return True
@@ -212,7 +212,7 @@ def is_women_competition(area_name: str, comp_name: str) -> bool:
     return False
 
 def is_u21_competition(comp_name: str) -> bool:
-    """U-21 ligi olup olmadÄ±ÄŸÄ±nÄ± kontrol eder"""
+    """U-21 ligi olup olmadÃ„Â±Ã„Å¸Ã„Â±nÃ„Â± kontrol eder"""
     if ALLOW_U21 == 1:
         return False
         
@@ -223,24 +223,24 @@ def is_u21_competition(comp_name: str) -> bool:
     return False
 
 def get_filter_counts() -> Dict[str, int]:
-    """Filtre sayaÃ§larÄ±nÄ± dÃ¶ndÃ¼rÃ¼r / Returns filter counters"""
+    """Filtre sayaÃƒÂ§larÃ„Â±nÃ„Â± dÃƒÂ¶ndÃƒÂ¼rÃƒÂ¼r / Returns filter counters"""
     return _filter_counters.copy()
 
-# --- TakÄ±m AdÄ± Benzerlik EÅŸleÅŸtirme ------------------------------------------
+# --- TakÃ„Â±m AdÃ„Â± Benzerlik EÃ…Å¸leÃ…Å¸tirme ------------------------------------------
 def normalize_team_name(name):
-    """TakÄ±m adÄ±nÄ± karÅŸÄ±laÅŸtÄ±rma iÃ§in normalize eder"""
+    """TakÃ„Â±m adÃ„Â±nÃ„Â± karÃ…Å¸Ã„Â±laÃ…Å¸tÃ„Â±rma iÃƒÂ§in normalize eder"""
     if not name:
         return ""
     
-    # KÃ¼Ã§Ã¼k harfe Ã§evir
+    # KÃƒÂ¼ÃƒÂ§ÃƒÂ¼k harfe ÃƒÂ§evir
     name = name.lower().strip()
     
-    # YaygÄ±n takÄ±m eklerini kaldÄ±r
+    # YaygÃ„Â±n takÃ„Â±m eklerini kaldÃ„Â±r
     suffixes = [
         ' fc', ' cf', ' af', ' sf', ' if', ' ff', 
         ' football club', ' club de foot', ' athletic club',
         ' sports club', ' united', ' city', ' town', ' fc.',
-        ' real', ' deportivo', ' athletic', ' atletico', ' atlÃ©tico',
+        ' real', ' deportivo', ' athletic', ' atletico', ' atlÃƒÂ©tico',
         ' sporting', ' os ', ' as ', ' us ', ' ac ', ' inter ',
         ' borussia', ' dynamo', ' sparta', ' rapid', ' ajax'
     ]
@@ -248,11 +248,11 @@ def normalize_team_name(name):
     for suffix in suffixes:
         name = name.replace(suffix, '')
     
-    # Ã–zel karakterleri ve fazla boÅŸluklarÄ± temizle
+    # Ãƒâ€“zel karakterleri ve fazla boÃ…Å¸luklarÃ„Â± temizle
     name = re.sub(r'[^\w\s]', ' ', name)
     name = re.sub(r'\s+', ' ', name).strip()
     
-    # Ã–zel takÄ±m ismi dÃ¼zeltmeleri
+    # Ãƒâ€“zel takÃ„Â±m ismi dÃƒÂ¼zeltmeleri
     special_cases = {
         'psg': 'paris saint germain',
         'psg paris': 'paris saint germain',
@@ -289,7 +289,7 @@ def normalize_team_name(name):
         'fc bayern munich': 'bayern munich',
         'bayern munchen': 'bayern munich',
         'bayer leverkusen': 'leverkusen',
-        'b mÃ¶nchengladbach': 'borussia monchengladbach',
+        'b mÃƒÂ¶nchengladbach': 'borussia monchengladbach',
         'borussia mgladbach': 'borussia monchengladbach',
         'borussia dortmund': 'dortmund',
         'eintracht frankfurt': 'eintracht frankfurt',
@@ -297,7 +297,7 @@ def normalize_team_name(name):
         'sc freiburg': 'freiburg',
         'vfl wolfsburg': 'wolfsburg',
         '1 fc koln': 'koln',
-        '1 fc kÃ¶ln': 'koln',
+        '1 fc kÃƒÂ¶ln': 'koln',
         '1 fc cologne': 'koln',
         'fc koln': 'koln',
         'fc schalke 04': 'schalke',
@@ -347,7 +347,7 @@ def normalize_team_name(name):
         'goztepe': 'goztepe',
         'goztepe sk': 'goztepe',
         'ankaragucu': 'ankaragucu',
-        'ankara guÃ§u': 'ankaragucu',
+        'ankara guÃƒÂ§u': 'ankaragucu',
         'erzurumspor': 'erzurumspor',
         'denizlispor': 'denizlispor',
         'genclerbirligi': 'genclerbirligi',
@@ -355,13 +355,13 @@ def normalize_team_name(name):
         'kayseri': 'kayserispor',
         'antalyaspor': 'antalyaspor',
         'antalya spor': 'antalyaspor',
-        # Milli takÄ±m dÃ¼zeltmeleri
+        # Milli takÃ„Â±m dÃƒÂ¼zeltmeleri
         'equatorial guinea': 'equatorial guinea',
         'estuarial guinea': 'equatorial guinea',
         'namaia': 'namibia',
         'bosna hareke': 'bosnia herzegovina',
-        'farko asiatÄ±n': 'faroe islands',
-        'karadaÄŸ': 'montenegro',
+        'farko asiatÃ„Â±n': 'faroe islands',
+        'karadaÃ„Å¸': 'montenegro',
         'danimaria': 'denmark',
         'rusla': 'russia',
         'holanda': 'netherlands',
@@ -372,45 +372,45 @@ def normalize_team_name(name):
     return special_cases.get(name, name)
 
 def team_similarity(a, b):
-    """Ä°ki takÄ±m adÄ± arasÄ±ndaki benzerlik skorunu hesaplar (0-1 arasÄ±)"""
+    """Ã„Â°ki takÃ„Â±m adÃ„Â± arasÃ„Â±ndaki benzerlik skorunu hesaplar (0-1 arasÃ„Â±)"""
     if not a or not b:
         return 0.0
     
     a_norm = normalize_team_name(a)
     b_norm = normalize_team_name(b)
     
-    # Tam eÅŸleÅŸme
+    # Tam eÃ…Å¸leÃ…Å¸me
     if a_norm == b_norm:
         return 1.0
     
-    # Kelime bazlÄ± benzerlik
+    # Kelime bazlÃ„Â± benzerlik
     a_words = set(a_norm.split())
     b_words = set(b_norm.split())
     
     if a_words and b_words:
-        # Ortak kelime oranÄ±
+        # Ortak kelime oranÃ„Â±
         common_words = a_words.intersection(b_words)
         word_similarity = len(common_words) / max(len(a_words), len(b_words))
         
         # String benzerlik
         string_similarity = SequenceMatcher(None, a_norm, b_norm).ratio()
         
-        # Kombine skor (kelime benzerliÄŸi daha aÄŸÄ±rlÄ±klÄ±)
+        # Kombine skor (kelime benzerliÃ„Å¸i daha aÃ„Å¸Ã„Â±rlÃ„Â±klÃ„Â±)
         return 0.7 * word_similarity + 0.3 * string_similarity
     
     return SequenceMatcher(None, a_norm, b_norm).ratio()
 
 def find_closest_team(target_team, team_list, threshold=0.75):
     """
-    TakÄ±m listesinde en benzer takÄ±mÄ± bulur
+    TakÃ„Â±m listesinde en benzer takÃ„Â±mÃ„Â± bulur
     
     Args:
-        target_team: Aranan takÄ±m adÄ±
-        team_list: Arama yapÄ±lacak takÄ±m listesi
-        threshold: Minimum benzerlik eÅŸiÄŸi (0-1 arasÄ±)
+        target_team: Aranan takÃ„Â±m adÃ„Â±
+        team_list: Arama yapÃ„Â±lacak takÃ„Â±m listesi
+        threshold: Minimum benzerlik eÃ…Å¸iÃ„Å¸i (0-1 arasÃ„Â±)
     
     Returns:
-        (en_benzer_takÄ±m, benzerlik_skoru) veya (None, 0) eÅŸleÅŸme yoksa
+        (en_benzer_takÃ„Â±m, benzerlik_skoru) veya (None, 0) eÃ…Å¸leÃ…Å¸me yoksa
     """
     if not target_team or not team_list:
         return None, 0.0
@@ -429,12 +429,12 @@ def find_closest_team(target_team, team_list, threshold=0.75):
     
     return best_match, best_score
 
-# ==================== STATE YÃ–NETÄ°MÄ° / STATE MANAGEMENT ====================
+# ==================== STATE YÃƒâ€“NETÃ„Â°MÃ„Â° / STATE MANAGEMENT ====================
 
 def load_state() -> Dict:
-    """STATE yoksa veya kapalÄ±ysa snapshot'tan yÃ¼kler / Loads from snapshot if STATE missing or disabled"""
+    """STATE yoksa veya kapalÃ„Â±ysa snapshot'tan yÃƒÂ¼kler / Loads from snapshot if STATE missing or disabled"""
     if not ALLOW_STATE_FILE or not Path(STATE_PATH).exists():
-        log("[STATE] Dosya yok/kapalÄ±. Snapshot'tan okunacak / File missing/disabled. Loading from snapshot.")
+        log("[STATE] Dosya yok/kapalÃ„Â±. Snapshot'tan okunacak / File missing/disabled. Loading from snapshot.")
         _filter_counters["snapshot_used"] += 1
         return load_snapshot()
     
@@ -451,14 +451,14 @@ def load_state() -> Dict:
         state.setdefault("last_res_date", None)
         return state
     except Exception as e:
-        log(f"[STATE] YÃ¼kleme hatasÄ± / Load error: {e}. Snapshot'a dÃ¼ÅŸÃ¼lÃ¼yor / Falling back to snapshot.")
+        log(f"[STATE] YÃƒÂ¼kleme hatasÃ„Â± / Load error: {e}. Snapshot'a dÃƒÂ¼Ã…Å¸ÃƒÂ¼lÃƒÂ¼yor / Falling back to snapshot.")
         _filter_counters["snapshot_used"] += 1
         return load_snapshot()
 
 def save_state(state: Dict) -> None:
     """State'i kaydeder / Saves state"""
     if not ALLOW_STATE_FILE:
-        log("[STATE] Yazma kapalÄ± (ALLOW_STATE_FILE=0) / Write disabled")
+        log("[STATE] Yazma kapalÃ„Â± (ALLOW_STATE_FILE=0) / Write disabled")
         return
     
     try:
@@ -467,9 +467,9 @@ def save_state(state: Dict) -> None:
         if _ensure_dir(state_dir):
             with open(STATE_PATH, "w", encoding="utf-8") as f:
                 json.dump(state, f, ensure_ascii=False, indent=2)
-            log(f"[STATE] Kaydedildi â†’ / Saved â†’ {STATE_PATH}")
+            log(f"[STATE] Kaydedildi Ã¢â€ â€™ / Saved Ã¢â€ â€™ {STATE_PATH}")
     except Exception as e:
-        log(f"[STATE] Kaydetme hatasÄ± / Save error: {e}")
+        log(f"[STATE] Kaydetme hatasÃ„Â± / Save error: {e}")
 
 STATE = load_state()
 
@@ -480,13 +480,13 @@ def _team_key(area, name):
     return f"{a}:{n}"
 
 def elo_get(area, name):
-    """GeliÅŸtirilmiÅŸ Elo getirme - milli takÄ±mlar iÃ§in proxy destekli"""
-    # Ã–nce milli takÄ±m kontrolÃ¼
+    """GeliÃ…Å¸tirilmiÃ…Å¸ Elo getirme - milli takÃ„Â±mlar iÃƒÂ§in proxy destekli"""
+    # Ãƒâ€“nce milli takÃ„Â±m kontrolÃƒÂ¼
     national_elo, national_source = get_national_elo_proxy(name, area)
     if national_elo is not None:
         return national_elo
     
-    # Normal kulÃ¼p takÄ±mÄ± Elo'su
+    # Normal kulÃƒÂ¼p takÃ„Â±mÃ„Â± Elo'su
     key = _team_key(area, name)
     return float(STATE.get("elo", {}).get(key, 1500.0))
 
@@ -500,14 +500,14 @@ def elo_expect(elo_a, elo_b, home_adv=0.0):
 
 def elo_update(area, home_name, away_name, result_hw, home_advantage=None):
     """
-    Elo gÃ¼ncellemesi - dinamik ev avantajÄ± desteÄŸi
+    Elo gÃƒÂ¼ncellemesi - dinamik ev avantajÃ„Â± desteÃ„Å¸i
     
     Args:
-        area: Lig bÃ¶lgesi
-        home_name: Ev sahibi takÄ±m
-        away_name: Deplasman takÄ±mÄ±  
-        result_hw: SonuÃ§ (1.0=ev kazandÄ±, 0.5=berabere, 0.0=deplasman kazandÄ±)
-        home_advantage: Ev avantajÄ± (None ise ELO_HOME_ADV kullanÄ±r)
+        area: Lig bÃƒÂ¶lgesi
+        home_name: Ev sahibi takÃ„Â±m
+        away_name: Deplasman takÃ„Â±mÃ„Â±  
+        result_hw: SonuÃƒÂ§ (1.0=ev kazandÃ„Â±, 0.5=berabere, 0.0=deplasman kazandÃ„Â±)
+        home_advantage: Ev avantajÃ„Â± (None ise ELO_HOME_ADV kullanÃ„Â±r)
     """
     if home_advantage is None:
         home_advantage = ELO_HOME_ADV
@@ -536,34 +536,34 @@ def get_w_mkt():
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
 
-# --- GELÄ°ÅMÄ°Å KADRO DEÄERÄ° SÄ°STEMÄ° (Transfermarkt + Fallback'ler) ------------
+# --- GELÃ„Â°Ã…ÂMÃ„Â°Ã…Â KADRO DEÃ„ÂERÃ„Â° SÃ„Â°STEMÃ„Â° (Transfermarkt + Fallback'ler) ------------
 TEAM_VALUES_PATH = "team_values.json"
 
 def load_team_values():
-    """TakÄ±m deÄŸerlerini yÃ¼kler"""
+    """TakÃ„Â±m deÃ„Å¸erlerini yÃƒÂ¼kler"""
     try:
         if os.path.exists(TEAM_VALUES_PATH):
             with open(TEAM_VALUES_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception as e:
-        log(f"TakÄ±m deÄŸerleri yÃ¼kleme hatasÄ±: {e}")
+        log(f"TakÃ„Â±m deÃ„Å¸erleri yÃƒÂ¼kleme hatasÃ„Â±: {e}")
     return {}
 
 def save_team_values(values):
-    """TakÄ±m deÄŸerlerini kaydeder"""
+    """TakÃ„Â±m deÃ„Å¸erlerini kaydeder"""
     try:
         with open(TEAM_VALUES_PATH, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        log(f"TakÄ±m deÄŸerleri kaydetme hatasÄ±: {e}")
+        log(f"TakÃ„Â±m deÃ„Å¸erleri kaydetme hatasÃ„Â±: {e}")
 
 def get_team_value_tmapi(team_name, area="Europe"):
-    """Transfermarkt API'sinden kadro deÄŸerini getirir - GÃœNCELLENDÄ°"""
+    """Transfermarkt API'sinden kadro deÃ„Å¸erini getirir - GÃƒÅ“NCELLENDÃ„Â°"""
     if not team_name:
         return None, None
     
     try:
-        # Ã–nce takÄ±m ismini normalize et
+        # Ãƒâ€“nce takÃ„Â±m ismini normalize et
         normalized_name = normalize_team_name(team_name)
         
         # tmapi.vercel.app API'si - URL encode ekle
@@ -575,21 +575,21 @@ def get_team_value_tmapi(team_name, area="Europe"):
         if response and response.get("success"):
             squad_value = response.get("data", {}).get("squad_value", None)
             if squad_value and squad_value > 0:
-                log(f"âœ… TMAPI baÅŸarÄ±lÄ±: {team_name} -> {squad_value}M â‚¬")
+                log(f"Ã¢Å“â€¦ TMAPI baÃ…Å¸arÃ„Â±lÃ„Â±: {team_name} -> {squad_value}M Ã¢â€šÂ¬")
                 return squad_value, "TMAPI"
             else:
-                log(f"âš ï¸ TMAPI deÄŸer bulunamadÄ±: {team_name}")
+                log(f"Ã¢Å¡ Ã¯Â¸Â TMAPI deÃ„Å¸er bulunamadÃ„Â±: {team_name}")
         else:
-            log(f"âŒ TMAPI hata: {team_name} - {response}")
+            log(f"Ã¢ÂÅ’ TMAPI hata: {team_name} - {response}")
             
     except Exception as e:
-        log(f"âŒ Transfermarkt API hatasÄ± {team_name}: {e}")
+        log(f"Ã¢ÂÅ’ Transfermarkt API hatasÃ„Â± {team_name}: {e}")
     
     return None, None
 
 def get_team_value_cies_fallback(team_name, area="Europe"):
-    """CIES/FootyStats fallback - GELÄ°ÅTÄ°RÄ°LMÄ°Å"""
-    # Milli takÄ±mlar iÃ§in Ã¶zel deÄŸerler
+    """CIES/FootyStats fallback - GELÃ„Â°Ã…ÂTÃ„Â°RÃ„Â°LMÃ„Â°Ã…Â"""
+    # Milli takÃ„Â±mlar iÃƒÂ§in ÃƒÂ¶zel deÃ„Å¸erler
     national_teams = {
         # Afrika
         "mozambique": 15.0, "guinea": 25.0, "botswana": 12.0, "uganda": 18.0,
@@ -603,12 +603,12 @@ def get_team_value_cies_fallback(team_name, area="Europe"):
     
     team_lower = normalize_team_name(team_name)
     
-    # Ã–nce milli takÄ±m kontrolÃ¼
+    # Ãƒâ€“nce milli takÃ„Â±m kontrolÃƒÂ¼
     for nat_team, value in national_teams.items():
         if nat_team in team_lower:
             return value, "CIES_NATIONAL"
     
-    # Lig bazlÄ± ortalama deÄŸerler
+    # Lig bazlÃ„Â± ortalama deÃ„Å¸erler
     league_defaults = {
         "premier league": 180.0, "la liga": 120.0, "serie a": 110.0, 
         "bundesliga": 100.0, "ligue 1": 90.0, "super lig": 40.0,
@@ -623,14 +623,14 @@ def get_team_value_cies_fallback(team_name, area="Europe"):
         if league in area_lower:
             return value, "CIES_LEAGUE"
     
-    return 30.0, "CIES_DEFAULT"  # Daha dÃ¼ÅŸÃ¼k genel varsayÄ±lan
+    return 30.0, "CIES_DEFAULT"  # Daha dÃƒÂ¼Ã…Å¸ÃƒÂ¼k genel varsayÃ„Â±lan
 
 def get_team_value(team_name, area="Europe"):
-    """GeliÅŸtirilmiÅŸ kadro deÄŸeri sistemi - zincirli fallback"""
+    """GeliÃ…Å¸tirilmiÃ…Å¸ kadro deÃ„Å¸eri sistemi - zincirli fallback"""
     if not team_name:
         return 30.0, "DEFAULT"
     
-    # Ã–nce cache'ten kontrol et
+    # Ãƒâ€“nce cache'ten kontrol et
     team_values = load_team_values()
     cache_key = f"{area}:{normalize_team_name(team_name)}"
     
@@ -640,7 +640,7 @@ def get_team_value(team_name, area="Europe"):
         source = value_data.get("source", "CACHE")
         timestamp = value_data.get("timestamp", 0)
         
-        # 30 gÃ¼nden eski veriyi yenile
+        # 30 gÃƒÂ¼nden eski veriyi yenile
         if time.time() - timestamp < 30 * 24 * 60 * 60:
             return value, source
     
@@ -648,7 +648,7 @@ def get_team_value(team_name, area="Europe"):
     value, source = get_team_value_tmapi(team_name, area)
     
     if value is None:
-        # Fallback: CIES/FootyStats lig ortalamalarÄ±
+        # Fallback: CIES/FootyStats lig ortalamalarÃ„Â±
         value, source = get_team_value_cies_fallback(team_name, area)
     
     # Cache'e kaydet
@@ -659,61 +659,61 @@ def get_team_value(team_name, area="Europe"):
     }
     save_team_values(team_values)
     
-    log(f"Kadro deÄŸeri gÃ¼ncellendi: {team_name} -> {value}M â‚¬ ({source})")
+    log(f"Kadro deÃ„Å¸eri gÃƒÂ¼ncellendi: {team_name} -> {value}M Ã¢â€šÂ¬ ({source})")
     return value, source
 
 def calculate_value_advantage(home_team, away_team, area="Europe"):
-    """Kadro deÄŸeri avantajÄ±nÄ± hesaplar (-1 ile +1 arasÄ±)"""
+    """Kadro deÃ„Å¸eri avantajÃ„Â±nÃ„Â± hesaplar (-1 ile +1 arasÃ„Â±)"""
     home_value, home_source = get_team_value(home_team, area)
     away_value, away_source = get_team_value(away_team, area)
     
     if home_value + away_value == 0:
         return 0.0, "NONE"
     
-    # DeÄŸer farkÄ±nÄ±n normalize edilmiÅŸ avantaja dÃ¶nÃ¼ÅŸÃ¼mÃ¼
+    # DeÃ„Å¸er farkÃ„Â±nÃ„Â±n normalize edilmiÃ…Å¸ avantaja dÃƒÂ¶nÃƒÂ¼Ã…Å¸ÃƒÂ¼mÃƒÂ¼
     value_ratio = (home_value - away_value) / (home_value + away_value)
     advantage = clamp(value_ratio * 0.3, -0.3, 0.3)  # Maksimum %30 etki
     
-    # Kaynak bilgisi - hangi takÄ±m hangi kaynaktan
+    # Kaynak bilgisi - hangi takÃ„Â±m hangi kaynaktan
     source_info = f"TM:{home_source}/{away_source}"
     
     return advantage, source_info
 
-# --- MÄ°LLÄ° TAKIM ELO SÄ°STEMÄ° -------------------------------------------------
+# --- MÃ„Â°LLÃ„Â° TAKIM ELO SÃ„Â°STEMÃ„Â° -------------------------------------------------
 NATIONAL_TEAM_ELO_PATH = "national_elo.json"
 
 def load_national_elo():
-    """Milli takÄ±m Elo deÄŸerlerini yÃ¼kler"""
+    """Milli takÃ„Â±m Elo deÃ„Å¸erlerini yÃƒÂ¼kler"""
     try:
         if os.path.exists(NATIONAL_TEAM_ELO_PATH):
             with open(NATIONAL_TEAM_ELO_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception as e:
-        log(f"Milli takÄ±m Elo yÃ¼kleme hatasÄ±: {e}")
+        log(f"Milli takÃ„Â±m Elo yÃƒÂ¼kleme hatasÃ„Â±: {e}")
     return {}
 
 def save_national_elo(values):
-    """Milli takÄ±m Elo deÄŸerlerini kaydeder"""
+    """Milli takÃ„Â±m Elo deÃ„Å¸erlerini kaydeder"""
     try:
         with open(NATIONAL_TEAM_ELO_PATH, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        log(f"Milli takÄ±m Elo kaydetme hatasÄ±: {e}")
+        log(f"Milli takÃ„Â±m Elo kaydetme hatasÃ„Â±: {e}")
 
 def get_national_elo_proxy(team_name, area="Europe"):
-    """Milli takÄ±mlar iÃ§in Elo proxy deÄŸeri - ACÄ°L DÃœZELTME"""
+    """Milli takÃ„Â±mlar iÃƒÂ§in Elo proxy deÃ„Å¸eri - ACÃ„Â°L DÃƒÅ“ZELTME"""
     if not team_name:
         return None, None
     
-    # Ã–NEMLÄ°: Ã–nce kulÃ¼p takÄ±mÄ± kontrolÃ¼ - milli takÄ±m deÄŸilse None dÃ¶n
+    # Ãƒâ€“NEMLÃ„Â°: Ãƒâ€“nce kulÃƒÂ¼p takÃ„Â±mÃ„Â± kontrolÃƒÂ¼ - milli takÃ„Â±m deÃ„Å¸ilse None dÃƒÂ¶n
     national_indicators = ["national", "milli", "country", "olympics", "world cup", "euro", "qualification"]
     team_lower = team_name.lower()
     
     is_national = any(indicator in team_lower for indicator in national_indicators)
     if not is_national:
-        return None, None  # KulÃ¼p takÄ±mÄ±
+        return None, None  # KulÃƒÂ¼p takÃ„Â±mÃ„Â±
     
-    # Milli takÄ±m Elo deÄŸerleri (FIFA sÄ±ralamasÄ± bazlÄ±)
+    # Milli takÃ„Â±m Elo deÃ„Å¸erleri (FIFA sÃ„Â±ralamasÃ„Â± bazlÃ„Â±)
     national_elo_values = {
         # Afrika
         "mozambique": 1300, "guinea": 1400, "botswana": 1250, "uganda": 1350,
@@ -731,13 +731,13 @@ def get_national_elo_proxy(team_name, area="Europe"):
         if nat_team in team_normalized:
             return elo, "ELO_NATIONAL"
     
-    return 1400.0, "ELO_DEFAULT"  # VarsayÄ±lan milli takÄ±m Elo'su
+    return 1400.0, "ELO_DEFAULT"  # VarsayÃ„Â±lan milli takÃ„Â±m Elo'su
 
-# ==================== YENÄ° Ã–ZELLÄ°KLER / NEW FEATURES ====================
+# ==================== YENÃ„Â° Ãƒâ€“ZELLÃ„Â°KLER / NEW FEATURES ====================
 
-# 3. EÅŸleÅŸtirme ToleransÄ± / Matching Tolerance
+# 3. EÃ…Å¸leÃ…Å¸tirme ToleransÃ„Â± / Matching Tolerance
 def match_with_tolerance(team1: str, team2: str, date1: str, date2: str, tolerance_days: int = 2) -> bool:
-    """TakÄ±m ve tarih eÅŸleÅŸtirme toleransÄ± / Team and date matching with tolerance"""
+    """TakÃ„Â±m ve tarih eÃ…Å¸leÃ…Å¸tirme toleransÃ„Â± / Team and date matching with tolerance"""
     try:
         date_obj1 = datetime.strptime(date1, "%Y-%m-%d")
         date_obj2 = datetime.strptime(date2, "%Y-%m-%d")
@@ -746,14 +746,14 @@ def match_with_tolerance(team1: str, team2: str, date1: str, date2: str, toleran
     except:
         return False
 
-# 4. KapanÄ±ÅŸ OranÄ± Drift / Closing Line Drift
+# 4. KapanÃ„Â±Ã…Å¸ OranÃ„Â± Drift / Closing Line Drift
 def calculate_closing_drift(opening_odds: float, closing_odds: float) -> Tuple[float, str]:
-    """KapanÄ±ÅŸ oranÄ± drift hesaplama / Closing line drift calculation"""
+    """KapanÃ„Â±Ã…Å¸ oranÃ„Â± drift hesaplama / Closing line drift calculation"""
     if opening_odds == 0:
         return 0.0, "Drift: 0%"
     drift_pct = ((closing_odds - opening_odds) / opening_odds) * 100
-    drift_pct = max(min(drift_pct, 3.0), -3.0)  # Â±3% tavan / ceiling
-    confidence_impact = drift_pct  # GÃ¼ven skoruna direkt etki / Direct impact to confidence score
+    drift_pct = max(min(drift_pct, 3.0), -3.0)  # Ã‚Â±3% tavan / ceiling
+    confidence_impact = drift_pct  # GÃƒÂ¼ven skoruna direkt etki / Direct impact to confidence score
     note = f"Drift: {drift_pct:+.1f}%"
     return confidence_impact, note
 
@@ -762,16 +762,16 @@ def calculate_referee_impact(referee_stats: Dict) -> float:
     """Hakem kart etkisi hesaplama / Referee card impact calculation"""
     avg_cards = referee_stats.get("avg_cards_per_match", 2.0)
     base_cards = 2.0  # Ortalama baz / Average base
-    impact = (avg_cards - base_cards) / base_cards * 10  # Â±10% tavan / ceiling
+    impact = (avg_cards - base_cards) / base_cards * 10  # Ã‚Â±10% tavan / ceiling
     impact = max(min(impact, 10.0), -10.0)
     return impact
 
 def calculate_fatigue_impact(matches_last_10_days: int, days_since_last_match: int) -> float:
-    """Dinlenme-gÃ¼n etkisi hesaplama / Rest-day impact calculation"""
-    # MaÃ§ yoÄŸunluÄŸu etkisi / Match density impact
-    density_impact = min(matches_last_10_days * 2, 6.0)  # Â±6% tavan / ceiling
+    """Dinlenme-gÃƒÂ¼n etkisi hesaplama / Rest-day impact calculation"""
+    # MaÃƒÂ§ yoÃ„Å¸unluÃ„Å¸u etkisi / Match density impact
+    density_impact = min(matches_last_10_days * 2, 6.0)  # Ã‚Â±6% tavan / ceiling
     # Dinlenme etkisi / Rest impact
-    rest_impact = max((3 - days_since_last_match) * 2, -6.0)  # Â±6% tavan
+    rest_impact = max((3 - days_since_last_match) * 2, -6.0)  # Ã‚Â±6% tavan
     total_impact = (density_impact + rest_impact) / 2
     return max(min(total_impact, 6.0), -6.0)
 
@@ -784,7 +784,7 @@ class DixonColesModel:
         self.rho = 0.0  # Beraberlik korelasyonu / Draw correlation
     
     def predict(self, home_team: str, away_team: str) -> Tuple[float, float, float]:
-        """MaÃ§ sonucu olasÄ±lÄ±klarÄ± / Match outcome probabilities"""
+        """MaÃƒÂ§ sonucu olasÃ„Â±lÃ„Â±klarÃ„Â± / Match outcome probabilities"""
         home_attack = self.attack.get(home_team, 1.0)
         home_defense = self.defense.get(home_team, 1.0)
         away_attack = self.attack.get(away_team, 1.0)
@@ -794,18 +794,18 @@ class DixonColesModel:
         lambda_home = home_attack * away_defense
         lambda_away = away_attack * home_defense
         
-        # Dixon-Coles dÃ¼zeltmesi / Dixon-Coles correction
+        # Dixon-Coles dÃƒÂ¼zeltmesi / Dixon-Coles correction
         if GOAL_MODEL == "DC":
-            # Beraberlik olasÄ±lÄ±ÄŸÄ± iyileÅŸtirmesi / Draw probability improvement
+            # Beraberlik olasÃ„Â±lÃ„Â±Ã„Å¸Ã„Â± iyileÃ…Å¸tirmesi / Draw probability improvement
             draw_bias = 1.0 + self.rho
             lambda_home *= draw_bias
             lambda_away *= draw_bias
         
         return lambda_home, lambda_away, self.rho
 
-# 7. Ã‡ift Elo / Dual Elo
+# 7. Ãƒâ€¡ift Elo / Dual Elo
 class DualEloSystem:
-    """Attack/Defense ayrÄ± Elo sistemi / Separate Attack/Defense Elo system"""
+    """Attack/Defense ayrÃ„Â± Elo sistemi / Separate Attack/Defense Elo system"""
     def __init__(self, k_factor: int = 20, home_advantage: int = 40):
         self.k = k_factor
         self.home_adv = home_advantage
@@ -813,44 +813,44 @@ class DualEloSystem:
         self.defense_elo = {}
     
     def get_ratings(self, team: str) -> Tuple[float, float]:
-        """TakÄ±m rating'lerini dÃ¶ndÃ¼rÃ¼r / Returns team ratings"""
+        """TakÃ„Â±m rating'lerini dÃƒÂ¶ndÃƒÂ¼rÃƒÂ¼r / Returns team ratings"""
         return self.attack_elo.get(team, 1500.0), self.defense_elo.get(team, 1500.0)
     
     def update_ratings(self, home_team: str, away_team: str, home_goals: int, away_goals: int):
-        """Rating'leri gÃ¼nceller / Updates ratings"""
-        # Attack/defense ayrÄ± gÃ¼ncelleme mantÄ±ÄŸÄ± / Separate attack/defense update logic
+        """Rating'leri gÃƒÂ¼nceller / Updates ratings"""
+        # Attack/defense ayrÃ„Â± gÃƒÂ¼ncelleme mantÃ„Â±Ã„Å¸Ã„Â± / Separate attack/defense update logic
         pass
 
-# 8. SÄ±ralama Decay / Ranking Decay
+# 8. SÃ„Â±ralama Decay / Ranking Decay
 def apply_ranking_decay(rankings: Dict[str, float], months_ago: int) -> float:
-    """SÄ±ralama sinyali time-decay uygular / Applies time-decay to ranking signals"""
-    half_life = 12  # 12 ay yarÄ±-Ã¶mÃ¼r / 12 month half-life
+    """SÃ„Â±ralama sinyali time-decay uygular / Applies time-decay to ranking signals"""
+    half_life = 12  # 12 ay yarÃ„Â±-ÃƒÂ¶mÃƒÂ¼r / 12 month half-life
     decay_factor = 0.5 ** (months_ago / half_life)
     return rankings.get("fifa", 0.0) * decay_factor
 
 # 9. Market Kalibrasyonu / Market Calibration
 class MarketCalibrator:
-    """Piyasa olasÄ±lÄ±k kalibrasyonu / Market probability calibration"""
+    """Piyasa olasÃ„Â±lÃ„Â±k kalibrasyonu / Market probability calibration"""
     def __init__(self):
         self.isotonic_model = IsotonicRegression(out_of_bounds='clip')
         self.is_fitted = True
     
     def calibrate_probabilities(self, raw_probs: np.ndarray, actual_results: np.ndarray) -> np.ndarray:
-        """OlasÄ±lÄ±klarÄ± kalibre eder / Calibrates probabilities"""
+        """OlasÃ„Â±lÃ„Â±klarÃ„Â± kalibre eder / Calibrates probabilities"""
         if len(raw_probs) < 10 or not self.is_fitted:
             return raw_probs  # Yeterli veri yoksa / Not enough data
         return self.isotonic_model.transform(raw_probs)
 
-# 10. KÄ±rmÄ±zÄ± Kart Riski / Red Card Risk
+# 10. KÃ„Â±rmÃ„Â±zÃ„Â± Kart Riski / Red Card Risk
 def calculate_red_card_risk(referee_red_rate: float, team_red_rate: float) -> float:
-    """KÄ±rmÄ±zÄ± kart risk skoru hesaplar / Calculates red card risk score"""
+    """KÃ„Â±rmÃ„Â±zÃ„Â± kart risk skoru hesaplar / Calculates red card risk score"""
     base_risk = (referee_red_rate + team_red_rate) / 2
-    risk_impact = max(min(base_risk * 20, 6.0), 3.0)  # %3-6 arasÄ± etki / 3-6% impact
+    risk_impact = max(min(base_risk * 20, 6.0), 3.0)  # %3-6 arasÃ„Â± etki / 3-6% impact
     return -risk_impact  # Negatif etki / Negative impact
 
 # 11. Basit Bayes Modeli / Simple Bayes Model
 class HierarchicalGoalModel:
-    """HiyerarÅŸik gol modeli / Hierarchical goal model"""
+    """HiyerarÃ…Å¸ik gol modeli / Hierarchical goal model"""
     def __init__(self):
         self.league_priors = {}
         self.team_offense = {}
@@ -858,7 +858,7 @@ class HierarchicalGoalModel:
     
     def predict_goals(self, home_team: str, away_team: str, league: str) -> Tuple[float, float]:
         """Gol tahmini / Goal prediction"""
-        # Lig bazlÄ± prior + takÄ±m regularizasyon / League-based prior + team regularization
+        # Lig bazlÃ„Â± prior + takÃ„Â±m regularizasyon / League-based prior + team regularization
         home_prior = self.league_priors.get(league, 1.0)
         away_prior = self.league_priors.get(league, 1.0)
         home_attack = self.team_offense.get(home_team, home_prior)
@@ -872,13 +872,13 @@ class HierarchicalGoalModel:
 
 # 12. xG-Proxy Modeli / xG-Proxy Model
 def calculate_xg_proxy(shots: int, on_target: int, dangerous_attacks: int) -> float:
-    """xG proxy deÄŸeri hesaplar / Calculates xG proxy value"""
+    """xG proxy deÃ„Å¸eri hesaplar / Calculates xG proxy value"""
     if shots == 0:
         return 0.0
     conversion_rate = on_target / shots
     danger_ratio = dangerous_attacks / max(shots, 1)
     xg_proxy = (conversion_rate * 0.3 + danger_ratio * 0.7) * shots
-    return min(xg_proxy, 8.0)  # Maksimum sÄ±nÄ±r / Maximum limit
+    return min(xg_proxy, 8.0)  # Maksimum sÃ„Â±nÃ„Â±r / Maximum limit
 
 # 13. Kadro Etkisi / Squad Effect
 def calculate_squad_impact(missing_players: int, team_value_change: float) -> float:
@@ -890,50 +890,50 @@ def calculate_squad_impact(missing_players: int, team_value_change: float) -> fl
     elif missing_players == 1:
         return -2.0  # %2 negatif etki / 2% negative impact
     else:
-        # TakÄ±m deÄŸeri deÄŸiÅŸimine gÃ¶re etki / Impact based on team value change
+        # TakÃ„Â±m deÃ„Å¸eri deÃ„Å¸iÃ…Å¸imine gÃƒÂ¶re etki / Impact based on team value change
         return max(min(team_value_change * 10, 5.0), -5.0)
 
 # 14. Multi-market Konsistensi / Multi-market Consistency
 def check_market_consistency(odds_1x2: Dict, odds_ah: Dict, odds_total: Dict) -> float:
-    """Ã‡oklu pazar tutarlÄ±lÄ±k kontrolÃ¼ / Multi-market consistency check"""
+    """Ãƒâ€¡oklu pazar tutarlÃ„Â±lÃ„Â±k kontrolÃƒÂ¼ / Multi-market consistency check"""
     consistency_score = 100.0
     
-    # 1X2 vs Asian Handicap tutarlÄ±lÄ±k / 1X2 vs Asian Handicap consistency
+    # 1X2 vs Asian Handicap tutarlÃ„Â±lÃ„Â±k / 1X2 vs Asian Handicap consistency
     if odds_1x2 and odds_ah:
-        # Basit tutarlÄ±lÄ±k kontrolÃ¼ / Simple consistency check
+        # Basit tutarlÃ„Â±lÃ„Â±k kontrolÃƒÂ¼ / Simple consistency check
         home_prob = 1.0 / odds_1x2.get('home', 3.0)
-        ah_prob = 0.5  # Basit varsayÄ±m / Simple assumption
+        ah_prob = 0.5  # Basit varsayÃ„Â±m / Simple assumption
         diff = abs(home_prob - ah_prob)
         if diff > 0.1:  # %10'dan fazla fark / More than 10% difference
             consistency_score -= 20
     
-    # TutarsÄ±zlÄ±k iÃ§in kalibrasyon / Calibration for inconsistency
+    # TutarsÃ„Â±zlÃ„Â±k iÃƒÂ§in kalibrasyon / Calibration for inconsistency
     calibration = max(consistency_score / 100, 0.8)  # Minimum %80 / Minimum 80%
     return calibration
 
-# 15. GeliÅŸmiÅŸ Kalite Skoru / Advanced Quality Score
+# 15. GeliÃ…Å¸miÃ…Å¸ Kalite Skoru / Advanced Quality Score
 def calculate_advanced_quality(features: Dict) -> float:
-    """GeliÅŸmiÅŸ kalite skoru hesaplama / Advanced quality score calculation"""
+    """GeliÃ…Å¸miÃ…Å¸ kalite skoru hesaplama / Advanced quality score calculation"""
     base_score = calculate_quality(features)  # Temel skor / Base score
     
-    # Ek faktÃ¶rler / Additional factors
+    # Ek faktÃƒÂ¶rler / Additional factors
     bonus_points = 0
     
-    # Veri kaynaÄŸÄ± Ã§eÅŸitliliÄŸi / Data source diversity
+    # Veri kaynaÃ„Å¸Ã„Â± ÃƒÂ§eÃ…Å¸itliliÃ„Å¸i / Data source diversity
     sources = features.get("data_sources", [])
     if len(sources) >= 3:
         bonus_points += 10
     elif len(sources) >= 2:
         bonus_points += 5
     
-    # GÃ¼ncellik / Freshness
+    # GÃƒÂ¼ncellik / Freshness
     data_age = features.get("data_age_hours", 48)
     if data_age <= 1:
         bonus_points += 10
     elif data_age <= 6:
         bonus_points += 5
     
-    # Model Ã§eÅŸitliliÄŸi / Model diversity
+    # Model ÃƒÂ§eÃ…Å¸itliliÃ„Å¸i / Model diversity
     models_used = features.get("models_used", 1)
     if models_used >= 3:
         bonus_points += 10
@@ -943,7 +943,7 @@ def calculate_advanced_quality(features: Dict) -> float:
     final_score = min(base_score + bonus_points, 100.0)
     return max(final_score, 0.0)
 
-# ==================== ORTAK FONKSÄ°YONLAR / COMMON FUNCTIONS ====================
+# ==================== ORTAK FONKSÃ„Â°YONLAR / COMMON FUNCTIONS ====================
 
 def calculate_quality(features: Dict) -> float:
     """Basit kalite skoru (0-100) / Simple quality score (0-100)"""
@@ -953,7 +953,7 @@ def calculate_quality(features: Dict) -> float:
     score = sum(1 for k in keys if features.get(k)) / len(keys) * 100.0
     return round(score, 1)
 
-# --- GELÄ°ÅMÄ°Å KART/KORNER SÄ°STEMÄ° (Ã‡oklu Kaynak) ----------------------------
+# --- GELÃ„Â°Ã…ÂMÃ„Â°Ã…Â KART/KORNER SÃ„Â°STEMÃ„Â° (Ãƒâ€¡oklu Kaynak) ----------------------------
 def get_cards_corners_apifootball(area, comp, home_team, away_team):
     """API-Football'dan kart ve korner verileri"""
     if not APIFOOT:
@@ -964,15 +964,15 @@ def get_cards_corners_apifootball(area, comp, home_team, away_team):
         if hint:
             return hint, "APIF"
     except Exception as e:
-        log(f"API-Football kart/korner hatasÄ±: {e}")
+        log(f"API-Football kart/korner hatasÃ„Â±: {e}")
     
     return None, "APIF"
 
 def get_cards_corners_totalcorner(area, comp, home_team, away_team):
     """TotalCorner fallback - sadece korner verisi"""
     try:
-        # TotalCorner API simulasyonu (gerÃ§ek API entegrasyonu iÃ§in gÃ¼ncellenmeli)
-        # Bu Ã¶rnekte lig ortalamalarÄ± dÃ¶ndÃ¼rÃ¼yoruz
+        # TotalCorner API simulasyonu (gerÃƒÂ§ek API entegrasyonu iÃƒÂ§in gÃƒÂ¼ncellenmeli)
+        # Bu ÃƒÂ¶rnekte lig ortalamalarÃ„Â± dÃƒÂ¶ndÃƒÂ¼rÃƒÂ¼yoruz
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
         
         # Basit varyasyon
@@ -980,13 +980,13 @@ def get_cards_corners_totalcorner(area, comp, home_team, away_team):
         
         return {"mu_corners_hint": corners}, "TC"
     except Exception as e:
-        log(f"TotalCorner hatasÄ±: {e}")
+        log(f"TotalCorner hatasÃ„Â±: {e}")
         return None, "TC"
 
 def get_cards_corners_footystats(area, comp, home_team, away_team):
-    """FootyStats fallback - lig ortalamalarÄ±"""
+    """FootyStats fallback - lig ortalamalarÃ„Â±"""
     try:
-        # FootyStats lig ortalamalarÄ±
+        # FootyStats lig ortalamalarÃ„Â±
         cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
         
@@ -995,11 +995,11 @@ def get_cards_corners_footystats(area, comp, home_team, away_team):
             "mu_corners_hint": corner_base
         }, "FS"
     except Exception as e:
-        log(f"FootyStats hatasÄ±: {e}")
+        log(f"FootyStats hatasÃ„Â±: {e}")
         return None, "FS"
 
 
-# --- 6C: Kart/Korner kayÄ±tlarÄ±ndan takÄ±m bazlÄ± ortalama Ã¼retimi ---
+# --- 6C: Kart/Korner kayÃ„Â±tlarÃ„Â±ndan takÃ„Â±m bazlÃ„Â± ortalama ÃƒÂ¼retimi ---
 def _num_or_none(x):
     try:
         if x in (None, ""): return None
@@ -1009,10 +1009,10 @@ def _num_or_none(x):
         return None
 
 def _aggregate_cards_corners_from_recs(home_team: str, away_team: str, recs: list[dict]):
-    """recs: list[dict] (JSON/CSV kayÄ±tlarÄ±). DÃ¶ndÃ¼rÃ¼r: {"mu_cards_hint": x?, "mu_corners_hint": y?} veya None"""
+    """recs: list[dict] (JSON/CSV kayÃ„Â±tlarÃ„Â±). DÃƒÂ¶ndÃƒÂ¼rÃƒÂ¼r: {"mu_cards_hint": x?, "mu_corners_hint": y?} veya None"""
     if not recs:
         return None
-    ht = _norm_team(home_team); at = _norm_team(away_team)
+    ht = norm_team(home_team); at = norm_team(away_team)
     # candidate columns
     home_keys = ["home","home_team","hometeam","team1","ev","evsahibi","host"]
     away_keys = ["away","away_team","awayteam","team2","dep","deplasman","guest"]
@@ -1040,10 +1040,10 @@ def _aggregate_cards_corners_from_recs(home_team: str, away_team: str, recs: lis
         hv, av = None, None
         for k in home_keys:
             if k in d and d[k]:
-                hv = _norm_team(d[k]); break
+                hv = norm_team(d[k]); break
         for k in away_keys:
             if k in d and d[k]:
-                av = _norm_team(d[k]); break
+                av = norm_team(d[k]); break
         if not hv or not av:
             continue
         # Only consider rows where at least one of the two teams matches
@@ -1094,18 +1094,18 @@ def _aggregate_cards_corners_from_recs(home_team: str, away_team: str, recs: lis
     return out or None
 
 def get_cards_corners_advanced(area, comp, home_team, away_team):
-    """GeliÅŸtirilmiÅŸ kart/korner sistemi - zincirli fallback"""
-    # 1. Ã–ncelik: API-Football
+    """GeliÃ…Å¸tirilmiÃ…Å¸ kart/korner sistemi - zincirli fallback"""
+    # 1. Ãƒâ€“ncelik: API-Football
     result, source = get_cards_corners_apifootball(area, comp, home_team, away_team)
     if result:
-        log(f"Kart/Korner verisi {source}'dan alÄ±ndÄ±: {home_team} vs {away_team}")
+        log(f"Kart/Korner verisi {source}'dan alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
         return result, source
     
     # 2. Fallback: TotalCorner (sadece korner)
     result, source = get_cards_corners_totalcorner(area, comp, home_team, away_team)
     if result and "mu_corners_hint" in result:
-        log(f"Korner verisi {source}'dan alÄ±ndÄ±: {home_team} vs {away_team}")
-        # Kart verisi iÃ§in FootyStats'e ihtiyaÃ§ var
+        log(f"Korner verisi {source}'dan alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
+        # Kart verisi iÃƒÂ§in FootyStats'e ihtiyaÃƒÂ§ var
         cards_result, cards_source = get_cards_corners_footystats(area, comp, home_team, away_team)
         if cards_result and "mu_cards_hint" in cards_result:
             result["mu_cards_hint"] = cards_result["mu_cards_hint"]
@@ -1115,104 +1115,102 @@ def get_cards_corners_advanced(area, comp, home_team, away_team):
     # 3. Fallback: FootyStats (hem kart hem korner)
     result, source = get_cards_corners_footystats(area, comp, home_team, away_team)
     if result:
-        log(f"Kart/Korner verisi {source}'dan alÄ±ndÄ±: {home_team} vs {away_team}")
+        log(f"Kart/Korner verisi {source}'dan alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
         return result, source
     
-    # 4. Son Ã§are: lig bazlÄ± ortalamalar
+    # 4. Son ÃƒÂ§are: lig bazlÃ„Â± ortalamalar
     cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
-    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
+    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)    # 3. Fallback: KullanÃ„Â±cÃ„Â± URL listeleri (resmÃƒÂ® Ã¢â€ â€™ aÃƒÂ§Ã„Â±k kaynak)
+    try:
+        urls_cards = (os.getenv("CARDS_URLS") or "").strip()
+        urls_corners = (os.getenv("CORNERS_URLS") or "").strip()
+        merged = None
+        if urls_cards:
+            recs = fetch_records(urls_cards, kind="club")
+            agg = _aggregate_cards_corners_from_recs(home_team, away_team, recs) if recs else None
+            if agg:
+                merged = dict(merged or {}); merged.update(agg)
+        if urls_corners:
+            recs2 = fetch_records(urls_corners, kind="club")
+            agg2 = _aggregate_cards_corners_from_recs(home_team, away_team, recs2) if recs2 else None
+            if agg2:
+                merged = dict(merged or {}); merged.update(agg2)
+        if merged and ("mu_cards_hint" in merged or "mu_corners_hint" in merged):
+            log(f"Kart/Korner verisi URL fallback ile alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
+            return merged, "URL"
+    except Exception as e:
+        log(f"URL kart/korner fallback hatasÃ„Â±: {e}")
+    # 4. Fallback: Yerel snapshot
+    try:
+        import json, csv, io
+        # TekleÃ…Å¸miÃ…Å¸ bir snapshot dosyasÃ„Â± varsayalÃ„Â±m; isim yoksa atla
+        for path in ["data/cards_corners.json", "data/cards_corners.csv"]:
+            if not os.path.exists(path):
+                continue
+            if path.endswith(".json"):
+                with open(path, "r", encoding="utf-8") as f:
+                    obj = json.load(f)
+                recs = obj if isinstance(obj, list) else None
+            else:
+                with open(path, "r", encoding="utf-8") as f:
+                    rdr = csv.DictReader(f)
+                    recs = [ { (k.strip().lower() if isinstance(k,str) else k): v for k,v in row.items() } for row in rdr ]
+            if recs:
+                agg = _aggregate_cards_corners_from_recs(home_team, away_team, recs)
+                if agg and ("mu_cards_hint" in agg or "mu_corners_hint" in agg):
+                    log(f"Kart/Korner verisi yerel snapshot ile alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
+                    return agg, "LOCAL"
+    except Exception as e:
+        log(f"Yerel kart/korner fallback hatasÃ„Â±: {e}")
+
     
-    log(f"Kart/Korner verisi DEFAULT'tan alÄ±ndÄ±: {home_team} vs {away_team}")
+    log(f"Kart/Korner verisi DEFAULT'tan alÃ„Â±ndÃ„Â±: {home_team} vs {away_team}")
     return {
         "mu_cards_hint": cards_base,
         "mu_corners_hint": corner_base
     }, "DEFAULT"
 
-# 3. Fallback: KullanÄ±cÄ± URL listeleri (resmÃ® â†’ aÃ§Ä±k kaynak)
-try:
-    urls_cards = (os.getenv("CARDS_URLS") or "").strip()
-    urls_corners = (os.getenv("CORNERS_URLS") or "").strip()
-    merged = None
-    if urls_cards:
-        recs = fetch_records(urls_cards, kind="club")
-        agg = _aggregate_cards_corners_from_recs(home_team, away_team, recs) if recs else None
-        if agg:
-            merged = dict(merged or {}); merged.update(agg)
-    if urls_corners:
-        recs2 = fetch_records(urls_corners, kind="club")
-        agg2 = _aggregate_cards_corners_from_recs(home_team, away_team, recs2) if recs2 else None
-        if agg2:
-            merged = dict(merged or {}); merged.update(agg2)
-    if merged and ("mu_cards_hint" in merged or "mu_corners_hint" in merged):
-        log(f"Kart/Korner verisi URL fallback ile alÄ±ndÄ±: {home_team} vs {away_team}")
-        return merged, "URL"
-except Exception as e:
-    log(f"URL kart/korner fallback hatasÄ±: {e}")
-
-# 4. Fallback: Yerel snapshot
-try:
-    import json, csv, io
-    # TekleÅŸmiÅŸ bir snapshot dosyasÄ± varsayalÄ±m; isim yoksa atla
-    for path in ["data/cards_corners.json", "data/cards_corners.csv"]:
-        if not os.path.exists(path):
-            continue
-        if path.endswith(".json"):
-            with open(path, "r", encoding="utf-8") as f:
-                obj = json.load(f)
-            recs = obj if isinstance(obj, list) else None
-        else:
-            with open(path, "r", encoding="utf-8") as f:
-                rdr = csv.DictReader(f)
-                recs = [ { (k.strip().lower() if isinstance(k,str) else k): v for k,v in row.items() } for row in rdr ]
-        if recs:
-            agg = _aggregate_cards_corners_from_recs(home_team, away_team, recs)
-            if agg and ("mu_cards_hint" in agg or "mu_corners_hint" in agg):
-                log(f"Kart/Korner verisi yerel snapshot ile alÄ±ndÄ±: {home_team} vs {away_team}")
-                return agg, "LOCAL"
-except Exception as e:
-    log(f"Yerel kart/korner fallback hatasÄ±: {e}")
-
-# --- DENGELENMÄ°Å EV SAHÄ°BÄ° AVANTAJI -----------------------------------------
+# --- DENGELENMÃ„Â°Ã…Â EV SAHÃ„Â°BÃ„Â° AVANTAJI -----------------------------------------
 def home_adv_effective(area, competition, home_team, away_team):
     """
-    Dinamik ev sahibi avantajÄ± hesaplar - DENGELENMÄ°Å
+    Dinamik ev sahibi avantajÃ„Â± hesaplar - DENGELENMÃ„Â°Ã…Â
     """
     base_advantage = ELO_HOME_ADV
     
-    # Milli takÄ±m maÃ§larÄ±nda ev avantajÄ±nÄ± azalt
+    # Milli takÃ„Â±m maÃƒÂ§larÃ„Â±nda ev avantajÃ„Â±nÃ„Â± azalt
     comp_lower = (competition or "").lower()
     if "world cup" in comp_lower or "euro" in comp_lower or "qualification" in comp_lower:
         base_advantage *= 0.6  # %40 azalt
-        log(f"âš½ Milli takÄ±m maÃ§Ä± - ev avantajÄ± azaltÄ±ldÄ±: {base_advantage:.1f}")
+        log(f"Ã¢Å¡Â½ Milli takÃ„Â±m maÃƒÂ§Ã„Â± - ev avantajÃ„Â± azaltÃ„Â±ldÃ„Â±: {base_advantage:.1f}")
     
-    # Kadro deÄŸeri etkisi
+    # Kadro deÃ„Å¸eri etkisi
     value_advantage, value_source = calculate_value_advantage(home_team, away_team, area)
     
-    # EÄŸer her iki takÄ±m da default deÄŸerdeyse, ev avantajÄ±nÄ± sÄ±fÄ±rla
+    # EÃ„Å¸er her iki takÃ„Â±m da default deÃ„Å¸erdeyse, ev avantajÃ„Â±nÃ„Â± sÃ„Â±fÃ„Â±rla
     if "DEFAULT" in value_source or "CIES_DEFAULT" in value_source:
         value_factor = 0.5  # %50 azalt
-        log(f"âš–ï¸ Default deÄŸerler - ev avantajÄ± azaltÄ±ldÄ±")
+        log(f"Ã¢Å¡â€“Ã¯Â¸Â Default deÃ„Å¸erler - ev avantajÃ„Â± azaltÃ„Â±ldÃ„Â±")
     else:
         value_factor = 1.0 - abs(value_advantage) * 2.0
     
     final_advantage = base_advantage * value_factor
     
-    log(f"Ev avantajÄ±: {home_team} vs {away_team} -> {final_advantage:.1f} "
+    log(f"Ev avantajÃ„Â±: {home_team} vs {away_team} -> {final_advantage:.1f} "
         f"(base: {ELO_HOME_ADV}, value_factor: {value_factor:.2f})")
     
     return clamp(final_advantage, 10.0, 80.0)  # Min 10, max 80
 
-# --- LÄ°G/KUPA FÄ°LTRESÄ° -------------------------------------------------------
-# KullanÄ±cÄ± isteÄŸi: yalnÄ±zca ÅŸu lig/kupalar:
-# Ä°ngiltere: Premier League, Championship
-# Ä°spanya: La Liga, La Liga 2
-# Ä°talya: Serie A, Serie B
+# --- LÃ„Â°G/KUPA FÃ„Â°LTRESÃ„Â° -------------------------------------------------------
+# KullanÃ„Â±cÃ„Â± isteÃ„Å¸i: yalnÃ„Â±zca Ã…Å¸u lig/kupalar:
+# Ã„Â°ngiltere: Premier League, Championship
+# Ã„Â°spanya: La Liga, La Liga 2
+# Ã„Â°talya: Serie A, Serie B
 # Almanya: Bundesliga, 2. Bundesliga
 # Fransa: Ligue 1, Ligue 2
-# TÃ¼rkiye: SÃ¼per Lig, 1. Lig
+# TÃƒÂ¼rkiye: SÃƒÂ¼per Lig, 1. Lig
 # Hollanda: Eredivisie, Eerste Divisie
 # Portekiz: Primeira Liga, Liga Portugal 2
-# BelÃ§ika: Pro League, Challenger Pro League
+# BelÃƒÂ§ika: Pro League, Challenger Pro League
 # UEFA: UCL, UEL, UECL, Super Cup, EURO, EURO Elemeleri, Nations League & Finals
 # FIFA: World Cup, Club World Cup
 
@@ -1220,7 +1218,7 @@ def _n(s):
     # normalize for comparisons
     s = (s or "").strip().lower()
     s = s.replace("trendyol ", "")
-    s = s.replace("division", "divisiÃ³n").replace("segunda", "la liga 2")
+    s = s.replace("division", "divisiÃƒÂ³n").replace("segunda", "la liga 2")
     s = s.replace("ligue one", "ligue 1")
     s = s.replace("la liga smartbank", "la liga 2")
     s = s.replace("keuken kampioen divisie", "eerste divisie")
@@ -1239,7 +1237,7 @@ _ALLOWED_PAIRS = {
     ("france", "ligue 1"),
     ("france", "ligue 2"),
     ("turkey", "super lig"),
-    ("turkey", "sÃ¼per lig"),
+    ("turkey", "sÃƒÂ¼per lig"),
     ("turkey", "1. lig"),
     ("netherlands", "eredivisie"),
     ("netherlands", "eerste divisie"),
@@ -1251,7 +1249,7 @@ _ALLOWED_PAIRS = {
     ("belgium", "challenger pro league"),
 }
 
-# UEFA/FIFA turnuvalarÄ± ad bazlÄ± kabul
+# UEFA/FIFA turnuvalarÃ„Â± ad bazlÃ„Â± kabul
 _UEFA_ALLOW_PAT = [
     "champions league",
     "uefa champions",
@@ -1275,7 +1273,7 @@ _FIFA_ALLOW_PAT = [
 ]
 
 def is_allowed_competition(area_name: str, comp_name: str) -> bool:
-    # KadÄ±n liglerini filtrele
+    # KadÃ„Â±n liglerini filtrele
     if is_women_competition(area_name, comp_name):
         return False
         
@@ -1286,11 +1284,11 @@ def is_allowed_competition(area_name: str, comp_name: str) -> bool:
     a, c = _n(area_name), _n(comp_name)
     if (a, c) in _ALLOWED_PAIRS:
         return True
-    if a in ("turkey", "tÃ¼rkiye") and c in ("super lig", "sÃ¼per lig", "1. lig"):
+    if a in ("turkey", "tÃƒÂ¼rkiye") and c in ("super lig", "sÃƒÂ¼per lig", "1. lig"):
         return True
     if a == "germany" and c in ("2. bundesliga", "bundesliga 2"):
         return True
-    if a == "spain" and c in ("la liga 2", "segunda divisiÃ³n", "laliga2", "segundadivisiÃ³n"):
+    if a == "spain" and c in ("la liga 2", "segunda divisiÃƒÂ³n", "laliga2", "segundadivisiÃƒÂ³n"):
         return True
     if a == "portugal" and c in ("liga portugal 2", "segunda liga"):
         return True
@@ -1321,40 +1319,40 @@ OLD_LEAGUES = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesli
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
 
-# Elo / Form ayarlarÄ±
+# Elo / Form ayarlarÃ„Â±
 ELO_K = float(os.getenv("ELO_K", "24"))
-ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÃœÅÃœRÃœLDÃœ: 60 -> 40
+ELO_HOME_ADV = float(os.getenv("ELO_HOME_ADV", "40"))  # DÃƒÅ“Ã…ÂÃƒÅ“RÃƒÅ“LDÃƒÅ“: 60 -> 40
 FORM_LOOKBACK = int(os.getenv("FORM_LOOKBACK", "10"))
 FORM_DAYS = int(os.getenv("FORM_DAYS", "120"))
 ALLOW_STATE_FILE = (os.getenv("ALLOW_STATE_FILE", "1") == "1")
 
-# Otomatik Ã¶ÄŸrenme ayarlarÄ±
+# Otomatik ÃƒÂ¶Ã„Å¸renme ayarlarÃ„Â±
 W_MKT_INIT = float(os.getenv("W_MKT_INIT", "0.45"))  # ARTIRILDI: 0.35 -> 0.45
 LEARN_RATE = float(os.getenv("LEARN_RATE", "0.05"))
 GOAL_LR = float(os.getenv("GOAL_LR", "0.02"))
 PRED_MATCH_WINDOW_HRS = int(os.getenv("PRED_MATCH_WINDOW_HRS", "48"))
 
-# Table/Streak ayarlarÄ±
+# Table/Streak ayarlarÃ„Â±
 TABLE_WEIGHT = float(os.getenv("TABLE_WEIGHT", "0.12"))
 STREAK_UNIT = float(os.getenv("STREAK_UNIT", "0.02"))
 STREAK_MAX = float(os.getenv("STREAK_MAX", "0.08"))
 
-# SERVICE modu zaman ayarlarÄ± (TR saati)
+# SERVICE modu zaman ayarlarÃ„Â± (TR saati)
 PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))
-RESULTS_HOUR = int(os.getenv("RESULTS_HOUR", "4"))  # <â€” ONAYLI: Ertesi gÃ¼n 04:00
-RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))  # <â€” ONAYLI: :00
+RESULTS_HOUR = int(os.getenv("RESULTS_HOUR", "4"))  # <Ã¢â‚¬â€ ONAYLI: Ertesi gÃƒÂ¼n 04:00
+RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))  # <Ã¢â‚¬â€ ONAYLI: :00
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
 
-# --- AkÄ±llÄ± Hava Modu --------------------------------------------------------
+# --- AkÃ„Â±llÃ„Â± Hava Modu --------------------------------------------------------
 WEATHER_SMART = (os.getenv("WEATHER_SMART", "1") == "1")
 WEATHER_AREAS = set(
     s.strip().lower() for s in (os.getenv("WEATHER_AREAS", "England,Spain,Italy,Germany,France,Turkey,Netherlands,Portugal,Belgium").split(",")) if s.strip()
 )
 
 def weather_enabled(area_name: str, comp_name: str) -> bool:
-    """Hava sadece bÃ¼yÃ¼k lig ve UEFA/FIFA maÃ§larÄ±nda alÄ±nsÄ±n (performans iÃ§in)."""
+    """Hava sadece bÃƒÂ¼yÃƒÂ¼k lig ve UEFA/FIFA maÃƒÂ§larÃ„Â±nda alÃ„Â±nsÃ„Â±n (performans iÃƒÂ§in)."""
     a = _n(area_name)
     c = _n(comp_name)
     if a in {s.lower() for s in WEATHER_AREAS}:
@@ -1363,14 +1361,14 @@ def weather_enabled(area_name: str, comp_name: str) -> bool:
         return True
     return False
 
-# --- Hava: takÄ±m -> ÅŸehir eÅŸleÅŸmesi ------------------------------------------
+# --- Hava: takÃ„Â±m -> Ã…Å¸ehir eÃ…Å¸leÃ…Å¸mesi ------------------------------------------
 def guess_city_from_team(team_name: str):
     t = (team_name or "").lower()
     overrides = {
-        # TÃ¼rkiye
+        # TÃƒÂ¼rkiye
         "galatasaray": "Istanbul",
         "fenerbahce": "Istanbul",
-        "beÅŸiktaÅŸ": "Istanbul",
+        "beÃ…Å¸iktaÃ…Å¸": "Istanbul",
         "besiktas": "Istanbul",
         "basaksehir": "Istanbul",
         "trabzonspor": "Trabzon",
@@ -1381,12 +1379,12 @@ def guess_city_from_team(team_name: str):
         "leverkusen": "Leverkusen",
         "schalke": "Gelsenkirchen",
         "st. pauli": "Hamburg",
-        # Ä°spanya
+        # Ã„Â°spanya
         "real madrid": "Madrid",
         "barcelona": "Barcelona",
-        "atlÃ©tico": "Madrid",
+        "atlÃƒÂ©tico": "Madrid",
         "atletico": "Madrid",
-        # Ä°talya
+        # Ã„Â°talya
         "juventus": "Turin",
         "inter": "Milan",
         "milan": "Milan",
@@ -1406,10 +1404,10 @@ def guess_city_from_team(team_name: str):
         "fluminense": "Rio de Janeiro",
         "botafogo": "Rio de Janeiro",
         "gremio": "Porto Alegre",
-        "grÃªmio": "Porto Alegre",
+        "grÃƒÂªmio": "Porto Alegre",
         "internacional": "Porto Alegre",
         "atletico mineiro": "Belo Horizonte",
-        # Milli takÄ±mlar
+        # Milli takÃ„Â±mlar
         "finland": "Helsinki",
         "lithuania": "Vilnius", 
         "scotland": "Glasgow",
@@ -1446,7 +1444,7 @@ def fetch_weather_note(home_team):
         prec = wx["hourly"]["precipitation"][:6]
         wind = wx["hourly"]["wind_speed_10m"][:6]
         tavg = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
-        return f"Hava: {tavg:.0f}Â°C, yaÄŸÄ±ÅŸ {pavg:.1f}mm, rÃ¼zgÃ¢r {wavg:.0f} km/s"
+        return f"Hava: {tavg:.0f}Ã‚Â°C, yaÃ„Å¸Ã„Â±Ã…Å¸ {pavg:.1f}mm, rÃƒÂ¼zgÃƒÂ¢r {wavg:.0f} km/s"
     except Exception:
         return None
 
@@ -1455,10 +1453,10 @@ def parse_weather(wx_text):
         return (None, None)
     wind = None; precip = None
     try:
-        if "rÃ¼zgÃ¢r" in wx_text:
-            wind = safe_float(wx_text.split("rÃ¼zgÃ¢r")[1].split("km/s")[0].strip().split()[-1], None)
-        if "yaÄŸÄ±ÅŸ" in wx_text:
-            precip = safe_float(wx_text.split("yaÄŸÄ±ÅŸ")[1].split("mm")[0].strip().split()[-1], None)
+        if "rÃƒÂ¼zgÃƒÂ¢r" in wx_text:
+            wind = safe_float(wx_text.split("rÃƒÂ¼zgÃƒÂ¢r")[1].split("km/s")[0].strip().split()[-1], None)
+        if "yaÃ„Å¸Ã„Â±Ã…Å¸" in wx_text:
+            precip = safe_float(wx_text.split("yaÃ„Å¸Ã„Â±Ã…Å¸")[1].split("mm")[0].strip().split()[-1], None)
     except Exception:
         pass
     return (wind, precip)
@@ -1505,7 +1503,7 @@ def fetch_fd_fixtures(date_str):
     log(f"FD fixtures (TR={date_str}) -> {len(out)}")
     return out
 
-# --- 2. Fallback: API-Football (tarih bazlÄ±) ---------------------------------
+# --- 2. Fallback: API-Football (tarih bazlÃ„Â±) ---------------------------------
 def fetch_apifoot_fixtures(date_str):
     if not APIFOOT:
         return []
@@ -1514,7 +1512,7 @@ def fetch_apifoot_fixtures(date_str):
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
     if not data:
-        log(f"APIF fixtures (TR={date_str}) -> 0 (boÅŸ/eriÅŸilemedi)")
+        log(f"APIF fixtures (TR={date_str}) -> 0 (boÃ…Å¸/eriÃ…Å¸ilemedi)")
         return out
     try:
         for item in (data.get("response") or []):
@@ -1551,7 +1549,7 @@ def fetch_apifoot_fixtures(date_str):
     log(f"APIF fixtures (TR={date_str}) -> {len(out)}")
     return out
 
-# --- OpenLigaDB fallback (yalnÄ±z Almanya alt ligleri) ------------------------
+# --- OpenLigaDB fallback (yalnÃ„Â±z Almanya alt ligleri) ------------------------
 def fetch_openligadb_day(date_str):
     y, m, d = date_str.split("-")
     leagues = [(lg.strip(), int(y)) for lg in OLD_LEAGUES if lg.strip()]
@@ -1640,17 +1638,17 @@ def fetch_odds_fixtures(date_str):
     log(f"OddsAPI fixtures (TR={date_str}) -> {len(out)}")
     return out
 
-# --- FikstÃ¼r toplayÄ±cÄ± zincir ------------------------------------------------
+# --- FikstÃƒÂ¼r toplayÃ„Â±cÃ„Â± zincir ------------------------------------------------
 def fetch_fixtures(date_str):
     fixtures = fetch_fd_fixtures(date_str)
     if not fixtures:
-        log("FD boÅŸ â†’ API-Football fallback deneniyorâ€¦")
+        log("FD boÃ…Å¸ Ã¢â€ â€™ API-Football fallback deneniyorÃ¢â‚¬Â¦")
         fixtures = fetch_apifoot_fixtures(date_str)
     if not fixtures:
-        log("API-Football da boÅŸ â†’ OpenLigaDB fallback deneniyorâ€¦")
+        log("API-Football da boÃ…Å¸ Ã¢â€ â€™ OpenLigaDB fallback deneniyorÃ¢â‚¬Â¦")
         fixtures = fetch_openligadb_day(date_str)
     if not fixtures:
-        log("OpenLigaDB de boÅŸ â†’ The Odds API event fallback deneniyorâ€¦")
+        log("OpenLigaDB de boÃ…Å¸ Ã¢â€ â€™ The Odds API event fallback deneniyorÃ¢â‚¬Â¦")
         fixtures = fetch_odds_fixtures(date_str)
     return fixtures
 
@@ -1697,10 +1695,10 @@ def fetch_odds_avg(area, comp, home, away):
         if not comps:
             continue
         t1 = norm(ev.get("home_team")); t2 = norm(ev.get("away_team"))
-        # GeliÅŸtirilmiÅŸ takÄ±m eÅŸleÅŸtirme - benzerlik kullan
+        # GeliÃ…Å¸tirilmiÃ…Å¸ takÃ„Â±m eÃ…Å¸leÃ…Å¸tirme - benzerlik kullan
         h_sim = team_similarity(h, t1)
         a_sim = team_similarity(a, t2)
-        if h_sim >= 0.75 and a_sim >= 0.75:  # %75 benzerlik eÅŸiÄŸi
+        if h_sim >= 0.75 and a_sim >= 0.75:  # %75 benzerlik eÃ…Å¸iÃ„Å¸i
             prices = {"home":[], "draw":[], "away":[]}
             for bk in comps:
                 for mk in bk.get("markets", []):
@@ -1727,7 +1725,7 @@ def fetch_odds_avg(area, comp, home, away):
     p1, px, p2 = (1/o1)/inv, (1/ox)/inv, (1/o2)/inv
     return {"odds": (o1, ox, o2), "probs": (p1, px, p2)}
 
-# --- Poisson + Lig tabanÄ± ----------------------------------------------------
+# --- Poisson + Lig tabanÃ„Â± ----------------------------------------------------
 LEAGUE_GOAL_BASE = {
     "Turkey": 2.60,
     "England": 2.75,
@@ -1779,7 +1777,7 @@ def blend_model_market(model_probs, market_probs):
     w = get_w_mkt()
     return tuple((1-w)*m + w*mk for m, mk in zip(model_probs, market_probs))
 
-# --- Kart / Korner bazlarÄ± ---------------------------------------------------
+# --- Kart / Korner bazlarÃ„Â± ---------------------------------------------------
 LEAGUE_CARD_BASE = {
     "Germany": 4.7,
     "Turkey": 5.1,
@@ -2142,7 +2140,7 @@ def _streak_from_any(fix):
         return net, f" | Streak (pos proxy) {hs_pos}/{N} vs {as_pos}/{N} (Adj {int(net*100)}%)"
     return 0.0, ""
 
-# --- GELÄ°ÅMÄ°Å DERECELENDÄ°RME (Kaynak Etiketleme) -----------------------------
+# --- GELÃ„Â°Ã…ÂMÃ„Â°Ã…Â DERECELENDÃ„Â°RME (Kaynak Etiketleme) -----------------------------
 def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None, source_info=""):
     cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
     corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
@@ -2185,7 +2183,7 @@ def rate_fixture(fx, odds_info):
     area = fx["area"] or "Europe"
     tot = base_total_goals(area)
     
-    # Dinamik ev sahibi avantajÄ± - DENGELENMÄ°Å
+    # Dinamik ev sahibi avantajÃ„Â± - DENGELENMÃ„Â°Ã…Â
     home_advantage = home_adv_effective(area, fx.get("competition",""), fx["home"], fx["away"])
     
     ah = 1.12
@@ -2193,7 +2191,7 @@ def rate_fixture(fx, odds_info):
     lam_h = max(0.2, tot*0.5*ah + noise)
     lam_a = max(0.2, tot*0.5*(2 - ah) - noise)
     
-    # Hava (AkÄ±llÄ± Mod)
+    # Hava (AkÃ„Â±llÃ„Â± Mod)
     wx = None
     if (not WEATHER_SMART) or weather_enabled(area, fx.get("competition","")):
         wx = fetch_weather_note(fx["home"])
@@ -2210,13 +2208,13 @@ def rate_fixture(fx, odds_info):
         except Exception:
             pass
     
-    # Elo etkisi (milli takÄ±m destekli)
+    # Elo etkisi (milli takÃ„Â±m destekli)
     Eh = elo_get(area, fx["home"]); Ea = elo_get(area, fx["away"])
     elo_diff = (Eh + home_advantage) - Ea
     elo_adj = clamp((elo_diff/400.0)*0.15, -0.20, 0.20)
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
     
-    # Kadro deÄŸeri avantajÄ± (Transfermarkt + Fallback)
+    # Kadro deÃ„Å¸eri avantajÃ„Â± (Transfermarkt + Fallback)
     value_advantage, value_source = calculate_value_advantage(fx["home"], fx["away"], area)
     lam_h *= (1.0 + value_advantage); lam_a *= (1.0 - value_advantage)
     
@@ -2265,7 +2263,7 @@ def rate_fixture(fx, odds_info):
     m_home, m_draw, m_away = poisson_prob(lam_h, lam_a)
     model_probs = (m_home, m_draw, m_away)
     
-    # Market karÄ±ÅŸÄ±mÄ±
+    # Market karÃ„Â±Ã…Å¸Ã„Â±mÃ„Â±
     market_probs = None
     odds_txt = ""
     if odds_info:
@@ -2281,23 +2279,23 @@ def rate_fixture(fx, odds_info):
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
     
-    # GELÄ°ÅMÄ°Å Kart/Korner â€” Ã‡oklu Kaynak Fallback
+    # GELÃ„Â°Ã…ÂMÃ„Â°Ã…Â Kart/Korner Ã¢â‚¬â€ Ãƒâ€¡oklu Kaynak Fallback
     apihint, kk_source = get_cards_corners_advanced(fx.get("area"), fx.get("competition"), fx.get("home"), fx.get("away"))
     
     kk = model_cards_corners(area, lam_h, lam_a, wx, apifoot_hint=apihint, source_info=kk_source)
     
-    # Kaynak etiketli Ã§Ä±ktÄ±
-    kk_txt = (f" | Korner Î¼â‰ˆ{kk['mu_corners']:.1f} (Ãœst8.5 {int(kk['p_over_corners_8_5']*100)}% / "
-              f"Ãœst9.5 {int(kk['p_over_corners_9_5']*100)}%) [{kk['source']}]"
-              f" | Kart Î¼â‰ˆ{kk['mu_cards']:.1f} (Ãœst3.5 {int(kk['p_over_cards_3_5']*100)}%) [{kk['source']}]")
+    # Kaynak etiketli ÃƒÂ§Ã„Â±ktÃ„Â±
+    kk_txt = (f" | Korner ÃÂ¼Ã¢â€°Ë†{kk['mu_corners']:.1f} (ÃƒÅ“st8.5 {int(kk['p_over_corners_8_5']*100)}% / "
+              f"ÃƒÅ“st9.5 {int(kk['p_over_corners_9_5']*100)}%) [{kk['source']}]"
+              f" | Kart ÃÂ¼Ã¢â€°Ë†{kk['mu_cards']:.1f} (ÃƒÅ“st3.5 {int(kk['p_over_cards_3_5']*100)}%) [{kk['source']}]")
     
-    # Kadro deÄŸeri bilgisi (kaynak etiketli)
+    # Kadro deÃ„Å¸eri bilgisi (kaynak etiketli)
     home_value, home_source = get_team_value(fx["home"], area)
     away_value, away_source = get_team_value(fx["away"], area)
-    value_txt = f" | Kadro: {home_value:.0f}Mâ‚¬ [{home_source}] vs {away_value:.0f}Mâ‚¬ [{away_source}]"
+    value_txt = f" | Kadro: {home_value:.0f}MÃ¢â€šÂ¬ [{home_source}] vs {away_value:.0f}MÃ¢â€šÂ¬ [{away_source}]"
     
     wx_txt = f" | {wx}" if wx else ""
-    note = (f"SeÃ§im: {pick} | GÃ¼ven: {conf_pct}% | Î»_h/Î»_a: {lam_h:.2f}/{lam_a:.2f}"
+    note = (f"SeÃƒÂ§im: {pick} | GÃƒÂ¼ven: {conf_pct}% | ÃÂ»_h/ÃÂ»_a: {lam_h:.2f}/{lam_a:.2f}"
             f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}")
     
     return {
@@ -2318,7 +2316,7 @@ def rate_fixture(fx, odds_info):
         "kk_source": kk_source
     }
 
-# --- Tahmin/sonuÃ§ eÅŸleÅŸme & Ã¶ÄŸrenme yardÄ±mcÄ±larÄ± -----------------------------
+# --- Tahmin/sonuÃƒÂ§ eÃ…Å¸leÃ…Å¸me & ÃƒÂ¶Ã„Å¸renme yardÃ„Â±mcÃ„Â±larÃ„Â± -----------------------------
 def match_key_from_fixture(fx):
     if fx.get("id"):
         return f"{fx.get('source','?')}:{fx['id']}"
@@ -2329,19 +2327,19 @@ def alt_key_from_names(home, away, date_str):
     return f"{norm_team(home)}|{norm_team(away)}|{date_str.replace('-','')}"
 
 def find_prediction_for_result(result):
-    """SonuÃ§ iÃ§in tahmin bulur (yakÄ±n isim eÅŸleÅŸtirmeli)"""
+    """SonuÃƒÂ§ iÃƒÂ§in tahmin bulur (yakÃ„Â±n isim eÃ…Å¸leÃ…Å¸tirmeli)"""
     home, away, date_str = result["home"], result["away"], result.get("date", "")
     
-    # Ã–nce tam eÅŸleÅŸme dene
+    # Ãƒâ€“nce tam eÃ…Å¸leÃ…Å¸me dene
     altk = alt_key_from_names(home, away, date_str)
     if altk in STATE["pred_store"]:
         return STATE["pred_store"][altk]
     
-    # ID bazlÄ± eÅŸleÅŸme
+    # ID bazlÃ„Â± eÃ…Å¸leÃ…Å¸me
     if result.get("id_key") and result["id_key"] in STATE["pred_store"]:
         return STATE["pred_store"][result["id_key"]]
     
-    # YakÄ±n isim eÅŸleÅŸtirmesi - GELÄ°ÅTÄ°RÄ°LMÄ°Å VERSÄ°YON
+    # YakÃ„Â±n isim eÃ…Å¸leÃ…Å¸tirmesi - GELÃ„Â°Ã…ÂTÃ„Â°RÃ„Â°LMÃ„Â°Ã…Â VERSÃ„Â°YON
     all_pred_keys = list(STATE["pred_store"].keys())
     all_team_pairs = []
     
@@ -2353,33 +2351,33 @@ def find_prediction_for_result(result):
                 if pred_date == date_str.replace("-", ""):
                     all_team_pairs.append((pred_home, pred_away, key))
     
-    # Ã‡ift yÃ¶nlÃ¼ eÅŸleÅŸtirme - GELÄ°ÅTÄ°RÄ°LMÄ°Å
+    # Ãƒâ€¡ift yÃƒÂ¶nlÃƒÂ¼ eÃ…Å¸leÃ…Å¸tirme - GELÃ„Â°Ã…ÂTÃ„Â°RÃ„Â°LMÃ„Â°Ã…Â
     best_match = None
     best_score = 0.0
     
     for pred_home, pred_away, key in all_team_pairs:
-        # Normal eÅŸleÅŸme
+        # Normal eÃ…Å¸leÃ…Å¸me
         home_sim = team_similarity(home, pred_home)
         away_sim = team_similarity(away, pred_away)
         normal_score = (home_sim + away_sim) / 2
         
-        # Ters eÅŸleÅŸme (API'de home/away ÅŸaÅŸmÄ±ÅŸ olabilir)
+        # Ters eÃ…Å¸leÃ…Å¸me (API'de home/away Ã…Å¸aÃ…Å¸mÃ„Â±Ã…Å¸ olabilir)
         home_sim_rev = team_similarity(home, pred_away)
         away_sim_rev = team_similarity(away, pred_home)
         reverse_score = (home_sim_rev + away_sim_rev) / 2
         
-        # En iyi skoru seÃ§
+        # En iyi skoru seÃƒÂ§
         current_score = max(normal_score, reverse_score)
         
-        if current_score > best_score and current_score >= 0.75:  # %75 benzerlik eÅŸiÄŸi
+        if current_score > best_score and current_score >= 0.75:  # %75 benzerlik eÃ…Å¸iÃ„Å¸i
             best_score = current_score
             best_match = key
             
             if current_score == reverse_score:
-                log(f"Ters eÅŸleÅŸme bulundu: {home}/{away} â‰ˆ {pred_away}/{pred_home} "
+                log(f"Ters eÃ…Å¸leÃ…Å¸me bulundu: {home}/{away} Ã¢â€°Ë† {pred_away}/{pred_home} "
                     f"(benzerlik: {current_score:.2f})")
             else:
-                log(f"Normal eÅŸleÅŸme bulundu: {home}/{away} â‰ˆ {pred_home}/{pred_away} "
+                log(f"Normal eÃ…Å¸leÃ…Å¸me bulundu: {home}/{away} Ã¢â€°Ë† {pred_home}/{pred_away} "
                     f"(benzerlik: {current_score:.2f})")
     
     if best_match:
@@ -2420,7 +2418,7 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
     }
     STATE["pred_store"][mk] = rec
     
-    # Ä°kincil anahtar: isim+tarih
+    # Ã„Â°kincil anahtar: isim+tarih
     altk = alt_key_from_names(fx.get("home"), fx.get("away"), (fx.get("utc_kickoff") or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%Y-%m-%d"))
     STATE["pred_store"][altk] = rec
 
@@ -2428,15 +2426,15 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 def send_mail(subject, body):
     body = (body or "").strip()
     if not body:
-        body = "(Bu e-postada iÃ§erik Ã¼retilemedi / maÃ§ bulunamadÄ±.)"
+        body = "(Bu e-postada iÃƒÂ§erik ÃƒÂ¼retilemedi / maÃƒÂ§ bulunamadÃ„Â±.)"
     msg = EmailMessage()
     msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
     msg.set_content(body)
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
         s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
-    log(f"Mail gÃ¶nderildi: {subject}")
+    log(f"Mail gÃƒÂ¶nderildi: {subject}")
 
-# --- SonuÃ§ Ã§ekiciler ---------------------------------------------------------
+# --- SonuÃƒÂ§ ÃƒÂ§ekiciler ---------------------------------------------------------
 def fetch_results_fd(date_str):
     if not FD_TOKEN:
         return []
@@ -2487,7 +2485,7 @@ def fetch_results_apifoot(date_str):
             continue
         st = (((item.get("fixture") or {}).get("status") or {}).get("short") or "").upper()
         if st not in ("FT","AET","PEN","MATCH_FINISHED"):
-            # bitmiÅŸ say
+            # bitmiÃ…Å¸ say
             continue
         goals = (item.get("goals") or {})
         gh, ga = goals.get("home"), goals.get("away")
@@ -2513,7 +2511,7 @@ def fetch_results_apifoot(date_str):
 def fetch_results(date_str):
     r = fetch_results_fd(date_str)
     if not r:
-        log("FD sonuÃ§ yok â†’ API-Football sonuÃ§ deneniyorâ€¦")
+        log("FD sonuÃƒÂ§ yok Ã¢â€ â€™ API-Football sonuÃƒÂ§ deneniyorÃ¢â‚¬Â¦")
         r = fetch_results_apifoot(date_str)
     return r
 
@@ -2521,10 +2519,10 @@ def fetch_results(date_str):
 def report_predictions(date_str):
     fixtures = fetch_fixtures(date_str)
     if not fixtures:
-        send_mail(f"GÃ¼nÃ¼n Tahminleri | {date_str}", "BugÃ¼n iÃ§in tahmin Ã§Ä±karÄ±lacak maÃ§ bulunamadÄ±.")
+        send_mail(f"GÃƒÂ¼nÃƒÂ¼n Tahminleri | {date_str}", "BugÃƒÂ¼n iÃƒÂ§in tahmin ÃƒÂ§Ã„Â±karÃ„Â±lacak maÃƒÂ§ bulunamadÃ„Â±.")
         return
     
-    lines = [f"âš½ GÃ¼nÃ¼n Tahminleri â€” {date_str} (Transfermarkt + Milli TakÄ±m Elo + CIES/FootyStats + API-Football + TotalCorner + Kaynak Etiketleme + Ev Sahibi Dengeleme)\n"]
+    lines = [f"Ã¢Å¡Â½ GÃƒÂ¼nÃƒÂ¼n Tahminleri Ã¢â‚¬â€ {date_str} (Transfermarkt + Milli TakÃ„Â±m Elo + CIES/FootyStats + API-Football + TotalCorner + Kaynak Etiketleme + Ev Sahibi Dengeleme)\n"]
     top = []; hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     
@@ -2540,36 +2538,36 @@ def report_predictions(date_str):
             continue
             
         ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M")
-        line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} â€” {rated['note']}"
+        line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} Ã¢â‚¬â€ {rated['note']}"
         lines.append(line)
         
         bucket = hi if rated["confidence"] >= HIGH_ALERT else top
         bucket.append((rated["confidence"], line))
     
     if len(lines) == 1:
-        lines.append("Filtreler nedeniyle listelenecek maÃ§ kalmadÄ± (MIN_CONF yÃ¼ksek olabilir).")
+        lines.append("Filtreler nedeniyle listelenecek maÃƒÂ§ kalmadÃ„Â± (MIN_CONF yÃƒÂ¼ksek olabilir).")
     
     top.sort(reverse=True)
-    best = [f"\nğŸ† En GÃ¼Ã§lÃ¼ {TOP_N} SeÃ§im:"] + [" " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
+    best = [f"\nÄŸÅ¸Ââ€  En GÃƒÂ¼ÃƒÂ§lÃƒÂ¼ {TOP_N} SeÃƒÂ§im:"] + [" " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
     
     hi_block = []
     if hi:
         hi.sort(reverse=True)
-        hi_block.append("\nğŸ”” YÃ¼ksek GÃ¼ven SeÃ§imler:")
+        hi_block.append("\nÄŸÅ¸â€â€ YÃƒÂ¼ksek GÃƒÂ¼ven SeÃƒÂ§imler:")
         for c, l in hi:
             hi_block.append(" " + l.replace("- ","").strip())
     
     body = "\n".join(lines + [""] + best + hi_block)
     save_state(STATE)
-    send_mail(f"GÃ¼nÃ¼n Tahminleri | {date_str}", body)
+    send_mail(f"GÃƒÂ¼nÃƒÂ¼n Tahminleri | {date_str}", body)
 
 def report_results(date_str):
     results = fetch_results(date_str)
-    lines = [f"ğŸ“Š GÃ¼nÃ¼n SonuÃ§larÄ± â€” {date_str}", ""]
+    lines = [f"ÄŸÅ¸â€œÅ  GÃƒÂ¼nÃƒÂ¼n SonuÃƒÂ§larÃ„Â± Ã¢â‚¬â€ {date_str}", ""]
     
     if not results:
-        lines.append("BugÃ¼n iÃ§in sonuÃ§ bulunamadÄ±.")
-        send_mail(f"GÃ¼nÃ¼n SonuÃ§larÄ± | {date_str}", "\n".join(lines))
+        lines.append("BugÃƒÂ¼n iÃƒÂ§in sonuÃƒÂ§ bulunamadÃ„Â±.")
+        send_mail(f"GÃƒÂ¼nÃƒÂ¼n SonuÃƒÂ§larÃ„Â± | {date_str}", "\n".join(lines))
         return
     
     total = 0
@@ -2585,16 +2583,16 @@ def report_results(date_str):
         area = res["area"]
         outcome_idx = 0 if gh>ga else 1 if gh==ga else 2
         
-        # GeliÅŸtirilmiÅŸ tahmin bulma
+        # GeliÃ…Å¸tirilmiÃ…Å¸ tahmin bulma
         pred = find_prediction_for_result(res)
         fuzzy_used = False
         
         if not pred:
-            lines.append(f"â“ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadÄ±)")
+            lines.append(f"Ã¢Ââ€œ {res['home']} {gh}-{ga} {res['away']} (tahmin bulunamadÃ„Â±)")
             continue
         
-        # YakÄ±n eÅŸleÅŸme kullanÄ±ldÄ±ysa iÅŸaretle
-        if "ğŸ”" in str(pred.get("note", "")):
+        # YakÃ„Â±n eÃ…Å¸leÃ…Å¸me kullanÃ„Â±ldÃ„Â±ysa iÃ…Å¸aretle
+        if "ÄŸÅ¸â€Â" in str(pred.get("note", "")):
             fuzzy_used = True
             matched_with_fuzzy += 1
         
@@ -2612,20 +2610,20 @@ def report_results(date_str):
         brier_market_sum += bk
         brier_blend_sum += bb
         
-        # Elo Ã¶ÄŸrenme - dinamik ev avantajÄ± ile
+        # Elo ÃƒÂ¶Ã„Å¸renme - dinamik ev avantajÃ„Â± ile
         result_hw = 1.0 if outcome_idx==0 else 0.0 if outcome_idx==2 else 0.5
         
-        # Ã–ncelikle kayÄ±tlÄ± home_advantage deÄŸerini kullan
+        # Ãƒâ€“ncelikle kayÃ„Â±tlÃ„Â± home_advantage deÃ„Å¸erini kullan
         home_advantage = pred.get("home_advantage")
         if home_advantage is None:
-            # Yedek: maÃ§ bilgileriyle yeniden hesapla
+            # Yedek: maÃƒÂ§ bilgileriyle yeniden hesapla
             home_advantage = home_adv_effective(
                 area, res.get("competition", ""), res["home"], res["away"]
             )
         
         elo_update(area, res["home"], res["away"], result_hw, home_advantage)
         
-        # goal_scale Ã¶ÄŸrenme
+        # goal_scale ÃƒÂ¶Ã„Å¸renme
         goals = gh + ga
         cur_scale = get_goal_scale(area)
         expected_tot = base_total_goals(area)
@@ -2636,11 +2634,11 @@ def report_results(date_str):
         s, n = goal_stats.get(area, (0,0))
         goal_stats[area] = (s+goals, n+1)
         
-        mark = "âœ…" if ok else "âŒ"
-        fuzzy_indicator = " ğŸ”" if fuzzy_used else ""
+        mark = "Ã¢Å“â€¦" if ok else "Ã¢ÂÅ’"
+        fuzzy_indicator = " ÄŸÅ¸â€Â" if fuzzy_used else ""
         lines.append(f"{mark}{fuzzy_indicator} {res['home']} {gh}-{ga} {res['away']} | Tahmin: {pred['pick']} ({pred['conf_pct']}%)")
     
-    # w_mkt Ã¶ÄŸrenme (model vs market performansÄ±na gÃ¶re)
+    # w_mkt ÃƒÂ¶Ã„Å¸renme (model vs market performansÃ„Â±na gÃƒÂ¶re)
     if total > 0:
         acc = 100.0 * correct / total
         bm_avg = brier_model_sum/total
@@ -2666,23 +2664,23 @@ def report_results(date_str):
         STATE["metrics"]["brier_blend"] = bb_avg
         
         lines.append("")
-        lines.append(f"ğŸ¯ DoÄŸruluk: {acc:.1f}% | Brier (model/market/blend): "
+        lines.append(f"ÄŸÅ¸ÂÂ¯ DoÃ„Å¸ruluk: {acc:.1f}% | Brier (model/market/blend): "
                     f"{bm_avg:.3f}/{(bk_avg if bk_avg is not None else float('nan')):.3f}/{bb_avg:.3f}")
-        lines.append(f"âš–ï¸ w_mkt: {old_w:.2f} â†’ {get_w_mkt():.2f}")
+        lines.append(f"Ã¢Å¡â€“Ã¯Â¸Â w_mkt: {old_w:.2f} Ã¢â€ â€™ {get_w_mkt():.2f}")
         
         if matched_with_fuzzy > 0:
-            lines.append(f"ğŸ” {matched_with_fuzzy} maÃ§ yakÄ±n eÅŸleÅŸtirme ile bulundu")
+            lines.append(f"ÄŸÅ¸â€Â {matched_with_fuzzy} maÃƒÂ§ yakÃ„Â±n eÃ…Å¸leÃ…Å¸tirme ile bulundu")
     
     if goal_stats:
         lines.append("")
-        lines.append("ğŸ“ˆ Goal-scale gÃ¼ncellemeleri:")
+        lines.append("ÄŸÅ¸â€œË† Goal-scale gÃƒÂ¼ncellemeleri:")
         for area, (s, n) in goal_stats.items():
             lines.append(f" - {area}: avg_goals={s/max(1,n):.2f} | goal_scale={get_goal_scale(area):.3f}")
     
     save_state(STATE)
-    send_mail(f"GÃ¼nÃ¼n SonuÃ§larÄ± | {date_str}", "\n".join(lines))
+    send_mail(f"GÃƒÂ¼nÃƒÂ¼n SonuÃƒÂ§larÃ„Â± | {date_str}", "\n".join(lines))
 
-# --- SERVICE (otomatik zamanlayÄ±cÄ±) ------------------------------------------
+# --- SERVICE (otomatik zamanlayÃ„Â±cÃ„Â±) ------------------------------------------
 def _today_str_tr(dt=None):
     return (dt or datetime.now(TR_TZ)).strftime("%Y-%m-%d")
 
@@ -2696,26 +2694,26 @@ def _time_reached_tr(target_h, target_m=0):
     return now >= tgt
 
 def run_service_loop():
-    """SÃ¼rekli Ã§alÄ±ÅŸÄ±r; TR 10:00'da bugÃ¼nÃ¼n tahmini, ertesi gÃ¼n TR 04:00'da DÃœNÃœN sonuÃ§larÄ±nÄ± gÃ¶nderir. AynÄ± gÃ¼n iÃ§inde tekrarÄ± engellemek iÃ§in STATE iÃ§inde tarih izler."""
-    log(f"SERVICE baÅŸlatÄ±ldÄ± (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve ertesi gÃ¼n {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d} [dÃ¼ne ait])")
+    """SÃƒÂ¼rekli ÃƒÂ§alÃ„Â±Ã…Å¸Ã„Â±r; TR 10:00'da bugÃƒÂ¼nÃƒÂ¼n tahmini, ertesi gÃƒÂ¼n TR 04:00'da DÃƒÅ“NÃƒÅ“N sonuÃƒÂ§larÃ„Â±nÃ„Â± gÃƒÂ¶nderir. AynÃ„Â± gÃƒÂ¼n iÃƒÂ§inde tekrarÃ„Â± engellemek iÃƒÂ§in STATE iÃƒÂ§inde tarih izler."""
+    log(f"SERVICE baÃ…Å¸latÃ„Â±ldÃ„Â± (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve ertesi gÃƒÂ¼n {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d} [dÃƒÂ¼ne ait])")
     while True:
         try:
             now_tr = datetime.now(TR_TZ)
             today = _today_str_tr(now_tr)
             
-            # Tahmin: bugÃ¼n 10:00 veya sonrasÄ± ve bugÃ¼n henÃ¼z gÃ¶nderilmemiÅŸse
+            # Tahmin: bugÃƒÂ¼n 10:00 veya sonrasÃ„Â± ve bugÃƒÂ¼n henÃƒÂ¼z gÃƒÂ¶nderilmemiÃ…Å¸se
             if (STATE.get("last_pred_date") != today) and _time_reached_tr(PREDICTION_HOUR, 0):
-                log("SERVICE: Tahmin zamanÄ± geldi â†’ rapor hazÄ±rlanÄ±yorâ€¦")
+                log("SERVICE: Tahmin zamanÃ„Â± geldi Ã¢â€ â€™ rapor hazÃ„Â±rlanÃ„Â±yorÃ¢â‚¬Â¦")
                 report_predictions(today)
                 STATE["last_pred_date"] = today
                 save_state(STATE)
             
-            # SonuÃ§: ertesi gÃ¼n 04:00'te, dÃ¼nkÃ¼ tarihe gÃ¶re
+            # SonuÃƒÂ§: ertesi gÃƒÂ¼n 04:00'te, dÃƒÂ¼nkÃƒÂ¼ tarihe gÃƒÂ¶re
             if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
-                res_date = _yesterday_str_tr(now_tr)  # her zaman DÃœN
-                log(f"SERVICE: SonuÃ§ zamanÄ± geldi (dÃ¼n={res_date}) â†’ rapor hazÄ±rlanÄ±yorâ€¦")
+                res_date = _yesterday_str_tr(now_tr)  # her zaman DÃƒÅ“N
+                log(f"SERVICE: SonuÃƒÂ§ zamanÃ„Â± geldi (dÃƒÂ¼n={res_date}) Ã¢â€ â€™ rapor hazÃ„Â±rlanÃ„Â±yorÃ¢â‚¬Â¦")
                 report_results(res_date)
-                STATE["last_res_date"] = today  # bugÃ¼nÃ¼ iÅŸaretle, tekrarÄ± engelle
+                STATE["last_res_date"] = today  # bugÃƒÂ¼nÃƒÂ¼ iÃ…Å¸aretle, tekrarÃ„Â± engelle
                 save_state(STATE)
                 
         except Exception:
@@ -2726,10 +2724,10 @@ def run_service_loop():
             except Exception:
                 pass
         
-        # Ä°nce adÄ±mlÄ± uyku: 20 saniye
+        # Ã„Â°nce adÃ„Â±mlÃ„Â± uyku: 20 saniye
         time.sleep(20)
 
-# --- Ã‡alÄ±ÅŸtÄ±rÄ±cÄ± -------------------------------------------------------------
+# --- Ãƒâ€¡alÃ„Â±Ã…Å¸tÃ„Â±rÃ„Â±cÃ„Â± -------------------------------------------------------------
 def main():
     try:
         now_utc = datetime.now(timezone.utc)
@@ -2749,10 +2747,10 @@ def main():
         if mode == "PREDICT":
             report_predictions(date_str)
         elif mode == "RESULTS":
-            # OnaylÄ± politika: RESULTS her zaman DÃœN'e bakar
+            # OnaylÃ„Â± politika: RESULTS her zaman DÃƒÅ“N'e bakar
             report_results(_yesterday_str_tr(tr_now))
         else:
-            send_mail("Tahmin Botu | Bilgi", "AUTO/SERVICE dÄ±ÅŸÄ± Ã§alÄ±ÅŸtÄ±rma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
+            send_mail("Tahmin Botu | Bilgi", "AUTO/SERVICE dÃ„Â±Ã…Å¸Ã„Â± ÃƒÂ§alÃ„Â±Ã…Å¸tÃ„Â±rma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
             
     except Exception:
         tb = traceback.format_exc(); log(tb)
@@ -2768,9 +2766,9 @@ if __name__ == "__main__":
 # --- Dinlenme (Rest) Etkisi ---
 def calculate_rest_effect(days_home, days_away):
     """
-    Pozitif deÄŸer = avantaj, negatif = dezavantaj.
+    Pozitif deÃ„Å¸er = avantaj, negatif = dezavantaj.
     Basit sezgisel:
-      <2 gÃ¼n: -0.15   |   2-3 gÃ¼n: -0.10   |   4-6 gÃ¼n: 0.00   |   >6 gÃ¼n: +0.05
+      <2 gÃƒÂ¼n: -0.15   |   2-3 gÃƒÂ¼n: -0.10   |   4-6 gÃƒÂ¼n: 0.00   |   >6 gÃƒÂ¼n: +0.05
     """
     def f(d):
         try:
