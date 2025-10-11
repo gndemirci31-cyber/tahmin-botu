@@ -80,13 +80,6 @@ jobs:
           FOOTBALL_DATA_TOKEN:   ${{ secrets.FOOTBALL_DATA_TOKEN }}
           ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
           APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
-          # Fallback veri kaynakları (CSV/JSON linkleri)
-          CARDS_URLS:            ${{ secrets.CARDS_URLS }}
-          CORNERS_URLS:          ${{ secrets.CORNERS_URLS }}
-          RESULTS_URLS:          ${{ secrets.RESULTS_URLS }}
-          # Opsiyonel: kullanıyorsan
-          FOOTYSTATS_API_KEY:    ${{ secrets.FOOTYSTATS_API_KEY }}
-          # Çalışma modu
           MODE:                  ${{ steps.pick.outputs.mode }}
 
           # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
@@ -114,11 +107,9 @@ jobs:
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
-        run: |
-          mkdir -p snapshots
-          python mailer.py --mode "${{ steps.pick.outputs.mode }}"
+        run: python mailer.py
 
-      - name: State'i kalıcılaştır (yalnızca RESULTS)
+      - name: State’i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
         run: |
           set -e
@@ -132,7 +123,7 @@ jobs:
               git push
               echo "✔ model_state.json commit/push edildi."
             else
-              echo "ℹ state'te değişiklik yok."
+              echo "ℹ state’te değişiklik yok."
             fi
           else
             echo "ℹ model_state.json bulunamadı veya boş."
