@@ -53,8 +53,6 @@ Modlar:
 import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from email.header import Header
-from email.utils import formataddr
 import requests
 from difflib import SequenceMatcher
 import numpy as np
@@ -914,38 +912,89 @@ def check_market_consistency(odds_1x2: Dict, odds_ah: Dict, odds_total: Dict) ->
     return calibration
 
 # 15. Gelişmiş Kalite Skoru / Advanced Quality Score
-def calculate_advanced_quality(features: Dict) -> float:
-    """Gelişmiş kalite skoru hesaplama / Advanced quality score calculation"""
-    base_score = calculate_quality(features)  # Temel skor / Base score
-    
-    # Ek faktörler / Additional factors
-    bonus_points = 0
-    
-    # Veri kaynağı çeşitliliği / Data source diversity
-    sources = features.get("data_sources", [])
-    if len(sources) >= 3:
-        bonus_points += 10
-    elif len(sources) >= 2:
-        bonus_points += 5
-    
-    # Güncellik / Freshness
-    data_age = features.get("data_age_hours", 48)
-    if data_age <= 1:
-        bonus_points += 10
-    elif data_age <= 6:
-        bonus_points += 5
-    
-    # Model çeşitliliği / Model diversity
-    models_used = features.get("models_used", 1)
-    if models_used >= 3:
-        bonus_points += 10
-    elif models_used >= 2:
-        bonus_points += 5
-    
-    final_score = min(base_score + bonus_points, 100.0)
-    return max(final_score, 0.0)
 
-# ==================== ORTAK FONKSİYONLAR / COMMON FUNCTIONS ====================
+# --- Helper: Rank delta (UEFA/Lig vs FIFA) -> z-like scale ---
+def compute_rank_delta_z(f):
+    try:
+        if f.get("is_national"):
+            def _rz(r):
+                try: return -(float(r) - 50.0) / 40.0
+                except Exception: return 0.0
+            return _rz(f.get("home_fifa_rank")) - _rz(f.get("away_fifa_rank"))
+        comp = (f.get("competition") or "").lower()
+        if any(k in comp for k in ["uefa","champions","europa","conference"]):
+            return float(f.get("uefa_rank_delta_z", f.get("elo_delta_z", 0.0)))
+        return float(f.get("table_delta_z", 0.0))
+    except Exception:
+        return 0.0
+
+def calculate_advanced_quality(features: Dict) -> float:
+    """Gelişmiş kalite skoru (adaptive blend). Güvenli ve minimal eklerle yenilendi."""
+    import os, math
+    try:
+        base_score = float(calculate_quality(features))
+    except Exception:
+        base_score = 0.0
+
+    q = base_score
+    bonus_points = 0.0
+
+    # Veri kaynağı çeşitliliği (Data sources)
+    try:
+        sources = features.get("data_sources", []) or []
+        if len(sources) >= 3:
+            bonus_points += 10.0
+        elif len(sources) >= 2:
+            bonus_points += 5.0
+    except Exception:
+        pass
+
+    # Güncellik (Freshness) — kaba bir ölçek
+    try:
+        age = float(features.get("data_age_hours", 48.0))
+        if age <= 6:   bonus_points += 5.0
+        elif age <= 24: bonus_points += 3.0
+        elif age <= 48: bonus_points += 1.0
+    except Exception:
+        pass
+
+    q += bonus_points
+
+    # --- Adaptif harman: birincil (kadro+sıralama) vs ikincil (elo, form, rest, hava) ---
+    try:
+        sv = float(features.get("squad_value_delta_z", 0.0))
+    except Exception:
+        sv = 0.0
+    rk = compute_rank_delta_z(features)
+
+    try:
+        T = float(os.getenv("MARGIN_THRESH", "0.8"))
+    except Exception:
+        T = 0.8
+
+    margin = abs(sv) + abs(rk)
+    alpha  = max(0.0, min(1.0, margin / T))  # 0..1; büyüdükçe birinciller baskın
+
+    # Birincil katkı
+    q += alpha * (0.28 * sv + 0.22 * rk)
+
+    # İkincil katkı (yakınsa daha etkili)
+    if alpha < 1.0:
+        sec = 0.0
+        try:   sec += 0.12 * float(features.get("form_ppg_delta_z", 0.0))
+        except Exception: pass
+        try:   sec += 0.10 * float(features.get("elo_delta_z", 0.0))
+        except Exception: pass
+        try:   sec += 0.05 * float(features.get("rest_effect_delta", 0.0))
+        except Exception: pass
+        try:   sec += 0.04 * float(features.get("weather_under_bias", 0.0))
+        except Exception: pass
+        q += (1.0 - alpha) * sec
+
+    # Son sınırla ve döndür
+    final_score = max(0.0, min(100.0, q))
+    return final_score
+
 
 def calculate_quality(features: Dict) -> float:
     """Basit kalite skoru (0-100) / Simple quality score (0-100)"""
@@ -1041,14 +1090,17 @@ def home_adv_effective(area, competition, home_team, away_team):
     Dinamik ev sahibi avantajı hesaplar - DENGELENMİŞ
     """
     base_advantage = ELO_HOME_ADV
-    
-    # Milli takım maçlarında ev avantajını azalt
-    comp_lower = (competition or "").lower()
-    if "world cup" in comp_lower or "euro" in comp_lower or "qualification" in comp_lower:
-        base_advantage *= 0.6  # %40 azalt
-        log(f"⚽ Milli takım maçı - ev avantajı azaltıldı: {base_advantage:.1f}")
-    
-    # Kadro değeri etkisi
+
+    # Nötr saha: ev avantajı sıfırlanır (diğer sinyaller aynen kullanılır)
+    comp_lower = (competition or '').lower()
+    if 'neutral' in comp_lower:
+        return 0.0
+
+    # Milli maçlarda ev avantajını üst sınırla (daha gerçekçi)
+    if any(k in comp_lower for k in ['world cup','euro','qualification','nations league','friendly']):
+        base_advantage = min(base_advantage, 35.0)
+
+    #  Kadro değeri etkisi
     value_advantage, value_source = calculate_value_advantage(home_team, away_team, area)
     
     # Eğer her iki takım da default değerdeyse, ev avantajını sıfırla
@@ -2289,21 +2341,17 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 
 # --- Mail --------------------------------------------------------------------
 def send_mail(subject, body):
-    try:
-        body = (body or "").strip()
-        msg = EmailMessage()
-        msg["From"] = formataddr((str(Header("Tahmin Botu", "utf-8")), GMAIL_USER))
-        msg["To"] = GMAIL_TO
-        msg["Subject"] = str(Header(subject, "utf-8"))
-        msg.set_content(body, subtype="plain", charset="utf-8")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as s:
-            s.login(GMAIL_USER, GMAIL_PASS)
-            s.send_message(msg)
-        log(f"Mail gönderildi: {subject}")
-        return True
-    except Exception as e:
-        log(f"Mail gönderme hatası: {e}")
-        return False
+    body = (body or "").strip()
+    if not body:
+        body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
+    msg = EmailMessage()
+    msg["From"] = GMAIL_USER; msg["To"] = GMAIL_TO; msg["Subject"] = subject
+    msg.set_content(body)
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+        s.login(GMAIL_USER, GMAIL_PASS); s.send_message(msg)
+    log(f"Mail gönderildi: {subject}")
+
+# --- Sonuç çekiciler ---------------------------------------------------------
 def fetch_results_fd(date_str):
     if not FD_TOKEN:
         return []
