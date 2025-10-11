@@ -2,12 +2,14 @@ name: Tahmin Botu
 
 on:
   schedule:
+    # TR 10:00 (UTC 07:00) → Günün Tahminleri
     - cron: "0 7 * * *"
+    # TR 04:00 (UTC 01:00, ertesi gün) → Dünün Sonuçları & Öğrenme
     - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
-        description: "AUTO / PREDICT / RESULTS"
+        description: "Manuel çalışma modu (AUTO / PREDICT / RESULTS)"
         required: false
         default: "AUTO"
 
@@ -24,52 +26,53 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0  # state push için geçmiş gerekir
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install deps
+      - name: Bağımlılıkları yükle
         run: pip install -r requirements.txt
 
-      - name: Pick mode
+      - name: Sabah/Gece seçimi (cron'a göre)
         id: pick
         env:
           SCHEDULE: ${{ github.event.schedule }}
           INPUT_MODE: ${{ github.event.inputs.mode }}
         run: |
           set -e
-          if [ "${INPUT_MODE}" = "PREDICT" ] || [ "${INPUT_MODE}" = "RESULTS" ]; then
-            echo "mode=${INPUT_MODE}" >> "${GITHUB_OUTPUT}"; exit 0; fi
-          if [ "${SCHEDULE}" = "0 7 * * *" ]; then echo "mode=PREDICT" >> "${GITHUB_OUTPUT}"; exit 0; fi
-          if [ "${SCHEDULE}" = "0 1 * * *" ]; then echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"; exit 0; fi
+          echo "::notice::event.schedule='$SCHEDULE' input.mode='$INPUT_MODE'"
+
+          # Manuel mod verilmişse onu kullan
+          if [ "$INPUT_MODE" = "PREDICT" ] || [ "$INPUT_MODE" = "RESULTS" ]; then
+            echo "mode=$INPUT_MODE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Zamanlayıcıdan geldiyse cron değerine göre karar ver
+          if [ "$SCHEDULE" = "0 7 * * *" ]; then
+            echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+            exit 0
+          elif [ "$SCHEDULE" = "0 1 * * *" ]; then
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Güvenlik: beklenmeyen durumda UTC saate göre
           HOUR="$(date -u +%H)"
-          if [ "${HOUR}" = "07" ]; then echo "mode=PREDICT" >> "${GITHUB_OUTPUT}";
-          elif [ "${HOUR}" = "01" ]; then echo "mode=RESULTS" >> "${GITHUB_OUTPUT}";
-          else echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"; fi
+          if [ "$HOUR" = "07" ]; then
+            echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+          elif [ "$HOUR" = "01" ]; then
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+          else
+            # Varsayılan: RESULTS
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+          fi
 
-      # ---- Diagnostics (safe heredoc) ----
-      - name: Fingerprint mailer.py
-        shell: bash
-        run: |
-          cat > check.py <<'PY'
-import hashlib, pathlib, re, os
-p = pathlib.Path('mailer.py')
-exists = p.exists()
-print('exists:', exists, 'size:', (p.stat().st_size if exists else None))
-if exists:
-    b = p.read_bytes()
-    print('sha1:', hashlib.sha1(b).hexdigest()[:12])
-    s = b.decode('utf-8','ignore')
-    m = re.search(r"MODEL_VERSION\s*=\s*os\.getenv\(\s*['\"]MODEL_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)", s)
-    print('MODEL_VERSION:', (m.group(1) if m else None))
-    print('has_DElo_tag:', ('ΔElo' in s) or ('DElo' in s))
-PY
-          python check.py
-
-      - name: Run bot
+      - name: Botu çalıştır
         env:
           GMAIL_USER:            ${{ secrets.GMAIL_USER }}
           GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
@@ -77,26 +80,37 @@ PY
           FOOTBALL_DATA_TOKEN:   ${{ secrets.FOOTBALL_DATA_TOKEN }}
           ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
           APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
+          # Fallback veri kaynakları (CSV/JSON linkleri)
           CARDS_URLS:            ${{ secrets.CARDS_URLS }}
           CORNERS_URLS:          ${{ secrets.CORNERS_URLS }}
           RESULTS_URLS:          ${{ secrets.RESULTS_URLS }}
+          # Opsiyonel: kullanıyorsan
           FOOTYSTATS_API_KEY:    ${{ secrets.FOOTYSTATS_API_KEY }}
+          # Çalışma modu
           MODE:                  ${{ steps.pick.outputs.mode }}
+
+          # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
           TOP_N:                 ${{ vars.TOP_N                 || '5'   }}
           MIN_CONF:              ${{ vars.MIN_CONF              || '0'   }}
           HIGH_ALERT:            ${{ vars.HIGH_ALERT            || '90'  }}
           SPLIT_HIGH_ALERT_MAIL: ${{ vars.SPLIT_HIGH_ALERT_MAIL || '0'   }}
+
           OLD_LEAGUES:           ${{ vars.OLD_LEAGUES           || 'bundesliga,bundesliga2' }}
           ODDS_TTL_MIN:          ${{ vars.ODDS_TTL_MIN          || '15'  }}
+
           ELO_K:                 ${{ vars.ELO_K                 || '24'  }}
           ELO_HOME_ADV:          ${{ vars.ELO_HOME_ADV          || '60'  }}
           FORM_LOOKBACK:         ${{ vars.FORM_LOOKBACK         || '10'  }}
           FORM_DAYS:             ${{ vars.FORM_DAYS             || '120' }}
           ALLOW_STATE_FILE:      ${{ vars.ALLOW_STATE_FILE      || '1'   }}
+
+          # Otomatik öğrenme & eşleştirme
           W_MKT_INIT:            ${{ vars.W_MKT_INIT            || '0.35' }}
           LEARN_RATE:            ${{ vars.LEARN_RATE            || '0.05' }}
           GOAL_LR:               ${{ vars.GOAL_LR               || '0.02' }}
           PRED_MATCH_WINDOW_HRS: ${{ vars.PRED_MATCH_WINDOW_HRS || '48'   }}
+
+          # Table/Streak ayarları
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
@@ -104,19 +118,22 @@ PY
           mkdir -p snapshots
           python mailer.py --mode "${{ steps.pick.outputs.mode }}"
 
-      - name: Persist state (RESULTS only)
+      - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
         run: |
           set -e
           if [ -f model_state.json ] && [ -s model_state.json ]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            # Değişiklik var mı?
             if ! git diff --quiet -- model_state.json; then
               git add model_state.json
               git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
               git push
+              echo "✔ model_state.json commit/push edildi."
             else
-              echo "no state changes"
+              echo "ℹ state'te değişiklik yok."
             fi
           else
-            echo "state file missing or empty"
+            echo "ℹ model_state.json bulunamadı veya boş."
+          fi
