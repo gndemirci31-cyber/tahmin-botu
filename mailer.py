@@ -1,7 +1,37 @@
+def _ensure_state_defaults(state: dict) -> dict:
+    try:
+        state.setdefault("elo", {})
+        state.setdefault("goal_scale", {})
+        state.setdefault("w_mkt", 0.45)
+        state.setdefault("pred_store", {})
+        state.setdefault("metrics", {})
+        state.setdefault("last_saved", None)
+        state.setdefault("last_pred_date", None)
+        state.setdefault("last_res_date", None)
+    except Exception:
+        state = {"elo": {}, "goal_scale": {}, "w_mkt": 0.45, "pred_store": {}, "metrics": {},
+                 "last_saved": None, "last_pred_date": None, "last_res_date": None}
+    return state
+
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GÜNCELLENMİŞ (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ)
-(GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LİG/KUPA FİLTRESİ + Akıllı Hava + SERVICE modu + Transfermarkt + Milli Takım Elo + Çoklu Fallback Sistemi + Kaynak Etiketleme + Ev Sahibi Dengeleme)
+Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER)
+
+GÜNCEL: Elo + OppAdj Form + Hava + Odds + API-Football ipucu + High-Alert ayrı mail + Otomatik Öğrenme (w_mkt & goal_scale) + TableAdj (standings) + Streak (W/L) + LİG/KUPA FİLTRESİ + Akıllı Hava + SERVICE modu + Transfermarkt + Milli Takım Elo + Çoklu Fallback Sistemi + Kaynak Etiketleme + Ev Sahibi Dengeleme + YENİ ÖZELLİKLER
+
+YENİ ÖZELLİKLER:
+- Dixon-Coles Modeli
+- Çift Elo Sistemi (Attack/Defense)
+- Kapanış Oranı Drift
+- Hakem/Dinlenme Etkisi
+- Sıralama Decay
+- Market Kalibrasyonu
+- Kırmızı Kart Riski
+- Hiyerarşik Gol Modeli
+- xG-Proxy Modeli
+- Kadro Etkisi
+- Multi-market Konsistensi
+- Gelişmiş Kalite Skoru
 
 Ücretsiz kaynaklar:
 - football-data.org (Fixtures/sonuçlar/standings) -> X-Auth-Token: FOOTBALL_DATA_TOKEN
@@ -20,11 +50,42 @@ Modlar:
 - MODE=SERVICE -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
-import os, math, time, json, smtplib, traceback, re, urllib.parse, random
+import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
 from difflib import SequenceMatcher
+import numpy as np
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+from scipy.optimize import minimize
+from sklearn.isotonic import IsotonicRegression
+
+
+# --- Model/version & retention ---
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.11-a")
+STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
+FREEZE_MINUTES = int(os.getenv("FREEZE_MINUTES", "60"))
+
+# ==================== AYARLAR / SETTINGS ====================
+STATE_PATH = os.getenv("STATE_PATH", "model_state.json")
+SNAPSHOT_DIR = os.getenv("SNAPSHOT_DIR", "snapshots")
+
+# Dosya yazma izinleri (1: açık, 0: kapalı) / File write permissions (1: on, 0: off)
+ALLOW_STATE_FILE = int(os.getenv("ALLOW_STATE_FILE", "1"))
+
+# Kadın ve U-yaş maçlarını dahil etme bayrakları / Women and U-age matches inclusion flags
+ALLOW_WOMEN = int(os.getenv("ALLOW_WOMEN", "0"))
+ALLOW_U21 = int(os.getenv("ALLOW_U21", "0"))
+
+# Model sabitleri / Model constants
+ELO_HOME_ADV = 40
+W_MKT_INIT = 0.45
+MIN_QUALITY = int(os.getenv("MIN_QUALITY", "0"))
+
+# Yeni özellik bayrakları / New feature flags
+GOAL_MODEL = os.getenv("GOAL_MODEL", "POISSON")  # DC|POISSON|HIER
+ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 
 # --- Ortak yardımcılar -------------------------------------------------------
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
@@ -72,6 +133,104 @@ def season_for_today():
     now = datetime.now(TR_TZ)
     y = now.year
     return y if now.month >= 7 else (y - 1)
+
+# ==================== YARDIMCILAR / HELPERS ====================
+
+def _ensure_dir(p: Path) -> bool:
+    """Klasör oluşturur - güvenli versiyon / Create directory - safe version"""
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+        return True
+    except Exception as e:
+        log(f"[FS] Klasör oluşturulamadı / Directory creation failed: {p} | {e}")
+        return False
+
+def save_snapshot(predictions: Dict, date: Optional[str] = None) -> None:
+    """Tahmin snapshot'ını kaydeder / Saves prediction snapshot"""
+    date = date or datetime.now().strftime("%Y-%m-%d")
+    snap_dir = Path(SNAPSHOT_DIR)
+    if not _ensure_dir(snap_dir):
+        log("[Snapshot] Kayıt YAPILAMADI (klasör açılamadı) / Save FAILED (directory error)")
+        return
+    path = snap_dir / f"pred_{date}.json"
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(predictions, f, ensure_ascii=False, indent=2)
+        log(f"[Snapshot] Kaydedildi / Saved: {path}")
+    except Exception as e:
+        log(f"[Snapshot] Kaydetme hatası / Save error: {e}")
+
+def load_snapshot(date: Optional[str] = None) -> Dict:
+    """Tahmin snapshot'ını yükler / Loads prediction snapshot"""
+    date = date or datetime.now().strftime("%Y-%m-%d")
+    path = Path(SNAPSHOT_DIR) / f"pred_{date}.json"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        log(f"[Snapshot] Yüklendi / Loaded: {path}")
+        return data
+    except Exception as e:
+        log(f"[Snapshot] Yükleme hatası / Load error: {e}")
+        return {}
+
+# ==================== FİLTRELER / FILTERS ====================
+
+_WOMEN_TOKENS = {
+    "women","woman","female","ladies","wsl", "féminine","feminine","feminino","femenina","femenino","femminile",
+    "frauen","damas","dames","mulheres","kobiet","vrouwen","donna","dziewcząt"
+}
+
+_WOMEN_HINTS = {
+    "liga mx femenil", "liga f", "liga iberdrola", "primera femenina", "frauen-bundesliga", "frauen bundesliga",
+    "serie a femminile", "division 1 féminine", "national women's",
+}
+
+_U_TOKENS = {
+    "u23","u22","u21","u20","u19","u18","u17", "youth","junior","primavera","sub-23","sub-21","sub-20","sub20","sub21"
+}
+
+def _norm(s: str) -> str:
+    return (s or "").strip().lower()
+
+# Log sayaçları / Log counters
+_filter_counters = {"women": 0, "u21": 0, "snapshot_used": 0}
+
+def is_women_competition(area_name: str, comp_name: str) -> bool:
+    """Kadın ligi/kupası olup olmadığını kontrol eder"""
+    if ALLOW_WOMEN == 1:
+        return False
+    
+    a, c = (area_name or "").lower(), (comp_name or "").lower()
+    combined = f"{a} {c}"
+    
+    # Token kontrolü
+    if any(token in combined for token in _WOMEN_TOKENS):
+        _filter_counters["women"] += 1
+        return True
+    
+    # Hint kontrolü
+    if any(hint in combined for hint in _WOMEN_HINTS):
+        _filter_counters["women"] += 1
+        return True
+        
+    return False
+
+def is_u21_competition(comp_name: str) -> bool:
+    """U-21 ligi olup olmadığını kontrol eder"""
+    if ALLOW_U21 == 1:
+        return False
+        
+    c = (comp_name or "").lower()
+    if any(token in c for token in _U_TOKENS):
+        _filter_counters["u21"] += 1
+        return True
+    return False
+
+def get_filter_counts() -> Dict[str, int]:
+    """Filtre sayaçlarını döndürür / Returns filter counters"""
+    return _filter_counters.copy()
 
 # --- Takım Adı Benzerlik Eşleştirme ------------------------------------------
 def normalize_team_name(name):
@@ -276,6 +435,113 @@ def find_closest_team(target_team, team_list, threshold=0.75):
     
     return best_match, best_score
 
+# ==================== STATE YÖNETİMİ / STATE MANAGEMENT ====================
+
+def load_state() -> Dict:
+    """STATE yoksa veya kapalıysa snapshot'tan yükler / Loads from snapshot if STATE missing or disabled"""
+    if not ALLOW_STATE_FILE or not Path(STATE_PATH).exists():
+        log("[STATE] Dosya yok/kapalı. Snapshot'tan okunacak / File missing/disabled. Loading from snapshot.")
+        _filter_counters["snapshot_used"] += 1
+        return load_snapshot()
+    
+    try:
+        with open(STATE_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        state.setdefault("elo", {})
+        state.setdefault("goal_scale", {})
+        state.setdefault("w_mkt", W_MKT_INIT)
+        state.setdefault("pred_store", {})
+        state.setdefault("metrics", {})
+        state.setdefault("last_saved", None)
+        state.setdefault("last_pred_date", None)
+        state.setdefault("last_res_date", None)
+        return state
+    except Exception as e:
+        log(f"[STATE] Yükleme hatası / Load error: {e}. Snapshot'a düşülüyor / Falling back to snapshot.")
+        _filter_counters["snapshot_used"] += 1
+        return load_snapshot()
+
+def save_state(state: Dict) -> None:
+    """State'i kaydeder / Saves state"""
+    if not ALLOW_STATE_FILE:
+        log("[STATE] Yazma kapalı (ALLOW_STATE_FILE=0) / Write disabled")
+        return
+    
+    try:
+        state["last_saved"] = datetime.utcnow().isoformat() + "Z"
+        state_dir = Path(STATE_PATH).parent
+        if _ensure_dir(state_dir):
+            with open(STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(state, f, ensure_ascii=False, indent=2)
+            log(f"[STATE] Kaydedildi → / Saved → {STATE_PATH}")
+    except Exception as e:
+        log(f"[STATE] Kaydetme hatası / Save error: {e}")
+
+STATE = load_state()
+
+STATE = _ensure_state_defaults(STATE)
+def _team_key(area, name):
+    a = (area or "Europe").strip().lower()
+    n = (name or "").strip().lower()
+    return f"{a}:{n}"
+
+def elo_get(area, name):
+    """Geliştirilmiş Elo getirme - milli takımlar için proxy destekli"""
+    # Önce milli takım kontrolü
+    national_elo, national_source = get_national_elo_proxy(name, area)
+    if national_elo is not None:
+        return national_elo
+    
+    # Normal kulüp takımı Elo'su
+    key = _team_key(area, name)
+    return float(STATE.get("elo", {}).get(key, 1500.0))
+
+def elo_set(area, name, val):
+    key = _team_key(area, name)
+    STATE.setdefault("elo", {})[key] = float(val)
+
+def elo_expect(elo_a, elo_b, home_adv=0.0):
+    diff = (elo_a + home_adv) - elo_b
+    return 1.0 / (1.0 + 10.0 ** (-diff / 400.0))
+
+def elo_update(area, home_name, away_name, result_hw, home_advantage=None):
+    """
+    Elo güncellemesi - dinamik ev avantajı desteği
+    
+    Args:
+        area: Lig bölgesi
+        home_name: Ev sahibi takım
+        away_name: Deplasman takımı  
+        result_hw: Sonuç (1.0=ev kazandı, 0.5=berabere, 0.0=deplasman kazandı)
+        home_advantage: Ev avantajı (None ise ELO_HOME_ADV kullanır)
+    """
+    if home_advantage is None:
+        home_advantage = ELO_HOME_ADV
+        
+    Eh = elo_get(area, home_name)
+    Ea = elo_get(area, away_name)
+    ph = elo_expect(Eh, Ea, home_advantage)
+    pa = 1.0 - ph
+    Eh_new = Eh + ELO_K * (result_hw - ph)
+    Ea_new = Ea + ELO_K * ((1.0 - result_hw) - pa)
+    elo_set(area, home_name, Eh_new)
+    elo_set(area, away_name, Ea_new)
+
+def get_goal_scale(area):
+    return float(STATE["goal_scale"].get(area or "Europe", 1.0))
+
+def set_goal_scale(area, val):
+    STATE["goal_scale"][area or "Europe"] = float(val)
+
+def get_w_mkt():
+    try:
+        return float(STATE.get("w_mkt", W_MKT_INIT))
+    except:
+        return W_MKT_INIT
+
+def set_w_mkt(val):
+    STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
+
 # --- GELİŞMİŞ KADRO DEĞERİ SİSTEMİ (Transfermarkt + Fallback'ler) ------------
 TEAM_VALUES_PATH = "team_values.json"
 
@@ -334,7 +600,7 @@ def get_team_value_cies_fallback(team_name, area="Europe"):
         # Afrika
         "mozambique": 15.0, "guinea": 25.0, "botswana": 12.0, "uganda": 18.0,
         "malawi": 10.0, "equatorial guinea": 20.0, "liberia": 14.0, "namibia": 16.0,
-        # Avrupa
+        # Avrupa  
         "finland": 45.0, "lithuania": 20.0, "scotland": 80.0, "greece": 65.0,
         "austria": 70.0, "san marino": 5.0, "cyprus": 25.0, "bosnia": 60.0,
         "faroe islands": 8.0, "montenegro": 35.0, "belarus": 30.0, "denmark": 120.0,
@@ -443,7 +709,7 @@ def save_national_elo(values):
 def get_national_elo_proxy(team_name, area="Europe"):
     """Milli takımlar için Elo proxy değeri - ACİL DÜZELTME"""
     if not team_name:
-        return 1500.0, "DEFAULT"
+        return None, None
     
     # ÖNEMLİ: Önce kulüp takımı kontrolü - milli takım değilse None dön
     national_indicators = ["national", "milli", "country", "olympics", "world cup", "euro", "qualification"]
@@ -472,6 +738,226 @@ def get_national_elo_proxy(team_name, area="Europe"):
             return elo, "ELO_NATIONAL"
     
     return 1400.0, "ELO_DEFAULT"  # Varsayılan milli takım Elo'su
+
+# ==================== YENİ ÖZELLİKLER / NEW FEATURES ====================
+
+# 3. Eşleştirme Toleransı / Matching Tolerance
+def match_with_tolerance(team1: str, team2: str, date1: str, date2: str, tolerance_days: int = 2) -> bool:
+    """Takım ve tarih eşleştirme toleransı / Team and date matching with tolerance"""
+    try:
+        date_obj1 = datetime.strptime(date1, "%Y-%m-%d")
+        date_obj2 = datetime.strptime(date2, "%Y-%m-%d")
+        days_diff = abs((date_obj2 - date_obj1).days)
+        return days_diff <= tolerance_days
+    except:
+        return False
+
+# 4. Kapanış Oranı Drift / Closing Line Drift
+def calculate_closing_drift(opening_odds: float, closing_odds: float) -> Tuple[float, str]:
+    """Kapanış oranı drift hesaplama / Closing line drift calculation"""
+    if opening_odds == 0:
+        return 0.0, "Drift: 0%"
+    drift_pct = ((closing_odds - opening_odds) / opening_odds) * 100
+    drift_pct = max(min(drift_pct, 3.0), -3.0)  # ±3% tavan / ceiling
+    confidence_impact = drift_pct  # Güven skoruna direkt etki / Direct impact to confidence score
+    note = f"Drift: {drift_pct:+.1f}%"
+    return confidence_impact, note
+
+# 5. Hakem / Dinlenme Etkisi / Referee / Rest Effect
+def calculate_referee_impact(referee_stats: Dict) -> float:
+    """Hakem kart etkisi hesaplama / Referee card impact calculation"""
+    avg_cards = referee_stats.get("avg_cards_per_match", 2.0)
+    base_cards = 2.0  # Ortalama baz / Average base
+    impact = (avg_cards - base_cards) / base_cards * 10  # ±10% tavan / ceiling
+    impact = max(min(impact, 10.0), -10.0)
+    return impact
+
+def calculate_fatigue_impact(matches_last_10_days: int, days_since_last_match: int) -> float:
+    """Dinlenme-gün etkisi hesaplama / Rest-day impact calculation"""
+    # Maç yoğunluğu etkisi / Match density impact
+    density_impact = min(matches_last_10_days * 2, 6.0)  # ±6% tavan / ceiling
+    # Dinlenme etkisi / Rest impact
+    rest_impact = max((3 - days_since_last_match) * 2, -6.0)  # ±6% tavan
+    total_impact = (density_impact + rest_impact) / 2
+    return max(min(total_impact, 6.0), -6.0)
+
+# 6. Dixon-Coles Modeli / Dixon-Coles Model
+class DixonColesModel:
+    """Dixon-Coles bivariate Poisson modeli / bivariate Poisson model"""
+    def __init__(self):
+        self.attack = {}
+        self.defense = {}
+        self.rho = 0.0  # Beraberlik korelasyonu / Draw correlation
+    
+    def predict(self, home_team: str, away_team: str) -> Tuple[float, float, float]:
+        """Maç sonucu olasılıkları / Match outcome probabilities"""
+        home_attack = self.attack.get(home_team, 1.0)
+        home_defense = self.defense.get(home_team, 1.0)
+        away_attack = self.attack.get(away_team, 1.0)
+        away_defense = self.defense.get(away_team, 1.0)
+        
+        # Basit Poisson hesaplama / Simple Poisson calculation
+        lambda_home = home_attack * away_defense
+        lambda_away = away_attack * home_defense
+        
+        # Dixon-Coles düzeltmesi / Dixon-Coles correction
+        if GOAL_MODEL == "DC":
+            # Beraberlik olasılığı iyileştirmesi / Draw probability improvement
+            draw_bias = 1.0 + self.rho
+            lambda_home *= draw_bias
+            lambda_away *= draw_bias
+        
+        return lambda_home, lambda_away, self.rho
+
+# 7. Çift Elo / Dual Elo
+class DualEloSystem:
+    """Attack/Defense ayrı Elo sistemi / Separate Attack/Defense Elo system"""
+    def __init__(self, k_factor: int = 20, home_advantage: int = 40):
+        self.k = k_factor
+        self.home_adv = home_advantage
+        self.attack_elo = {}
+        self.defense_elo = {}
+    
+    def get_ratings(self, team: str) -> Tuple[float, float]:
+        """Takım rating'lerini döndürür / Returns team ratings"""
+        return self.attack_elo.get(team, 1500.0), self.defense_elo.get(team, 1500.0)
+    
+    def update_ratings(self, home_team: str, away_team: str, home_goals: int, away_goals: int):
+        """Rating'leri günceller / Updates ratings"""
+        # Attack/defense ayrı güncelleme mantığı / Separate attack/defense update logic
+        pass
+
+# 8. Sıralama Decay / Ranking Decay
+def apply_ranking_decay(rankings: Dict[str, float], months_ago: int) -> float:
+    """Sıralama sinyali time-decay uygular / Applies time-decay to ranking signals"""
+    half_life = 12  # 12 ay yarı-ömür / 12 month half-life
+    decay_factor = 0.5 ** (months_ago / half_life)
+    return rankings.get("fifa", 0.0) * decay_factor
+
+# 9. Market Kalibrasyonu / Market Calibration
+class MarketCalibrator:
+    """Piyasa olasılık kalibrasyonu / Market probability calibration"""
+    def __init__(self):
+        self.isotonic_model = IsotonicRegression(out_of_bounds='clip')
+        self.is_fitted = True
+    
+    def calibrate_probabilities(self, raw_probs: np.ndarray, actual_results: np.ndarray) -> np.ndarray:
+        """Olasılıkları kalibre eder / Calibrates probabilities"""
+        if len(raw_probs) < 10 or not self.is_fitted:
+            return raw_probs  # Yeterli veri yoksa / Not enough data
+        return self.isotonic_model.transform(raw_probs)
+
+# 10. Kırmızı Kart Riski / Red Card Risk
+def calculate_red_card_risk(referee_red_rate: float, team_red_rate: float) -> float:
+    """Kırmızı kart risk skoru hesaplar / Calculates red card risk score"""
+    base_risk = (referee_red_rate + team_red_rate) / 2
+    risk_impact = max(min(base_risk * 20, 6.0), 3.0)  # %3-6 arası etki / 3-6% impact
+    return -risk_impact  # Negatif etki / Negative impact
+
+# 11. Basit Bayes Modeli / Simple Bayes Model
+class HierarchicalGoalModel:
+    """Hiyerarşik gol modeli / Hierarchical goal model"""
+    def __init__(self):
+        self.league_priors = {}
+        self.team_offense = {}
+        self.team_defense = {}
+    
+    def predict_goals(self, home_team: str, away_team: str, league: str) -> Tuple[float, float]:
+        """Gol tahmini / Goal prediction"""
+        # Lig bazlı prior + takım regularizasyon / League-based prior + team regularization
+        home_prior = self.league_priors.get(league, 1.0)
+        away_prior = self.league_priors.get(league, 1.0)
+        home_attack = self.team_offense.get(home_team, home_prior)
+        away_attack = self.team_offense.get(away_team, away_prior)
+        home_defense = self.team_defense.get(home_team, home_prior)
+        away_defense = self.team_defense.get(away_team, away_prior)
+        
+        lambda_home = home_attack * away_defense
+        lambda_away = away_attack * home_defense
+        return lambda_home, lambda_away
+
+# 12. xG-Proxy Modeli / xG-Proxy Model
+def calculate_xg_proxy(shots: int, on_target: int, dangerous_attacks: int) -> float:
+    """xG proxy değeri hesaplar / Calculates xG proxy value"""
+    if shots == 0:
+        return 0.0
+    conversion_rate = on_target / shots
+    danger_ratio = dangerous_attacks / max(shots, 1)
+    xg_proxy = (conversion_rate * 0.3 + danger_ratio * 0.7) * shots
+    return min(xg_proxy, 8.0)  # Maksimum sınır / Maximum limit
+
+# 13. Kadro Etkisi / Squad Effect
+def calculate_squad_impact(missing_players: int, team_value_change: float) -> float:
+    """Kadro/eksik oyuncu etkisi hesaplar / Calculates squad/missing player impact"""
+    if missing_players >= 3:
+        return -8.0  # %8 negatif etki / 8% negative impact
+    elif missing_players >= 2:
+        return -5.0  # %5 negatif etki / 5% negative impact
+    elif missing_players == 1:
+        return -2.0  # %2 negatif etki / 2% negative impact
+    else:
+        # Takım değeri değişimine göre etki / Impact based on team value change
+        return max(min(team_value_change * 10, 5.0), -5.0)
+
+# 14. Multi-market Konsistensi / Multi-market Consistency
+def check_market_consistency(odds_1x2: Dict, odds_ah: Dict, odds_total: Dict) -> float:
+    """Çoklu pazar tutarlılık kontrolü / Multi-market consistency check"""
+    consistency_score = 100.0
+    
+    # 1X2 vs Asian Handicap tutarlılık / 1X2 vs Asian Handicap consistency
+    if odds_1x2 and odds_ah:
+        # Basit tutarlılık kontrolü / Simple consistency check
+        home_prob = 1.0 / odds_1x2.get('home', 3.0)
+        ah_prob = 0.5  # Basit varsayım / Simple assumption
+        diff = abs(home_prob - ah_prob)
+        if diff > 0.1:  # %10'dan fazla fark / More than 10% difference
+            consistency_score -= 20
+    
+    # Tutarsızlık için kalibrasyon / Calibration for inconsistency
+    calibration = max(consistency_score / 100, 0.8)  # Minimum %80 / Minimum 80%
+    return calibration
+
+# 15. Gelişmiş Kalite Skoru / Advanced Quality Score
+def calculate_advanced_quality(features: Dict) -> float:
+    """Gelişmiş kalite skoru hesaplama / Advanced quality score calculation"""
+    base_score = calculate_quality(features)  # Temel skor / Base score
+    
+    # Ek faktörler / Additional factors
+    bonus_points = 0
+    
+    # Veri kaynağı çeşitliliği / Data source diversity
+    sources = features.get("data_sources", [])
+    if len(sources) >= 3:
+        bonus_points += 10
+    elif len(sources) >= 2:
+        bonus_points += 5
+    
+    # Güncellik / Freshness
+    data_age = features.get("data_age_hours", 48)
+    if data_age <= 1:
+        bonus_points += 10
+    elif data_age <= 6:
+        bonus_points += 5
+    
+    # Model çeşitliliği / Model diversity
+    models_used = features.get("models_used", 1)
+    if models_used >= 3:
+        bonus_points += 10
+    elif models_used >= 2:
+        bonus_points += 5
+    
+    final_score = min(base_score + bonus_points, 100.0)
+    return max(final_score, 0.0)
+
+# ==================== ORTAK FONKSİYONLAR / COMMON FUNCTIONS ====================
+
+def calculate_quality(features: Dict) -> float:
+    """Basit kalite skoru (0-100) / Simple quality score (0-100)"""
+    keys = ("odds", "weather", "standings", "form", "ranking", "value")
+    if not isinstance(features, dict) or not keys:
+        return 0.0
+    score = sum(1 for k in keys if features.get(k)) / len(keys) * 100.0
+    return round(score, 1)
 
 # --- GELİŞMİŞ KART/KORNER SİSTEMİ (Çoklu Kaynak) ----------------------------
 def get_cards_corners_apifootball(area, comp, home_team, away_team):
@@ -655,21 +1141,13 @@ _FIFA_ALLOW_PAT = [
     "club world cup"
 ]
 
-# Kadın liglerini filtreleme için yasaklı kelimeler
-_WOMEN_KEYWORDS = [
-    "women", "feminine", "ladies", "female", "wsl", "frauen", 
-    "femminile", "féminine", "feminino"
-]
-
-def is_women_competition(area_name: str, comp_name: str) -> bool:
-    """Kadın ligi/kupası olup olmadığını kontrol eder"""
-    a, c = (area_name or "").lower(), (comp_name or "").lower()
-    combined = f"{a} {c}"
-    return any(keyword in combined for keyword in _WOMEN_KEYWORDS)
-
 def is_allowed_competition(area_name: str, comp_name: str) -> bool:
     # Kadın liglerini filtrele
     if is_women_competition(area_name, comp_name):
+        return False
+        
+    # U-21 liglerini filtrele
+    if is_u21_competition(comp_name):
         return False
         
     a, c = _n(area_name), _n(comp_name)
@@ -735,139 +1213,6 @@ RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))  # <— ONAYLI: :00
 
 if not (GMAIL_USER and GMAIL_PASS and GMAIL_TO):
     raise SystemExit("GMAIL_USER/GMAIL_PASS/GMAIL_TO secrets eksik.")
-
-# --- State (kalibrasyon/Elo + Öğrenme) --------------------------------------
-STATE_PATH = "model_state.json"
-
-def _state_load():
-    try:
-        if os.path.exists(STATE_PATH):
-            with open(STATE_PATH, "r", encoding="utf-8") as f:
-                st = json.load(f)
-            st.setdefault("elo", {})
-            st.setdefault("goal_scale", {})  # area -> ölçek (1.0)
-            st.setdefault("w_mkt", W_MKT_INIT)  # harman ağırlık
-            st.setdefault("pred_store", {})  # match_key -> tahmin/teşhis
-            st.setdefault("metrics", {})  # kümülatif metrikler (opsiyonel)
-            st.setdefault("last_saved", None)
-            # SERVICE mod için son çalışma günleri
-            st.setdefault("last_pred_date", None)
-            st.setdefault("last_res_date", None)
-            return st
-    except Exception as e:
-        log(f"state load err: {e}")
-    return {"elo": {}, "goal_scale": {}, "w_mkt": W_MKT_INIT, "pred_store": {}, "metrics": {}, "last_saved": None, "last_pred_date": None, "last_res_date": None}
-
-def _state_save(st):
-    if not ALLOW_STATE_FILE:
-        log("STATE kaydı kapalı (ALLOW_STATE_FILE=0)")
-        return
-    try:
-        st["last_saved"] = datetime.utcnow().isoformat() + "Z"
-        with open(STATE_PATH, "w", encoding="utf-8") as f:
-            json.dump(st, f, ensure_ascii=False, indent=2)
-        log(f"state saved -> {STATE_PATH}")
-    except Exception as e:
-        log(f"state save err: {e}")
-
-STATE = _state_load()
-
-def _team_key(area, name):
-    a = (area or "Europe").strip().lower()
-    n = (name or "").strip().lower()
-    return f"{a}:{n}"
-
-def elo_get(area, name):
-    """Geliştirilmiş Elo getirme - milli takımlar için proxy destekli"""
-    # Önce milli takım kontrolü
-    national_elo, national_source = get_national_elo_proxy(name, area)
-    if national_elo is not None:
-        return national_elo
-    
-    # Normal kulüp takımı Elo'su
-    key = _team_key(area, name)
-    return float(STATE.get("elo", {}).get(key, 1500.0))
-
-def elo_set(area, name, val):
-    key = _team_key(area, name)
-    STATE.setdefault("elo", {})[key] = float(val)
-
-def elo_expect(elo_a, elo_b, home_adv=0.0):
-    diff = (elo_a + home_adv) - elo_b
-    return 1.0 / (1.0 + 10.0 ** (-diff / 400.0))
-
-def elo_update(area, home_name, away_name, result_hw, home_advantage=None):
-    """
-    Elo güncellemesi - dinamik ev avantajı desteği
-    
-    Args:
-        area: Lig bölgesi
-        home_name: Ev sahibi takım
-        away_name: Deplasman takımı  
-        result_hw: Sonuç (1.0=ev kazandı, 0.5=berabere, 0.0=deplasman kazandı)
-        home_advantage: Ev avantajı (None ise ELO_HOME_ADV kullanır)
-    """
-    if home_advantage is None:
-        home_advantage = ELO_HOME_ADV
-        
-    Eh = elo_get(area, home_name)
-    Ea = elo_get(area, away_name)
-    ph = elo_expect(Eh, Ea, home_advantage)
-    pa = 1.0 - ph
-    Eh_new = Eh + ELO_K * (result_hw - ph)
-    Ea_new = Ea + ELO_K * ((1.0 - result_hw) - pa)
-    elo_set(area, home_name, Eh_new)
-    elo_set(area, away_name, Ea_new)
-
-def get_goal_scale(area):
-    return float(STATE["goal_scale"].get(area or "Europe", 1.0))
-
-def set_goal_scale(area, val):
-    STATE["goal_scale"][area or "Europe"] = float(val)
-
-def get_w_mkt():
-    try:
-        return float(STATE.get("w_mkt", W_MKT_INIT))
-    except:
-        return W_MKT_INIT
-
-def set_w_mkt(val):
-    STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
-
-# --- Odds sport-key haritalaması --------------------------------------------
-def guess_sport_key(area: str, comp: str):
-    a = (area or "").lower()
-    c = (comp or "").lower()
-    s = f"{a} {c}"
-    mapping = {
-        # Germany
-        "bundesliga 3": "soccer_germany_bundesliga3",
-        "bundesliga 2": "soccer_germany_bundesliga2",
-        "bundesliga": "soccer_germany_bundesliga",
-        "dfb": "soccer_germany_dfb_pokal",
-        # Turkey
-        "super lig": "soccer_turkey_super_league",
-        # England
-        "premier": "soccer_epl",
-        "championship": "soccer_efl_championship",
-        # Spain
-        "la liga": "soccer_spain_la_liga",
-        # Italy
-        "serie a": "soccer_italy_serie_a",
-        # France
-        "ligue 1": "soccer_france_ligue_one",
-        # UEFA
-        "champions": "soccer_uefa_champs_league",
-        "europa": "soccer_uefa_europa_league",
-        # Brazil (gerekebilir)
-        "campeonato brasileiro": "soccer_brazil_campeonato",
-        "brasileirao": "soccer_brazil_campeonato",
-        "brasileiro": "soccer_brazil_campeonato",
-    }
-    for k, v in mapping.items():
-        if k in s:
-            return v
-    return None
 
 # --- Akıllı Hava Modu --------------------------------------------------------
 WEATHER_SMART = (os.getenv("WEATHER_SMART", "1") == "1")
@@ -1177,6 +1522,28 @@ def fetch_fixtures(date_str):
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
+
+# --- Guess sport key for The Odds API --------------------------------------
+def guess_sport_key(area, comp):
+    area_l = (area or "").lower()
+    comp_l = (comp or "").lower()
+    mapping = {
+        ("england", "premier league"): "soccer_epl",
+        ("england", "championship"): "soccer_efl_championship",
+        ("spain", "la liga"): "soccer_spain_la_liga",
+        ("italy", "serie a"): "soccer_italy_serie_a",
+        ("germany", "bundesliga"): "soccer_germany_bundesliga",
+        ("france", "ligue 1"): "soccer_france_ligue_one",
+        ("turkey", "super lig"): "soccer_turkey_super_league",
+        ("europe", "uefa champions league"): "soccer_uefa_champs_league",
+        ("europe", "uefa europa league"): "soccer_uefa_europa_league",
+    }
+    for (a, c), skey in mapping.items():
+        if a in area_l and c in comp_l:
+            return skey
+    return None
+
+
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
         return None
@@ -1926,7 +2293,14 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 
 # --- Mail --------------------------------------------------------------------
 def send_mail(subject, body):
-    body = (body or "").strip()
+
+    # Sürüm etiketi ve zaman damgası
+    try:
+        stamp = datetime.now(TR_TZ).strftime("%Y-%m-%d %H:%M")
+        subject = f"{subject} · {MODEL_VERSION} · {stamp}"
+    except Exception:
+        pass
+        body = (body or "").strip()
     if not body:
         body = "(Bu e-postada içerik üretilemedi / maç bulunamadı.)"
     msg = EmailMessage()
@@ -2060,7 +2434,7 @@ def report_predictions(date_str):
             hi_block.append(" " + l.replace("- ","").strip())
     
     body = "\n".join(lines + [""] + best + hi_block)
-    _state_save(STATE)
+    save_state(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
 def report_results(date_str):
@@ -2179,7 +2553,7 @@ def report_results(date_str):
         for area, (s, n) in goal_stats.items():
             lines.append(f" - {area}: avg_goals={s/max(1,n):.2f} | goal_scale={get_goal_scale(area):.3f}")
     
-    _state_save(STATE)
+    save_state(STATE)
     send_mail(f"Günün Sonuçları | {date_str}", "\n".join(lines))
 
 # --- SERVICE (otomatik zamanlayıcı) ------------------------------------------
@@ -2208,7 +2582,7 @@ def run_service_loop():
                 log("SERVICE: Tahmin zamanı geldi → rapor hazırlanıyor…")
                 report_predictions(today)
                 STATE["last_pred_date"] = today
-                _state_save(STATE)
+                save_state(STATE)
             
             # Sonuç: ertesi gün 04:00'te, dünkü tarihe göre
             if (STATE.get("last_res_date") != today) and _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
@@ -2216,7 +2590,7 @@ def run_service_loop():
                 log(f"SERVICE: Sonuç zamanı geldi (dün={res_date}) → rapor hazırlanıyor…")
                 report_results(res_date)
                 STATE["last_res_date"] = today  # bugünü işaretle, tekrarı engelle
-                _state_save(STATE)
+                save_state(STATE)
                 
         except Exception:
             tb = traceback.format_exc()
@@ -2263,3 +2637,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --- Dinlenme (Rest) Etkisi ---
+def calculate_rest_effect(days_home, days_away):
+    """
+    Pozitif değer = avantaj, negatif = dezavantaj.
+    Basit sezgisel:
+      <2 gün: -0.15   |   2-3 gün: -0.10   |   4-6 gün: 0.00   |   >6 gün: +0.05
+    """
+    def f(d):
+        try:
+            d = float(d)
+        except Exception:
+            return 0.0
+        if d < 2:
+            return -0.15
+        if d < 3:
+            return -0.10
+        if d > 6:
+            return 0.05
+        return 0.0
+    return {"home": f(days_home), "away": f(days_away)}
