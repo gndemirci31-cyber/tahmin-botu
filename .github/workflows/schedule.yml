@@ -2,12 +2,12 @@ name: Tahmin Botu
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # TR 10:00 → Günün Tahminleri
-    - cron: "0 1 * * *"   # TR 04:00 → Dünün Sonuçları
+    - cron: "0 7 * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
-        description: "Manuel çalışma modu (AUTO / PREDICT / RESULTS)"
+        description: "AUTO / PREDICT / RESULTS"
         required: false
         default: "AUTO"
 
@@ -24,72 +24,52 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Bagimliliklari yukle
+      - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Sabah/Gece secimi (cron'a gore)
+      - name: Pick mode
         id: pick
         env:
           SCHEDULE: ${{ github.event.schedule }}
           INPUT_MODE: ${{ github.event.inputs.mode }}
         run: |
           set -e
-          echo "::notice::event.schedule='${SCHEDULE}' input.mode='${INPUT_MODE}'"
           if [ "${INPUT_MODE}" = "PREDICT" ] || [ "${INPUT_MODE}" = "RESULTS" ]; then
-            echo "mode=${INPUT_MODE}" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-          if [ "${SCHEDULE}" = "0 7 * * *" ]; then
-            echo "mode=PREDICT" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-          if [ "${SCHEDULE}" = "0 1 * * *" ]; then
-            echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
+            echo "mode=${INPUT_MODE}" >> "${GITHUB_OUTPUT}"; exit 0; fi
+          if [ "${SCHEDULE}" = "0 7 * * *" ]; then echo "mode=PREDICT" >> "${GITHUB_OUTPUT}"; exit 0; fi
+          if [ "${SCHEDULE}" = "0 1 * * *" ]; then echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"; exit 0; fi
           HOUR="$(date -u +%H)"
-          if [ "${HOUR}" = "07" ]; then
-            echo "mode=PREDICT" >> "${GITHUB_OUTPUT}"
-          elif [ "${HOUR}" = "01" ]; then
-            echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"
-          else
-            echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"
-          fi
+          if [ "${HOUR}" = "07" ]; then echo "mode=PREDICT" >> "${GITHUB_OUTPUT}";
+          elif [ "${HOUR}" = "01" ]; then echo "mode=RESULTS" >> "${GITHUB_OUTPUT}";
+          else echo "mode=RESULTS" >> "${GITHUB_OUTPUT}"; fi
 
-      # ===== TANILAMA ADIMLARI (ASCII, heredoc ile guvenli) =====
-      - name: CWD ve dosyalari listele
-        run: |
-          pwd
-          ls -la
-
-      - name: mailer.py parmak izi ve MODEL_VERSION kontrolu
+      # ---- Diagnostics (safe heredoc) ----
+      - name: Fingerprint mailer.py
         shell: bash
         run: |
-          cat > check_mailer.py <<'PY'
-import hashlib, pathlib, re, os, sys
+          cat > check.py <<'PY'
+import hashlib, pathlib, re, os
 p = pathlib.Path('mailer.py')
 exists = p.exists()
-print('exists mailer.py:', exists, 'size:', (p.stat().st_size if exists else None))
+print('exists:', exists, 'size:', (p.stat().st_size if exists else None))
 if exists:
-    data = p.read_bytes()
-    txt = data.decode('utf-8', 'ignore')
-    print('SHA1(mailer.py)=', hashlib.sha1(data).hexdigest()[:12])
-    m = re.search(r"MODEL_VERSION\s*=\s*os\.getenv\(\s*['\"]MODEL_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)", txt)
-    print('MODEL_VERSION in file:', (m.group(1) if m else None))
-    print('has_DElo_tag:', (('DElo' in txt) or ('\\u0394Elo' in txt) or ('ΔElo' in txt)))
+    b = p.read_bytes()
+    print('sha1:', hashlib.sha1(b).hexdigest()[:12])
+    s = b.decode('utf-8','ignore')
+    m = re.search(r"MODEL_VERSION\s*=\s*os\.getenv\(\s*['\"]MODEL_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)", s)
+    print('MODEL_VERSION:', (m.group(1) if m else None))
+    print('has_DElo_tag:', ('ΔElo' in s) or ('DElo' in s))
 PY
-          python check_mailer.py
-      # ===== /TANILAMA ADIMLARI =====
+          python check.py
 
-      - name: Botu calistir
+      - name: Run bot
         env:
           GMAIL_USER:            ${{ secrets.GMAIL_USER }}
           GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
@@ -124,7 +104,7 @@ PY
           mkdir -p snapshots
           python mailer.py --mode "${{ steps.pick.outputs.mode }}"
 
-      - name: State'i kalicilastir (yalnizca RESULTS)
+      - name: Persist state (RESULTS only)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
         run: |
           set -e
@@ -135,10 +115,8 @@ PY
               git add model_state.json
               git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
               git push
-              echo "OK: model_state.json push edildi."
             else
-              echo "INFO: state'te degisiklik yok."
+              echo "no state changes"
             fi
           else
-            echo "INFO: model_state.json bulunamadi veya bos."
-          fi
+            echo "state file missing or empty"
