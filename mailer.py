@@ -1,3 +1,52 @@
+
+# --- SANITY GUARDS FOR HOME/AWAY DECISION ------------------------------------
+def _sanity_pick_guard(fx, Eh, Ea, home_advantage, value_advantage, market_probs, pick, conf, p_home, p_draw, p_away):
+    """
+    Prevents obvious direction errors (e.g., picking Home when Away is overwhelming favorite).
+    Returns possibly adjusted (pick, conf, note_suffix, flagged).
+    """
+    note_bits = []
+    flagged = False
+
+    # Effective strength diff (+ favours home, - favours away)
+    eff_diff = (Eh + (home_advantage or 0.0)) - (Ea or 0.0)
+    # Convert Elo diff to a soft probability proxy (logistic)
+    try:
+        from math import exp
+        elo_prob_home = 1.0 / (1.0 + exp(-eff_diff / 120.0))
+    except Exception:
+        elo_prob_home = 0.5
+
+    market_home = market_draw = market_away = None
+    if market_probs:
+        market_home, market_draw, market_away = market_probs
+
+    # RULE A: If both Elo/value & market say Away >= 0.60, don't allow Home pick
+    away_strength = 1.0 - elo_prob_home  # simple complement
+    value_hint = 0.5 + (value_advantage or 0.0)/2.0  # map [-0.3,0.3] -> [0.35,0.65]
+    away_hint = max(away_strength, 1.0 - value_hint)
+
+    market_away_prob = market_away if market_away is not None else 0.0
+    if (away_hint >= 0.60) and (market_away_prob >= 0.60) and (pick == "1"):
+        # force switch to Away
+        pick, conf = "2", max(conf, int(round(max(p_away, market_away_prob)*100)))
+        note_bits.append("SANITY: forced AWAY (Elo/Value+Market)")
+        flagged = True
+
+    # RULE B: Strong-away gap protection even without market
+    if (pick == "1") and (eff_diff <= -120):
+        pick, conf = "2", max(conf, int(round(p_away*100)))
+        note_bits.append("SANITY: forced AWAY (large strength gap)")
+        flagged = True
+
+    # RULE C: Neutral venues -> remove home bias
+    if fx.get("venue_type") == "neutral" and pick == "1" and p_away > p_home:
+        pick, conf = "2", max(conf, int(round(p_away*100)))
+        note_bits.append("SANITY: neutral venue away>home")
+
+    note_suffix = (" [" + " | ".join(note_bits) + "]") if note_bits else ""
+    return pick, conf, note_suffix, flagged
+
 def _ensure_state_defaults(state: dict) -> dict:
     try:
         state.setdefault("elo", {})
@@ -2141,6 +2190,13 @@ def rate_fixture(fx, odds_info):
     picks = [("1", p_home), ("X", p_draw), ("2", p_away)]
     picks.sort(key=lambda x: x[1], reverse=True)
     pick, conf = picks[0]; conf_pct = int(round(conf*100))
+
+    # --- Sanity guard to avoid home/away inversion or obvious mis-picks ---
+    pick, conf, _sanity_suffix, _flagged = _sanity_pick_guard(
+        fx, Eh, Ea, home_advantage, value_advantage, market_probs, pick, conf,
+        p_home, p_draw, p_away
+    )
+    conf_pct = int(round(conf*100))
     
     # GELİŞMİŞ Kart/Korner — Çoklu Kaynak Fallback
     apihint, kk_source = get_cards_corners_advanced(fx.get("area"), fx.get("competition"), fx.get("home"), fx.get("away"))
@@ -2159,9 +2215,8 @@ def rate_fixture(fx, odds_info):
     
     wx_txt = f" | {wx}" if wx else ""
     note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
-            f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}")
-    
-    return {
+            f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}{_sanity_suffix}")
+return {
         "pick": pick,
         "confidence": conf_pct,
         "lambda_h": lam_h,
