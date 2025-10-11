@@ -20,7 +20,7 @@ Modlar:
 - MODE=SERVICE -> Sürekli çalışır; TR 10:00'da Tahmin, ertesi gün TR 04:00'da DÜNÜN Sonuçlarını yollar (tekrar etmez)
 """
 
-import os, math, time, json, smtplib, traceback, re, urllib.parse
+import os, math, time, json, smtplib, traceback, re, urllib.parse, random
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
@@ -496,7 +496,6 @@ def get_cards_corners_totalcorner(area, comp, home_team, away_team):
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
         
         # Basit varyasyon
-        import random
         corners = corner_base * random.uniform(0.9, 1.1)
         
         return {"mu_corners_hint": corners}, "TC"
@@ -969,7 +968,7 @@ def fetch_weather_note(home_team):
         prec = wx["hourly"]["precipitation"][:6]
         wind = wx["hourly"]["wind_speed_10m"][:6]
         tavg = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
-        return f"Hava: {tavg:.0}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
+        return f"Hava: {tavg:.0f}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
     except Exception:
         return None
 
@@ -1644,6 +1643,44 @@ def _streak_from_any(fix):
     return 0.0, ""
 
 # --- GELİŞMİŞ DERECELENDİRME (Kaynak Etiketleme) -----------------------------
+def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None, source_info=""):
+    cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
+    corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
+    
+    wind, precip = parse_weather(wx_text) if wx_text else (None, None)
+    tempo_factor = clamp((lam_h + lam_a) / 2.6, 0.7, 1.4)
+    
+    cards = cards_base
+    corners = corner_base * tempo_factor
+    
+    if apifoot_hint:
+        if apifoot_hint.get("mu_cards_hint"):
+            cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
+        if apifoot_hint.get("mu_corners_hint"):
+            corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
+    
+    if precip is not None:
+        cards *= 1.00 + min(0.10, 0.02 * max(0.0, precip))
+        corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
+    if wind is not None:
+        corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
+        cards *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
+    
+    p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
+    p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
+    p_cards_3_5 = poisson_over_prob(max(0.1, cards), 3.5)
+    p_cards_4_5 = poisson_over_prob(max(0.1, cards), 4.5)
+    
+    return {
+        "mu_cards": cards,
+        "mu_corners": corners,
+        "p_over_cards_3_5": p_cards_3_5,
+        "p_over_cards_4_5": p_cards_4_5,
+        "p_over_corners_8_5": p_corners_8_5,
+        "p_over_corners_9_5": p_corners_9_5,
+        "source": source_info
+    }
+
 def rate_fixture(fx, odds_info):
     area = fx["area"] or "Europe"
     tot = base_total_goals(area)
@@ -1746,44 +1783,6 @@ def rate_fixture(fx, odds_info):
     
     # GELİŞMİŞ Kart/Korner — Çoklu Kaynak Fallback
     apihint, kk_source = get_cards_corners_advanced(fx.get("area"), fx.get("competition"), fx.get("home"), fx.get("away"))
-    
-    def model_cards_corners(area, lam_h, lam_a, wx_text, apifoot_hint=None, source_info=""):
-        cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
-        corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
-        
-        wind, precip = parse_weather(wx_text) if wx_text else (None, None)
-        tempo_factor = clamp((lam_h + lam_a) / 2.6, 0.7, 1.4)
-        
-        cards = cards_base
-        corners = corner_base * tempo_factor
-        
-        if apifoot_hint:
-            if apifoot_hint.get("mu_cards_hint"):
-                cards = 0.6 * cards + 0.4 * max(0.1, apifoot_hint["mu_cards_hint"])
-            if apifoot_hint.get("mu_corners_hint"):
-                corners = 0.6 * corners + 0.4 * max(0.1, apifoot_hint["mu_corners_hint"])
-        
-        if precip is not None:
-            cards *= 1.00 + min(0.10, 0.02 * max(0.0, precip))
-            corners *= 1.00 - min(0.10, 0.015 * max(0.0, precip))
-        if wind is not None:
-            corners *= 1.00 + min(0.08, 0.003 * max(0.0, wind))
-            cards *= 1.00 + min(0.05, 0.002 * max(0.0, wind))
-        
-        p_corners_8_5 = poisson_over_prob(max(0.1, corners), 8.5)
-        p_corners_9_5 = poisson_over_prob(max(0.1, corners), 9.5)
-        p_cards_3_5 = poisson_over_prob(max(0.1, cards), 3.5)
-        p_cards_4_5 = poisson_over_prob(max(0.1, cards), 4.5)
-        
-        return {
-            "mu_cards": cards,
-            "mu_corners": corners,
-            "p_over_cards_3_5": p_cards_3_5,
-            "p_over_cards_4_5": p_cards_4_5,
-            "p_over_corners_8_5": p_corners_8_5,
-            "p_over_corners_9_5": p_corners_9_5,
-            "source": source_info
-        }
     
     kk = model_cards_corners(area, lam_h, lam_a, wx, apifoot_hint=apihint, source_info=kk_source)
     
