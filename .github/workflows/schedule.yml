@@ -127,7 +127,7 @@ jobs:
           set -e
           mkdir -p snapshots
           # FOOTBALL_DATA_TOKEN bilerek YOK; APIFootball kullanılacak
-          python sorunsuz_olan_mailer.py
+          python mailer.py
 
       - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
