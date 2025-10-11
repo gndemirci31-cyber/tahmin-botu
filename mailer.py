@@ -62,6 +62,51 @@ from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
 
 
+# --- Lig bazlÄ± kart/korner taban ortalamalarÄ± + yardÄ±mcÄ± --------------------
+LEAGUE_CARD_BASE = {
+    "england":     4.2,
+    "spain":       5.1,
+    "italy":       5.2,
+    "germany":     4.6,
+    "france":      4.4,
+    "turkey":      5.5,
+    "netherlands": 4.6,
+    "portugal":    5.1,
+    "belgium":     4.7,
+    "europe":      4.6,
+}
+
+LEAGUE_CORNER_BASE = {
+    "england":     10.2,
+    "spain":       9.0,
+    "italy":       9.3,
+    "germany":     9.7,
+    "france":      9.1,
+    "turkey":      9.4,
+    "netherlands": 10.0,
+    "portugal":    9.2,
+    "belgium":     9.5,
+    "europe":      9.2,
+}
+
+def base_from_area(area: str, table: dict, default_val: float) -> float:
+    if not isinstance(table, dict):
+        return float(default_val)
+
+    a = (area or "Europe").strip().lower()
+    if a in table:
+        return float(table[a])
+    for key in table.keys():
+        if key in a:
+            return float(table[key])
+    if "uefa" in a or "europe" in a:
+        return float(table.get("europe", default_val))
+    return float(table.get("europe", default_val))
+
+
+
+
+
 # --- Model/version & retention ---
 MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.11-a")
 STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
