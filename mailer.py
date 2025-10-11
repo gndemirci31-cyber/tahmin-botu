@@ -2216,7 +2216,7 @@ def rate_fixture(fx, odds_info):
     wx_txt = f" | {wx}" if wx else ""
     note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
             f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}{_sanity_suffix}")
-return {
+    return {
         "pick": pick,
         "confidence": conf_pct,
         "lambda_h": lam_h,
