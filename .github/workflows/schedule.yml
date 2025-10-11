@@ -123,11 +123,15 @@ jobs:
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
+
+          # Anti home-bias ayarları (mailer.py’deki yamayla uyumlu)
+          HOME_ADV_MAX:          ${{ vars.HOME_ADV_MAX          || '8'    }}
+          MIN_MARKET_WEIGHT:     ${{ vars.MIN_MARKET_WEIGHT     || '0.60' }}
         run: |
           set -e
           mkdir -p snapshots
-          # FOOTBALL_DATA_TOKEN bilerek YOK; APIFootball kullanılacak
-          python mailer.py
+          # mailer.py komut satırı modu bekliyorsa argümanla da geçir
+          python mailer.py --mode "${{ steps.pick.outputs.mode }}"
 
       - name: State'i kalıcılaştır (yalnızca RESULTS)
         if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
