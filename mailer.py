@@ -2599,7 +2599,7 @@ def run_service_loop():
         # Ä°nce adÄ±mlÄ± uyku: 20 saniye
         time.sleep(20)
 
-# --- Ana/İtici Arayüz --------------------------------------------------------
+# --- Ana/İtici Arayüz ---------------------------------------------------------
 def main():
     try:
         now_utc = datetime.now(timezone.utc)
@@ -2626,18 +2626,25 @@ def main():
                       "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS verin.")
 
     except Exception:
-        tb = traceback.format_exc(); log(tb)
+        tb = traceback.format_exc()
+        log(tb)
         try:
             send_mail("Tahmin Botu | Hata", tb)
         except Exception:
             pass
+
+
+def report_predictions(date_str):
+    """Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz"""
+    return report_prediction(date_str)
+
 
 # --- Dinlenme (Rest) Etkisi ---------------------------------------------------
 def calculate_rest_effect(days_home, days_away):
     """
     Pozitif değer = avantaj, negatif = dezavantaj.
     Basit sezgisel:
-        <2 gün: -0.15   |   2-3 gün: -0.10   |   4-6 gün: 0.00   |   >6 gün: +0.05
+        <2 gün: -0.15 | 2-3 gün: -0.10 | 4-6 gün: 0.00 | >6 gün: +0.05
     """
     def f(d):
         try:
