@@ -2696,7 +2696,7 @@ def get_current_date():
 # Ana çalıştırma
 if __name__ == "__main__":
     if MODE_ENV == "PREDICT":
-        report_predictions(_today_str_tr())
+        report_prediction(_today_str_tr())
     elif MODE_ENV == "RESULTS":
         report_results(_yesterday_str_tr())
     elif MODE_ENV == "SERVICE":
