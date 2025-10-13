@@ -2640,8 +2640,8 @@ def main():
 def report_predictions(date_str):
     """Tahmin sonuçlarını hesapla ve kaydet"""
     try:
-        # Asıl tahmin fonksiyonunu çağır
-        return make_predictions(date_str)
+        # Eski fonksiyon: report_prediction()
+        return report_prediction(date_str)
     except Exception as e:
         log(f"Prediction Error: {e}")
         raise
