@@ -2632,12 +2632,6 @@ def main():
         except Exception:
             pass
 
-
-def report_predictions(date_str: str):
-    """Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz"""
-    return report_prediction(date_str)
-
-
 # --- Dinlenme (Rest) Etkisi ---------------------------------------------------
 def calculate_rest_effect(days_home, days_away):
     """
