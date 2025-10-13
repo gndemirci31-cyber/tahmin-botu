@@ -2721,5 +2721,14 @@ def report_prediction(date_str):
         return None
 
 if __name__ == "__main__":
+    # MODE kontrolü ekle
+    mode = os.getenv("MODE", "PREDICT").upper()
     today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
-    report_prediction(today)
+    yesterday = (datetime.now(TR_TZ) - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    if mode == "RESULTS":
+        # RESULTS modu: dünün sonuçlarını kontrol et
+        report_results(yesterday)
+    else:
+        # PREDICT modu: bugünün tahminlerini üret
+        report_prediction(today)
