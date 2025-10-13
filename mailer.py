@@ -2681,11 +2681,11 @@ def report_prediction(date_str):
 
 def log_prediction_success(result):
     """Başarılı tahminleri loglar"""
-    print(f"{mailer} Prediction successful: {len(result)} tahmin üretildi")
+    print(f"[mailer] Prediction successful: {len(result)} tahmin üretildi")
 
 def log_prediction_failure():
     """Başarısız tahminleri loglar"""
-    print(f"{mailer} Prediction failed")
+    print(f"[mailer] Prediction failed")
 
 # Gerekli yardımcı fonksiyonlar
 def get_current_date():
@@ -2704,6 +2704,6 @@ if __name__ == "__main__":
     else:  # AUTO
         now_tr = datetime.now(TR_TZ)
         if now_tr.hour == 7:  # UTC 07:00 = TR 10:00
-            report_predictions(_today_str_tr())
+            report_prediction(_today_str_tr())
         else:
             report_results(_yesterday_str_tr())
