@@ -99,7 +99,7 @@ jobs:
           MODE:                  ${{ steps.pick.outputs.mode }}
 
           # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
-          TOP_N:                 ${{ vars.TOP_N                 || '5'   }}
+          TOP_N:                 ${{ vars.TOP_N                 || '5'   }}  # DEĞİŞTİ: 1 → 5 (En güçlü 5 seçim)
           MIN_CONF:              ${{ vars.MIN_CONF              || '0'   }}
           HIGH_ALERT:            ${{ vars.HIGH_ALERT            || '90'  }}
           SPLIT_HIGH_ALERT_MAIL: ${{ vars.SPLIT_HIGH_ALERT_MAIL || '0'   }}
