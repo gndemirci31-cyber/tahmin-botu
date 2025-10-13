@@ -2622,8 +2622,10 @@ def main():
             # Onaylı politika: RESULTS her zaman düne bakar
             report_results(_yesterday_str_tr(tr_now))
         else:
-            send_mail("Tahmin Botu | Bilgi",
-                      "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS verin.")
+            send_mail(
+                "Tahmin Botu | Bilgi",
+                "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS verin."
+            )
 
     except Exception:
         tb = traceback.format_exc()
@@ -2634,9 +2636,15 @@ def main():
             pass
 
 
+# --- Tahmin Raporu ------------------------------------------------------------
 def report_predictions(date_str):
-    """Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz"""
-    return report_prediction(date_str)
+    """Tahmin sonuçlarını hesapla ve kaydet"""
+    try:
+        # Asıl tahmin fonksiyonunu çağır
+        return make_predictions(date_str)
+    except Exception as e:
+        log(f"Prediction Error: {e}")
+        raise
 
 
 # --- Dinlenme (Rest) Etkisi ---------------------------------------------------
