@@ -133,8 +133,8 @@ jobs:
           # mailer.py komut satırı modu bekliyorsa argümanla da geçir
           python mailer.py --mode "${{ steps.pick.outputs.mode }}"
 
-      - name: State'i kalıcılaştır (yalnızca RESULTS)
-        if: ${{ steps.pick.outputs.mode == 'RESULTS' }}
+      - name: State'i kalıcılaştır (PREDICT ve RESULTS)
+        if: always()
         run: |
           set -e
           if [ -f model_state.json ] && [ -s model_state.json ]; then
@@ -142,7 +142,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             # Değişiklik var mı?
             if ! git diff --quiet -- model_state.json; then
-              git add model_state.json
+              git add -f model_state.json
               git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
               git push
               echo "✔ model_state.json commit/push edildi."
