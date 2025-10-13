@@ -2438,8 +2438,6 @@ def fetch_results(date_str):
 def report_results(date_str):
     results = fetch_results(date_str)
     lines = [f"ğŸ“Š GÃ¼nÃ¼n SonuÃ§larÄ± â€” {date_str}", ""]
-    
-    \1
 
     # State'i boÅŸ da olsa kalÄ±cÄ±laÅŸtÄ±r
     save_state(STATE)
