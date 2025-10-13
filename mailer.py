@@ -2599,31 +2599,32 @@ def run_service_loop():
         # Ä°nce adÄ±mlÄ± uyku: 20 saniye
         time.sleep(20)
 
-# --- Ã‡alÄ±ÅŸtÄ±rÄ±cÄ± -------------------------------------------------------------
+# --- Ana/İtici Arayüz --------------------------------------------------------
 def main():
     try:
         now_utc = datetime.now(timezone.utc)
         tr_now = now_utc.astimezone(TR_TZ)
         date_str = tr_now.strftime("%Y-%m-%d")
         mode = MODE_ENV
-        
+
         log(f"MODE={mode} | TR now={tr_now} | date={date_str} | w_mkt={get_w_mkt():.2f}")
-        
+
         if mode == "SERVICE":
             run_service_loop()
             return
-        
+
         if mode == "AUTO":
             mode = "PREDICT" if now_utc.hour == 7 else "RESULTS"
-        
+
         if mode == "PREDICT":
             report_predictions(date_str)
         elif mode == "RESULTS":
-            # OnaylÄ± politika: RESULTS her zaman DÃœN'e bakar
+            # Onaylı politika: RESULTS her zaman düne bakar
             report_results(_yesterday_str_tr(tr_now))
         else:
-            send_mail("Tahmin Botu | Bilgi", "AUTO/SERVICE dÄ±ÅŸÄ± Ã§alÄ±ÅŸtÄ±rma. MODE=PREDICT veya MODE=RESULTS veya MODE=SERVICE bekleniyor.")
-            
+            send_mail("Tahmin Botu | Bilgi",
+                      "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS verin.")
+
     except Exception:
         tb = traceback.format_exc(); log(tb)
         try:
@@ -2631,21 +2632,18 @@ def main():
         except Exception:
             pass
 
-if __name__ == "__main__":
-    main()
 
-def report_predictions(date_str):
-        
-    # Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz
+def report_predictions(date_str: str):
+    """Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz"""
     return report_prediction(date_str)
-    """
-# --- Dinlenme (Rest) Etkisi ---
-def calculate_rest_effect(days_home, days_away):
-    
 
-    Pozitif deÄŸer = avantaj, negatif = dezavantaj.
+
+# --- Dinlenme (Rest) Etkisi ---------------------------------------------------
+def calculate_rest_effect(days_home, days_away):
+    """
+    Pozitif değer = avantaj, negatif = dezavantaj.
     Basit sezgisel:
-      <2 gÃ¼n: -0.15   |   2-3 gÃ¼n: -0.10   |   4-6 gÃ¼n: 0.00   |   >6 gÃ¼n: +0.05
+        <2 gün: -0.15   |   2-3 gün: -0.10   |   4-6 gün: 0.00   |   >6 gün: +0.05
     """
     def f(d):
         try:
@@ -2659,4 +2657,9 @@ def calculate_rest_effect(days_home, days_away):
         if d > 6:
             return 0.05
         return 0.0
+
     return {"home": f(days_home), "away": f(days_away)}
+
+
+if __name__ == "__main__":
+    main()
