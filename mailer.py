@@ -1529,6 +1529,12 @@ def fetch_fixtures(date_str):
     if not fixtures:
         log("OpenLigaDB de boş → The Odds API event fallback deneniyor…")
         fixtures = fetch_odds_fixtures(date_str)
+    
+    # YENİ EKLENEN KOD: Saat bilgisi kontrolü ve loglama
+    for fixture in fixtures:
+        if not fixture.get("utc_kickoff"):
+            log(f"⚠️ Saat bilgisi yok: {fixture.get('home')} vs {fixture.get('away')}")
+    
     return fixtures
 
 # --- Odds (avg) --------------------------------------------------------------
@@ -2174,7 +2180,17 @@ def rate_fixture(fx, odds_info):
     value_txt = f" | Kadro: {home_value:.0f}M€ [{home_source}] vs {away_value:.0f}M€ [{away_source}]"
     
     wx_txt = f" | {wx}" if wx else ""
-    note = (f"Seçim: {pick} | Güven: {conf_pct}% | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
+
+    # YENİ EKLENEN KOD: Saat bilgisi kontrolü
+    utc_kickoff = fx.get("utc_kickoff")
+    if utc_kickoff:
+        local_time = utc_kickoff.astimezone(TR_TZ).strftime("%H:%M")
+        time_txt = f"Saat: {local_time}"
+    else:
+        time_txt = "Saat: Veri Yok"
+        log(f"⏰ Fixture saat bilgisi eksik: {fx['home']} vs {fx['away']}")
+
+    note = (f"Seçim: {pick} | Güven: {conf_pct}% | {time_txt} | λ_h/λ_a: {lam_h:.2f}/{lam_a:.2f}"
             f"{wx_txt}{odds_txt}{kk_txt}{value_txt}{form_txt}{table_txt}{streak_txt}")
     
     return {
@@ -2402,7 +2418,9 @@ def fetch_results(date_str):
     return r
 
 # --- Raporlar ----------------------------------------------------------------
-
+def report_predictions(date_str):
+    fixtures = fetch_fixtures(date_str)
+    
     # State'i boş da olsa kalıcılaştır
     save_state(STATE)
     
@@ -2421,8 +2439,15 @@ def fetch_results(date_str):
         if rated["confidence"] < MIN_CONF:
             continue
             
-        ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M")
-        line = f"- {ko_local} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
+        # YENİ EKLENEN KOD: Saat formatı iyileştirmesi
+        ko_local = (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ)
+        if ko_local:
+            ko_str = ko_local.strftime("%H:%M")
+        else:
+            ko_str = "Saat: Veri Yok"
+            log(f"⏰ Saat bilgisi eksik: {fx['home']} vs {fx['away']}")
+        
+        line = f"- {ko_str} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
         lines.append(line)
         
         bucket = hi if rated["confidence"] >= HIGH_ALERT else top
@@ -2431,6 +2456,8 @@ def fetch_results(date_str):
     if len(lines) == 1:
         lines.append("Filtreler nedeniyle listelenecek maç kalmadı (MIN_CONF yüksek olabilir).")
     
+    # YENİ EKLENEN KOD: TOP_N = 5 olarak sabitlendi
+    TOP_N = 5  # En güçlü 5 seçim
     top.sort(reverse=True)
     best = [f"\n🏆 En Güçlü {TOP_N} Seçim:"] + [" " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
     
@@ -2659,14 +2686,13 @@ def format_prediction_results(predictions):
     Tahmin sonuçlarını formatlar
     """
     return predictions
-# Mevcut report_prediction fonksiyonunu güncelle
+
 def log_prediction_success(predictions):
     log(f"Tahmin başarılı: {len(predictions)} maç")
 
 def log_prediction_failure():
     log("Tahmin başarısız")
 
-# Mevcut report_prediction fonksiyonunu güncelle
 def report_prediction(date_str):
     """
     Tahmin raporlama fonksiyonu - make_prediction'ı çağırır ve email gönderir
