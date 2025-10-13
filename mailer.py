@@ -2660,50 +2660,30 @@ def format_prediction_results(predictions):
     """
     return predictions
 
-# Mevcut report_prediction fonksiyonunu güncelle
-def report_prediction(date_str):
-    """
-    Tahmin raporlama fonksiyonu - make_prediction'ı çağırır
-    """
-    try:
-        prediction_result = make_prediction(date_str)
-        if prediction_result:
-            # Başarılı tahmin işlemleri
-            log_prediction_success(prediction_result)
-            return prediction_result
-        else:
-            # Tahmin başarısız
-            log_prediction_failure()
-            return None
-    except Exception as e:
-        print(f"Report prediction error: {e}")
-        return None
-
-def log_prediction_success(result):
-    """Başarılı tahminleri loglar"""
-    print(f"[mailer] Prediction successful: {len(result)} tahmin üretildi")
-
-def log_prediction_failure():
-    """Başarısız tahminleri loglar"""
-    print(f"[mailer] Prediction failed")
-
-# Gerekli yardımcı fonksiyonlar
-def get_current_date():
-    """Geçerli tarihi döndürür"""
-    from datetime import datetime
-    return datetime.now().strftime("%Y-%m-%d")
-
-# Ana çalıştırma
-if __name__ == "__main__":
-    if MODE_ENV == "PREDICT":
-        report_prediction(_today_str_tr())
-    elif MODE_ENV == "RESULTS":
-        report_results(_yesterday_str_tr())
-    elif MODE_ENV == "SERVICE":
-        run_service_loop()
-    else:  # AUTO
-        now_tr = datetime.now(TR_TZ)
-        if now_tr.hour == 7:  # UTC 07:00 = TR 10:00
-            report_prediction(_today_str_tr())
-        else:
-            report_results(_yesterday_str_tr())
+2663 # Mevcut report_prediction fonksiyonunu güncelle
+2664 def report_prediction(date_str):
+2665     """
+2666     Tahmin raporlama fonksiyonu - make_prediction'ı çağırır ve email gönderir
+2667     """
+2668     try:
+2669         prediction_result = make_prediction(date_str)
+2670         if prediction_result:
+2671             # Başarılı tahmin işlemleri
+2672             log_prediction_success(prediction_result)
+2673             
+2674             # EMAIL GÖNDERME KISMI EKLE
+2675             lines = [f"🏟️ Günün Tahminleri — {date_str}"]
+2676             for pred in prediction_result:
+2677                 lines.append(f"- {pred['match']} — {pred['prediction']} ({pred['confidence']}%) - {pred['note']}")
+2678             
+2679             body = "\n".join(lines)
+2680             send_mail(f"Günün Tahminleri | {date_str}", body)
+2681             
+2682             return prediction_result
+2683         else:
+2684             # Tahmin başarısız
+2685             log_prediction_failure()
+2686             return None
+2687     except Exception as e:
+2688         print(f"Report prediction error: {e}")
+2689         return None
