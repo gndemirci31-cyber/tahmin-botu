@@ -2602,18 +2602,26 @@ def run_service_loop():
 # --- Ana/İtici Arayüz ---------------------------------------------------------
 def make_prediction(date_str):
     """
-    Tahmin işlemlerini gerçekleştiren fonksiyon
+    Gerçek tahmin işlemlerini gerçekleştiren fonksiyon
     """
     try:
-        # Burada tahmin mantığınızı ekleyin
-        # Örnek tahmin işlemleri:
-        # 1. Veri hazırlama
-        prepared_data = prepare_data_for_prediction(date_str)
-        # 2. Model yükleme veya tahmin yapma
-        prediction_result = run_prediction_model(prepared_data)
-        # 3. Sonuçları formatlama
-        formatted_result = format_prediction_results(prediction_result)
-        return formatted_result
+        # Mevcut tahmin sistemini kullan
+        fixtures = fetch_fixtures(date_str)
+        predictions = []
+        
+        for fx in fixtures:
+            odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
+            rated = rate_fixture(fx, odds)
+            
+            predictions.append({
+                "match": f"{fx['home']} vs {fx['away']}",
+                "prediction": rated["pick"],
+                "confidence": rated["confidence"],
+                "note": rated["note"]
+            })
+        
+        return predictions
+        
     except Exception as e:
         print(f"Prediction error: {e}")
         return None
@@ -2622,28 +2630,25 @@ def prepare_data_for_prediction(date_str):
     """
     Tahmin için gerekli verileri hazırlar
     """
-    # Mevcut veri hazırlama kodunuzu buraya taşıyın
-    # Örnek:
-    # data = load_data_from_source()
-    # processed_data = preprocess_data(data)
-    return {}  # placeholder
+    # fetch_fixtures zaten verileri hazırlıyor
+    return fetch_fixtures(date_str)
 
-def run_prediction_model(data):
+def run_prediction_model(fixtures_data):
     """
     Tahmin modelini çalıştırır
     """
-    # Mevcut model kodunuzu buraya taşıyın
-    # Örnek:
-    # model = load_model()
-    # prediction = model.predict(data)
-    return {}  # placeholder
+    predictions = []
+    for fx in fixtures_data:
+        odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
+        rated = rate_fixture(fx, odds)
+        predictions.append(rated)
+    return predictions
 
-def format_prediction_results(prediction):
+def format_prediction_results(predictions):
     """
     Tahmin sonuçlarını formatlar
     """
-    # Sonuç formatlama kodunuzu buraya taşıyın
-    return prediction
+    return predictions
 
 # Mevcut report_prediction fonksiyonunu güncelle
 def report_prediction(date_str):
@@ -2666,7 +2671,7 @@ def report_prediction(date_str):
 
 def log_prediction_success(result):
     """Başarılı tahminleri loglar"""
-    print(f"{mailer} Prediction successful: {result}")
+    print(f"{mailer} Prediction successful: {len(result)} tahmin üretildi")
 
 def log_prediction_failure():
     """Başarısız tahminleri loglar"""
