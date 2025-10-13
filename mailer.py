@@ -2392,7 +2392,6 @@ def fetch_results(date_str):
     return r
 
 # --- Raporlar ----------------------------------------------------------------
-\1
 
     # State'i boÅŸ da olsa kalÄ±cÄ±laÅŸtÄ±r
     save_state(STATE)
