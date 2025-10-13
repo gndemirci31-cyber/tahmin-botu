@@ -2600,75 +2600,80 @@ def run_service_loop():
         time.sleep(20)
 
 # --- Ana/İtici Arayüz ---------------------------------------------------------
-def main():
+def make_prediction(date_str):
+    """
+    Tahmin işlemlerini gerçekleştiren fonksiyon
+    """
     try:
-        now_utc = datetime.now(timezone.utc)
-        tr_now = now_utc.astimezone(TR_TZ)
-        date_str = tr_now.strftime("%Y-%m-%d")
-        mode = MODE_ENV
-
-        log(f"MODE={mode} | TR now={tr_now} | date={date_str} | w_mkt={get_w_mkt():.2f}")
-
-        if mode == "SERVICE":
-            run_service_loop()
-            return
-
-        if mode == "AUTO":
-            mode = "PREDICT" if now_utc.hour == 7 else "RESULTS"
-
-        if mode == "PREDICT":
-            report_predictions(date_str)
-        elif mode == "RESULTS":
-            # Onaylı politika: RESULTS her zaman düne bakar
-            report_results(_yesterday_str_tr(tr_now))
-        else:
-            send_mail(
-                "Tahmin Botu | Bilgi",
-                "AUTO/SERVICE dışı çalıştırma. MODE=PREDICT veya MODE=RESULTS verin."
-            )
-
-    except Exception:
-        tb = traceback.format_exc()
-        log(tb)
-        try:
-            send_mail("Tahmin Botu | Hata", tb)
-        except Exception:
-            pass
-
-
-# --- Tahmin Raporu ------------------------------------------------------------
-def report_predictions(date_str):
-    """Tahmin sonuçlarını hesapla ve kaydet"""
-    try:
-        # Eski fonksiyon: report_prediction()
-        return report_prediction(date_str)
+        # Burada tahmin mantığınızı ekleyin
+        # Örnek tahmin işlemleri:
+        # 1. Veri hazırlama
+        prepared_data = prepare_data_for_prediction(date_str)
+        # 2. Model yükleme veya tahmin yapma
+        prediction_result = run_prediction_model(prepared_data)
+        # 3. Sonuçları formatlama
+        formatted_result = format_prediction_results(prediction_result)
+        return formatted_result
     except Exception as e:
-        log(f"Prediction Error: {e}")
-        raise
+        print(f"Prediction error: {e}")
+        return None
 
-
-# --- Dinlenme (Rest) Etkisi ---------------------------------------------------
-def calculate_rest_effect(days_home, days_away):
+def prepare_data_for_prediction(date_str):
     """
-    Pozitif değer = avantaj, negatif = dezavantaj.
-    Basit sezgisel:
-        <2 gün: -0.15 | 2-3 gün: -0.10 | 4-6 gün: 0.00 | >6 gün: +0.05
+    Tahmin için gerekli verileri hazırlar
     """
-    def f(d):
-        try:
-            d = float(d)
-        except Exception:
-            return 0.0
-        if d < 2:
-            return -0.15
-        if d < 3:
-            return -0.10
-        if d > 6:
-            return 0.05
-        return 0.0
+    # Mevcut veri hazırlama kodunuzu buraya taşıyın
+    # Örnek:
+    # data = load_data_from_source()
+    # processed_data = preprocess_data(data)
+    return {}  # placeholder
 
-    return {"home": f(days_home), "away": f(days_away)}
+def run_prediction_model(data):
+    """
+    Tahmin modelini çalıştırır
+    """
+    # Mevcut model kodunuzu buraya taşıyın
+    # Örnek:
+    # model = load_model()
+    # prediction = model.predict(data)
+    return {}  # placeholder
 
+def format_prediction_results(prediction):
+    """
+    Tahmin sonuçlarını formatlar
+    """
+    # Sonuç formatlama kodunuzu buraya taşıyın
+    return prediction
 
-if __name__ == "__main__":
-    main()
+# Mevcut report_prediction fonksiyonunu güncelle
+def report_prediction(date_str):
+    """
+    Tahmin raporlama fonksiyonu - make_prediction'ı çağırır
+    """
+    try:
+        prediction_result = make_prediction(date_str)
+        if prediction_result:
+            # Başarılı tahmin işlemleri
+            log_prediction_success(prediction_result)
+            return prediction_result
+        else:
+            # Tahmin başarısız
+            log_prediction_failure()
+            return None
+    except Exception as e:
+        print(f"Report prediction error: {e}")
+        return None
+
+def log_prediction_success(result):
+    """Başarılı tahminleri loglar"""
+    print(f"{mailer} Prediction successful: {result}")
+
+def log_prediction_failure():
+    """Başarısız tahminleri loglar"""
+    print(f"{mailer} Prediction failed")
+
+# Gerekli yardımcı fonksiyonlar
+def get_current_date():
+    """Geçerli tarihi döndürür"""
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d")
