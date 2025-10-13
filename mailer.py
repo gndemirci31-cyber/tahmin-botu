@@ -2659,6 +2659,12 @@ def format_prediction_results(predictions):
     Tahmin sonuçlarını formatlar
     """
     return predictions
+# Mevcut report_prediction fonksiyonunu güncelle
+def log_prediction_success(predictions):
+    log(f"Tahmin başarılı: {len(predictions)} maç")
+
+def log_prediction_failure():
+    log("Tahmin başarısız")
 
 # Mevcut report_prediction fonksiyonunu güncelle
 def report_prediction(date_str):
@@ -2671,7 +2677,7 @@ def report_prediction(date_str):
             # Başarılı tahmin işlemleri
             log_prediction_success(prediction_result)
 
-            # EMAIL GÖNDERME KISMI EKLE
+            # EMAIL GÖNDERME KISMI
             lines = [f"🏟️ Günün Tahminleri — {date_str}"]
             for pred in prediction_result:
                 lines.append(f"- {pred['match']} — {pred['prediction']} ({pred['confidence']}%) - {pred['note']}")
@@ -2687,3 +2693,7 @@ def report_prediction(date_str):
     except Exception as e:
         print(f"Report prediction error: {e}")
         return None
+
+if __name__ == "__main__":
+    today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
+    report_prediction(today)
