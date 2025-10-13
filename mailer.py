@@ -2634,10 +2634,15 @@ def main():
 if __name__ == "__main__":
     main()
 
-
+def report_predictions(date_str):
+        
+    # Eski çağrılar bozulmasın diye tekil fonksiyona yönlendiriyoruz
+    return report_prediction(date_str)
+    """
 # --- Dinlenme (Rest) Etkisi ---
 def calculate_rest_effect(days_home, days_away):
-    """
+    
+
     Pozitif deÄŸer = avantaj, negatif = dezavantaj.
     Basit sezgisel:
       <2 gÃ¼n: -0.15   |   2-3 gÃ¼n: -0.10   |   4-6 gÃ¼n: 0.00   |   >6 gÃ¼n: +0.05
