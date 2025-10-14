@@ -5,7 +5,13 @@ Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + 
 import json
 import os
 import re
-import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
+import math
+import time
+import smtplib
+import traceback
+import urllib.parse
+import random
+import logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
@@ -48,10 +54,11 @@ HEADERS_JSON = {"Accept": "application/json"}
 # --- TOP_N AYARI ---
 TOP_N = int(os.getenv("TOP_N", "5"))  # En güçlü tahmin sayısı
 MIN_CONF = int(os.getenv("MIN_CONF", "0"))  # Minimum güven seviyesi
-NIGPLALERT = int(os.getenv("NIGPLALERT", "99")) # Yüksek given uyarı eşiği
+NIGPLALERT = int(os.getenv("NIGPLALERT", "99"))  # Yüksek güven uyarı eşiği
+HIGH_ALERT = 80  # Yüksek güven eşiği
 
 def log(msg):
-    print(f"{mailer} (msg)", flush=True)
+    print(f"{msg}", flush=True)
 
 def http_get(url, headers=None, params=None, timeout=25):
     try:
@@ -65,9 +72,6 @@ def http_get(url, headers=None, params=None, timeout=25):
     except Exception as e:
         log(f"GET ERROR {url}: {e}")
         return None
-
-def to_dt_utc(s):
-    try:
 
 def to_dt_utc(s):
     try:
@@ -89,7 +93,7 @@ def clamp(x, a, b):
     return max(a, min(b, x))
 
 def norm_team(x: str):
-    return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc","").strip()
+    return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc", "").strip()
 
 def season_for_today():
     now = datetime.now(TR_TZ)
@@ -147,8 +151,8 @@ def load_snapshot(date: Optional[str] = None) -> Dict:
 # ==================== FİLTRELER / FILTERS ====================
 
 _WOMEN_TOKENS = {
-    "women","woman","female","ladies","wsl", "féminine","feminine","feminino","femenina","femenino","femminile",
-    "frauen","damas","dames","mulheres","kobiet","vrouwen","donna","dziewcząt"
+    "women", "woman", "female", "ladies", "wsl", "féminine", "feminine", "feminino", "femenina", "femenino", "femminile",
+    "frauen", "damas", "dames", "mulheres", "kobiet", "vrouwen", "donna", "dziewcząt"
 }
 
 _WOMEN_HINTS = {
@@ -157,7 +161,7 @@ _WOMEN_HINTS = {
 }
 
 _U_TOKENS = {
-    "u23","u22","u21","u20","u19","u18","u17", "youth","junior","primavera","sub-23","sub-21","sub-20","sub20","sub21"
+    "u23", "u22", "u21", "u20", "u19", "u18", "u17", "youth", "junior", "primavera", "sub-23", "sub-21", "sub-20", "sub20", "sub21"
 }
 
 def _norm(s: str) -> str:
@@ -283,7 +287,6 @@ def normalize_team_name(name):
         'atletico de madrid': 'atletico madrid',
         'athletic bilbao': 'athletic bilbao',
         'athletic club': 'athletic bilbao',
-        'real sociedad': 'real sociedad',
         'real sociedad': 'real sociedad',
         'valencia cf': 'valencia',
         'villareal': 'villarreal',
@@ -557,7 +560,7 @@ def get_w_mkt():
     try:
         return float(STATE.get("w_mkt", W_MKT_INIT))
     except:
-    return W_MKT_INIT
+        return W_MKT_INIT
 
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
