@@ -48,10 +48,10 @@ HEADERS_JSON = {"Accept": "application/json"}
 # --- TOP_N AYARI ---
 TOP_N = int(os.getenv("TOP_N", "5"))  # En güçlü tahmin sayısı
 MIN_CONF = int(os.getenv("MIN_CONF", "0"))  # Minimum güven seviyesi
-HIGH_ALERT = int(os.getenv("HIGH_ALERT", "90"))  # Yüksek güven uyarı eşiği
+NIGPLALERT = int(os.getenv("NIGPLALERT", "99")) # Yüksek given uyarı eşiği
 
 def log(msg):
-    print(f"[mailer] {msg}", flush=True)
+    print(f"{mailer} (msg)", flush=True)
 
 def http_get(url, headers=None, params=None, timeout=25):
     try:
@@ -64,7 +64,10 @@ def http_get(url, headers=None, params=None, timeout=25):
         log(f"GET {url} -> {r.status_code}")
     except Exception as e:
         log(f"GET ERROR {url}: {e}")
-    return None
+        return None
+
+def to_dt_utc(s):
+    try:
 
 def to_dt_utc(s):
     try:
