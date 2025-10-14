@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER)
+Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ)
 """
 import json
 import os
@@ -44,6 +44,11 @@ ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 # --- Ortak yardımcılar -------------------------------------------------------
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
 HEADERS_JSON = {"Accept": "application/json"}
+
+# --- TOP_N AYARI ---
+TOP_N = int(os.getenv("TOP_N", "5"))  # En güçlü tahmin sayısı
+MIN_CONF = int(os.getenv("MIN_CONF", "0"))  # Minimum güven seviyesi
+HIGH_ALERT = int(os.getenv("HIGH_ALERT", "90"))  # Yüksek güven uyarı eşiği
 
 def log(msg):
     print(f"[mailer] {msg}", flush=True)
@@ -1193,9 +1198,6 @@ FD_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY = os.getenv("ODDS_API_KEY")
 APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
 MODE_ENV = (os.getenv("MODE") or "AUTO").upper().strip()
-TOP_N = int(os.getenv("TOP_N", "5"))
-MIN_CONF = int(os.getenv("MIN_CONF", "0"))
-HIGH_ALERT = int(os.getenv("HIGH_ALERT", "90"))
 OLD_LEAGUES = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
 ODDS_TTL_MIN = int(os.getenv("ODDS_TTL_MIN", "15"))
 SPLIT_HIGH = (os.getenv("SPLIT_HIGH_ALERT_MAIL", "0") == "1")
@@ -2427,7 +2429,8 @@ def report_predictions(date_str):
     save_state(STATE)
     
     lines = [f"🏟️ Günün Tahminleri — {date_str} (Transfermarkt + Milli Takım Elo + CIES/FootyStats + API-Football + TotalCorner + Kaynak Etiketleme + Ev Sahibi Dengeleme)\n"]
-    top = []; hi = []
+    top_predictions = []  # TOP_N için liste
+    hi = []
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     
     for fx in fixtures:
@@ -2452,16 +2455,29 @@ def report_predictions(date_str):
         line = f"- {ko_str} | {fx.get('area','')} {fx.get('competition','')} | {fx['home']} vs {fx['away']} — {rated['note']}"
         lines.append(line)
         
-        bucket = hi if rated["confidence"] >= HIGH_ALERT else top
-        bucket.append((rated["confidence"], line))
+        # TOP_N için adayları topla
+        if rated["confidence"] >= MIN_CONF:
+            top_predictions.append((rated["confidence"], line))
+        
+        bucket = hi if rated["confidence"] >= HIGH_ALERT else None
+        if bucket is not None:
+            bucket.append((rated["confidence"], line))
+    
+    # EN ÖNEMLİ EKSİK KISIM: Top N seçimleri vurgula
+    # En yüksek güvenli TOP_N maçı seç
+    top_predictions.sort(key=lambda x: x[0], reverse=True)
+    top_n = top_predictions[:TOP_N]
+    
+    # Özel "En Güçlü X Seçim" bölümü ekle
+    if top_n:
+        lines.append(f"\n🏆 En Güçlü {TOP_N} Seçim:")
+        for conf, line in top_n:
+            # "⭐" emojisi ekle ve "- " kısmını temizle
+            cleaned_line = line.replace("- ", "").strip()
+            lines.append(f"⭐ {cleaned_line}")
     
     if len(lines) == 1:
         lines.append("Filtreler nedeniyle listelenecek maç kalmadı (MIN_CONF yüksek olabilir).")
-    
-    # YENİ EKLENEN KOD: TOP_N = 5 olarak sabitlendi
-    TOP_N = 5  # En güçlü 5 seçim
-    top.sort(reverse=True)
-    best = [f"\n🏆 En Güçlü {TOP_N} Seçim:"] + [" " + l.replace("- ","").strip() for c, l in top[:TOP_N]]
     
     hi_block = []
     if hi:
@@ -2470,27 +2486,33 @@ def report_predictions(date_str):
         for c, l in hi:
             hi_block.append(" " + l.replace("- ","").strip())
     
-    body = "\n".join(lines + [""] + best + hi_block)
+    body = "\n".join(lines + [""] + hi_block)
     save_state(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
 # --- EN YÜKSEK GÜVENİLİR 5 MAÇ SEÇİMİ ---
-def get_top_5_predictions(email_content):
-    """
-    E-posta içeriğinden en yüksek güvenilen 5 maçı seçer
-    """
-    # 1. Tüm maç tahminlerini bulur
-    pattern = r"- (.*?) – \d+ \((\d+)%\) - Seçim: \d+ \| Güven: \d+%"
-    matches = re.findall(pattern, email_content)
+def get_top_5_predictions(body):
+    """Mevcut tahminlerden en iyi 5'ini seç (legacy fonksiyon)"""
+    # Bu fonksiyon mevcut kodunuzla uyumluluk için
+    top_predictions = []
+    lines = body.split('\n')
     
-    # 2. Güven yüzdelerine göre büyükten küçüğe sıralar  
-    sorted_matches = sorted(matches, key=lambda x: int(x[1]), reverse=True)
+    for line in lines:
+        if 'Güven:' in line and ('✅' in line or '⚠️' in line):
+            try:
+                # Güven yüzdesini çıkar
+                confidence_str = line.split('Güven: %')[-1].split()[0]
+                confidence = float(confidence_str) / 100
+                top_predictions.append((line, confidence))
+            except (IndexError, ValueError):
+                continue
     
-    # 3. En yüksek güvene sahip ilk 5 maçı seçer
-    top_5_matches = sorted_matches[:5]
-    
-    return top_5_matches
+    # Güvene göre sırala ve top 5'i al
+    top_predictions.sort(key=lambda x: x[1], reverse=True)
+    return [(match.replace('✅', '').replace('⚠️', '').replace('-', '').strip(), conf*100) 
+            for match, conf in top_predictions[:5]]
 
+# --- State dosyası işlemleri ---
 STATE_FILE = "predictions_state.json"
 
 # State dosyasına yazma
