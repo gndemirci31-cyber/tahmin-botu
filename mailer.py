@@ -554,7 +554,7 @@ def get_w_mkt():
     try:
         return float(STATE.get("w_mkt", W_MKT_INIT))
     except:
-        return W_MKT_INIT
+    return W_MKT_INIT
 
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
@@ -2934,17 +2934,7 @@ def format_predictions_email(predictions, date_str):
     return "\n".join(lines)
 
 if __name__ == "__main__":
-    # MODE kontrolü ekle
-    mode = os.getenv("MODE", "PREDICT").upper()
+    # TAHMİN MODU - SADECE TAHMİN YAP
+    mode = "PREDICT"
     today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
-    yesterday = (datetime.now(TR_TZ) - timedelta(days=1)).strftime("%Y-%m-%d")
-    
-    if mode == "RESULTS":
-        # RESULTS modu: dünün sonuçlarını kontrol et
-        report_results(yesterday)
-    elif mode == "TOP_N":
-        # TOP_N modu: sadece en iyi tahminleri gönder
-        enhanced_report_predictions(today)
-    else:
-        # PREDICT modu: bugünün tahminlerini üret (orijinal davranış)
-        report_predictions(today)
+    report_predictions(today)
