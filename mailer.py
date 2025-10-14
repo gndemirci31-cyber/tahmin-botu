@@ -2798,6 +2798,141 @@ def report_prediction(date_str):
         print(f"Report prediction error: {e}")
         return None
 
+# --- TOP_N ÖZELLİĞİ İÇİN YENİ FONKSİYONLAR ---
+def get_top_n_predictions(predictions, n=TOP_N, min_confidence=MIN_CONF):
+    """
+    En yüksek güvenilir N tahmini seçer
+    
+    Args:
+        predictions: Tüm tahmin listesi
+        n: Seçilecek tahmin sayısı
+        min_confidence: Minimum güven seviyesi
+    
+    Returns:
+        Sıralanmış tahmin listesi
+    """
+    # Güven eşiğini geçen tahminleri filtrele
+    filtered = [p for p in predictions if p.get('confidence', 0) >= min_confidence]
+    
+    # Güvene göre sırala
+    filtered.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+    
+    # İlk N'yi al
+    return filtered[:n]
+
+def format_top_n_email(predictions, date_str, n=TOP_N):
+    """
+    TOP_N tahminlerini e-posta formatına dönüştürür
+    """
+    lines = []
+    lines.append(f"🏆 GÜNÜN EN İYİ {n} TAHMİNİ — {date_str}")
+    lines.append("=" * 60)
+    lines.append("")
+    
+    if not predictions:
+        lines.append("❌ Bugün için yeterince güvenilir tahmin bulunamadı.")
+        lines.append(f"ℹ️ Minimum güven eşiği: {MIN_CONF}%")
+        return "\n".join(lines)
+    
+    for i, pred in enumerate(predictions, 1):
+        # Emoji seçimi
+        emoji = "🔥" if pred.get('confidence', 0) >= HIGH_ALERT else "✅"
+        
+        lines.append(f"{emoji} #{i} - {pred.get('confidence', 0)}% GÜVEN")
+        lines.append(f"   ⚽ {pred.get('match', 'Maç bilgisi yok')}")
+        lines.append(f"   🎯 Tahmin: {pred.get('prediction', 'N/A')}")
+        
+        # Not kısmını temizle ve formatla
+        note = pred.get('note', '')
+        if note:
+            # Uzun notu kısalt
+            if len(note) > 150:
+                note = note[:147] + "..."
+            lines.append(f"   📝 {note}")
+        
+        lines.append("")
+    
+    # İstatistikler
+    lines.append("📊 İSTATİSTİKLER")
+    lines.append(f"   • Toplam Tahmin: {len(predictions)}")
+    if predictions:
+        avg_confidence = sum(p.get('confidence', 0) for p in predictions) / len(predictions)
+        lines.append(f"   • Ortalama Güven: {avg_confidence:.1f}%")
+        
+        high_confidence = sum(1 for p in predictions if p.get('confidence', 0) >= HIGH_ALERT)
+        if high_confidence > 0:
+            lines.append(f"   • Yüksek Güven ({HIGH_ALERT}%+): {high_confidence}")
+    
+    lines.append("")
+    lines.append(f"🤖 Model: {MODEL_VERSION}")
+    lines.append(f"⏰ Üretim Zamanı: {datetime.now(TR_TZ).strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    return "\n".join(lines)
+
+def enhanced_report_predictions(date_str):
+    """
+    Geliştirilmiş tahmin raporu - TOP_N özelliği ile
+    """
+    fixtures = fetch_fixtures(date_str)
+    
+    # State'i boş da olsa kalıcılaştır
+    save_state(STATE)
+    
+    all_predictions = []
+    hi = []
+    fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
+    
+    for fx in fixtures:
+        odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
+        rated = rate_fixture(fx, odds)
+        record_prediction(
+            fx, rated, rated["probs_model"], rated["probs_market"], rated["probs_blend"],
+            rated["wx_adj"], rated["elo_adj"], rated["net_form"]
+        )
+        
+        prediction_data = {
+            "match": f"{fx['home']} vs {fx['away']}",
+            "prediction": rated["pick"],
+            "confidence": rated["confidence"],
+            "note": rated["note"],
+            "area": fx.get("area", ""),
+            "competition": fx.get("competition", ""),
+            "time": (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M") if fx.get("utc_kickoff") else "Saat Yok"
+        }
+        
+        all_predictions.append(prediction_data)
+        
+        if rated["confidence"] >= HIGH_ALERT:
+            hi.append((rated["confidence"], prediction_data))
+    
+    # TOP_N tahminlerini seç
+    top_predictions = get_top_n_predictions(all_predictions, TOP_N, MIN_CONF)
+    
+    # E-posta gönder
+    if top_predictions:
+        email_body = format_top_n_email(top_predictions, date_str, TOP_N)
+        send_mail(f"En İyi {TOP_N} Tahmin | {date_str}", email_body)
+    else:
+        email_body = format_top_n_email([], date_str, TOP_N)
+        send_mail(f"En İyi {TOP_N} Tahmin | {date_str} - TAHMİN YOK", email_body)
+    
+    # Orijinal formatı da koru (isteğe bağlı)
+    original_body = format_predictions_email(all_predictions, date_str)
+    send_mail(f"Tüm Tahminler | {date_str}", original_body)
+    
+    return top_predictions
+
+def format_predictions_email(predictions, date_str):
+    """
+    Orijinal e-posta formatını korur
+    """
+    lines = [f"🏟️ Günün Tahminleri — {date_str}"]
+    
+    for pred in predictions:
+        lines.append(f"- {pred['match']} — {pred['prediction']} ({pred['confidence']}%) - {pred['note']}")
+    
+    return "\n".join(lines)
+
 if __name__ == "__main__":
     # MODE kontrolü ekle
     mode = os.getenv("MODE", "PREDICT").upper()
@@ -2807,6 +2942,9 @@ if __name__ == "__main__":
     if mode == "RESULTS":
         # RESULTS modu: dünün sonuçlarını kontrol et
         report_results(yesterday)
+    elif mode == "TOP_N":
+        # TOP_N modu: sadece en iyi tahminleri gönder
+        enhanced_report_predictions(today)
     else:
-        # PREDICT modu: bugünün tahminlerini üret
-        report_prediction(today)
+        # PREDICT modu: bugünün tahminlerini üret (orijinal davranış)
+        report_predictions(today)
