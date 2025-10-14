@@ -2474,6 +2474,60 @@ def report_predictions(date_str):
     save_state(STATE)
     send_mail(f"Günün Tahminleri | {date_str}", body)
 
+# --- EN YÜKSEK GÜVENİLİR 5 MAÇ SEÇİMİ ---
+def get_top_5_predictions(email_content):
+    """
+    E-posta içeriğinden en yüksek güvenilen 5 maçı seçer
+    """
+    # 1. Tüm maç tahminlerini bulur
+    pattern = r"- (.*?) – \d+ \((\d+)%\) - Seçim: \d+ \| Güven: \d+%"
+    matches = re.findall(pattern, email_content)
+    
+    # 2. Güven yüzdelerine göre büyükten küçüğe sıralar  
+    sorted_matches = sorted(matches, key=lambda x: int(x[1]), reverse=True)
+    
+    # 3. En yüksek güvene sahip ilk 5 maçı seçer
+    top_5_matches = sorted_matches[:5]
+    
+    return top_5_matches
+
+STATE_FILE = "predictions_state.json"
+
+# State dosyasına yazma
+def save_to_state_file(predictions):
+    with open(STATE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(predictions, f, ensure_ascii=False, indent=2)
+
+# State dosyasından okuma  
+def read_from_state_file():
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+# State'den en yüksek güvenli 5 tahmini getirme
+def get_top_5_from_state():
+    predictions = read_from_state_file()
+    if not predictions:
+        return []
+    
+    # Güven yüzdesine göre sırala ve ilk 5'i al
+    sorted_predictions = sorted(predictions, key=lambda x: x.get('confidence', 0), reverse=True)
+    return sorted_predictions[:5]
+
+def print_top_5_predictions():
+    top_5 = get_top_5_from_state()
+    
+    if not top_5:
+        print("State dosyasında tahmin bulunamadı")
+        return
+    
+    print("En yüksek güvenilen 5 maç:")
+    for i, prediction in enumerate(top_5, 1):
+        match = prediction.get('match', 'Bilinmeyen maç')
+        confidence = prediction.get('confidence', 0)
+        print(f"{i}. {match} - Güven: %{confidence}")
+
 def report_results(date_str):
     results = fetch_results(date_str)
     lines = [f"📊 Günün Sonuçları — {date_str}", ""]
