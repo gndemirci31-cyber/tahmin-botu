@@ -2,7 +2,9 @@
 """
 Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER)
 """
-
+import json
+import os
+import re
 import os, math, time, json, smtplib, traceback, re, urllib.parse, random, logging
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
