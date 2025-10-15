@@ -1010,6 +1010,7 @@ def get_uefa_coefficient_backup(team_name):
 
 def update_external_data():
     """Tüm external verileri otomatik günceller"""
+    initialize_external_data_state()
     
     # Takım değerleri (günlük)
     if needs_update("team_values"):
@@ -3338,6 +3339,52 @@ def initialize_external_data_state():
             }
         }
 
+# ==================== YENİ FONKSİYONLAR ====================
+
+def update_team_values():
+    """Takım değerlerini otomatik günceller"""
+    try:
+        # Örnek takımların değerlerini güncelle
+        sample_teams = ["Galatasaray", "Fenerbahçe", "Beşiktaş", "Trabzonspor"]
+        for team in sample_teams:
+            value, source = get_team_value(team, "Turkey")
+            STATE["external_data"]["team_values"][team] = value
+            
+        STATE["external_data"]["last_updated"]["team_values"] = datetime.now().isoformat()
+        log("✅ Takım değerleri güncellendi")
+    except Exception as e:
+        log(f"❌ Takım değerleri güncelleme hatası: {e}")
+
+def update_fifa_rankings():
+    """FIFA sıralamalarını günceller (basit versiyon)"""
+    try:
+        # Örnek milli takım sıralamaları
+        national_teams = {
+            "Turkey": 40, "Germany": 16, "France": 2, "Brazil": 5,
+            "Argentina": 1, "England": 3, "Spain": 8, "Italy": 9
+        }
+        
+        STATE["external_data"]["fifa_rankings"] = national_teams
+        STATE["external_data"]["last_updated"]["fifa_rankings"] = datetime.now().isoformat()
+        log("✅ FIFA sıralamaları güncellendi")
+    except Exception as e:
+        log(f"❌ FIFA sıralamaları güncelleme hatası: {e}")
+
+def update_uefa_coefficients():
+    """UEFA katsayılarını günceller (basit versiyon)"""
+    try:
+        # Örnek UEFA katsayıları
+        uefa_coeffs = {
+            "Galatasaray": 25.0, "Fenerbahçe": 20.0, "Beşiktaş": 18.0,
+            "Bayern Munich": 120.0, "Real Madrid": 130.0, "Manchester City": 125.0
+        }
+        
+        STATE["external_data"]["uefa_coefficients"] = uefa_coeffs
+        STATE["external_data"]["last_updated"]["uefa_coefficients"] = datetime.now().isoformat()
+        log("✅ UEFA katsayıları güncellendi")
+    except Exception as e:
+        log(f"❌ UEFA katsayıları güncelleme hatası: {e}")
+
 # ==================== ANA ÇALIŞTIRMA ====================
 
 def main():
@@ -3351,13 +3398,8 @@ def main():
         # External verileri güncelle
         update_external_data()
         
-        # Bugünün tahminlerini oluştur
-        today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
-        enhanced_report_predictions(today)
-        
-        # Schedule kontrolü - sonuç raporu için
-        if _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
-            fix_results_schedule()
+        # Otomatik mod: 10:00'da tahmin, 04:00'da sonuç
+        run_service_loop()
             
     except Exception as e:
         log(f"Main execution error: {e}")
