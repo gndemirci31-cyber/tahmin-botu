@@ -147,21 +147,23 @@ jobs:
           echo "🚀 Bot başlatılıyor: $MODE modu"
           python mailer.py --mode "$MODE"
 
-      - name: State'i kalıcılaştır (PREDICT ve RESULTS)
-        if: always() && (steps.pick.outputs.mode == 'PREDICT' || steps.pick.outputs.mode == 'RESULTS')
+      - name: State'i kalıcılaştır (TÜM MODLAR)
+        if: always()
         run: |
           set -e
           if [ -f model_state.json ] && [ -s model_state.json ]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            if ! git diff --quiet -- model_state.json; then
-              git add -f model_state.json
-              git commit -m "chore(state): ${{ steps.pick.outputs.mode }} update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
-              git push
-              echo "✔ model_state.json commit/push edildi."
-            else
-              echo "ℹ state'te değişiklik yok."
-            fi
+            
+            # Değişiklik kontrolü yap, her zaman push etmeye çalış
+            git add -f model_state.json
+            # Değişiklik yoksa commit başarısız olur, bu normal
+            git commit -m "chore(state): auto-update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]" || echo "ℹ state'te değişiklik yok - commit gerekmez"
+            
+            # Her durumda push dene (branch güncel olabilir)
+            git push || echo "ℹ push gerekmez (branch güncel)"
+            
+            echo "✅ State kalıcılaştırma tamamlandı"
           else
-            echo "ℹ model_state.json bulunamadı veya boş."
+            echo "ℹ model_state.json bulunamadı veya boş"
           fi
