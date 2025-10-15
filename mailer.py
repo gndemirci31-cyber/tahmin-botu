@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ)
+Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ)
 """
 import json
 import os
@@ -23,7 +23,7 @@ from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
 
 # --- Model/version & retention ---
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.11-a")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.15-a")
 STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
 FREEZE_MINUTES = int(os.getenv("FREEZE_MINUTES", "60"))
 
@@ -761,6 +761,385 @@ def get_national_elo_proxy(team_name, area="Europe"):
             return elo, "ELO_NATIONAL"
     
     return 1400.0, "ELO_DEFAULT"  # Varsayılan milli takım Elo'su
+
+# ==================== AKILLI FEATURE SİSTEMİ ====================
+
+def determine_match_type(home_country, away_country, competition):
+    """Maç türünü otomatik belirler"""
+    comp_lower = (competition or "").lower()
+    
+    # Milli Takım Maçları
+    if any(keyword in comp_lower for keyword in ["world cup", "euro", "qualification", "international", "nations league"]):
+        return "INTERNATIONAL"
+    
+    # Aynı Ülke Takımları - Yerel Lig
+    if home_country == away_country:
+        return "DOMESTIC_LEAGUE"
+    
+    # Farklı Ülke Takımları - Avrupa Kupası
+    if any(cup in comp_lower for cup in ["champions league", "europa league", "conference league", "uefa"]):
+        return "EUROPEAN_CUP"
+    
+    return "OTHER"
+
+def get_intelligent_features(home_team, away_team, home_country, away_country, match_type):
+    """Maç türüne göre akıllı feature seçimi"""
+    
+    features = {}
+    
+    # 1. Takım Değerleri (Tüm maç türleri için)
+    features['home_team_value'] = get_team_value_feature(home_team, home_country)
+    features['away_team_value'] = get_team_value_feature(away_team, away_country)
+    features['value_ratio'] = features['home_team_value'] / max(features['away_team_value'], 0.1)
+    
+    # 2. Maç Türüne Özel Feature'lar
+    if match_type == "DOMESTIC_LEAGUE":
+        # AYNI LİG - Lig Pozisyonu ve Form
+        features.update(get_league_features(home_team, away_team, home_country))
+        
+    elif match_type == "EUROPEAN_CUP":
+        # AVRUPA KUPASI - UEFA katsayıları
+        features.update(get_european_features(home_team, away_team))
+        
+    elif match_type == "INTERNATIONAL":
+        # MİLLİ TAKIM - FIFA sıralaması
+        features.update(get_international_features(home_team, away_team))
+    
+    return features
+
+def get_league_features(home_team, away_team, country):
+    """Aynı ligdeki takımlar için lig tablosu bilgileri"""
+    features = {}
+    
+    try:
+        # API-Football'dan lig pozisyonları
+        standings = get_apifootball_standings(country)
+        
+        if standings:
+            home_position = standings.get(home_team, {}).get('position', 20)
+            away_position = standings.get(away_team, {}).get('position', 20)
+            home_points = standings.get(home_team, {}).get('points', 0)
+            away_points = standings.get(away_team, {}).get('points', 0)
+            
+            features['home_league_position'] = home_position
+            features['away_league_position'] = away_position
+            features['position_difference'] = abs(home_position - away_position)
+            features['points_difference'] = home_points - away_points
+            
+    except Exception as e:
+        log(f"Lig verileri alınamadı: {e}")
+    
+    return features
+
+def get_european_features(home_team, away_team):
+    """Avrupa kupaları için UEFA katsayıları"""
+    features = {}
+    
+    try:
+        home_coeff = get_uefa_coefficient(home_team)
+        away_coeff = get_uefa_coefficient(away_team)
+        
+        features['home_uefa_coefficient'] = home_coeff
+        features['away_uefa_coefficient'] = away_coeff
+        features['uefa_coeff_ratio'] = home_coeff / max(away_coeff, 0.1)
+        
+    except Exception as e:
+        log(f"UEFA verileri alınamadı: {e}")
+    
+    return features
+
+def get_international_features(home_team, away_team):
+    """Milli takımlar için FIFA sıralaması"""
+    features = {}
+    
+    try:
+        home_rank = get_fifa_ranking(home_team)
+        away_rank = get_fifa_ranking(away_team)
+        
+        features['home_fifa_rank'] = home_rank
+        features['away_fifa_rank'] = away_rank
+        features['rank_difference'] = home_rank - away_rank
+        features['fifa_power_ratio'] = (1/max(home_rank, 1)) / (1/max(away_rank, 1))
+        
+    except Exception as e:
+        log(f"FIFA verileri alınamadı: {e}")
+    
+    return features
+
+# ==================== API-FOOTBALL PREMIUM ENTEGRASYONU ====================
+
+def get_apifootball_standings(country):
+    """API-Football'dan lig tablosu"""
+    try:
+        league_id = get_league_id_for_country(country)
+        if not league_id:
+            return None
+            
+        season = season_for_today()
+        url = f"{APIFOOT_BASE}/standings"
+        params = {"league": league_id, "season": season}
+        
+        response = _apifoot_get(url, params)
+        if response:
+            return parse_apifootball_standings(response)
+            
+    except Exception as e:
+        log(f"API-Football standings error: {e}")
+    
+    return None
+
+def get_team_value_apifootball(team_name):
+    """API-Football'dan takım değeri"""
+    try:
+        team_id = _apifoot_find_team_id(team_name)
+        if not team_id:
+            return None
+            
+        url = f"{APIFOOT_BASE}/teams"
+        params = {"id": team_id}
+        
+        response = _apifoot_get(url, params)
+        if response and response[0]:
+            return response[0].get('team', {}).get('market_value')
+            
+    except Exception as e:
+        log(f"API-Football team value error: {e}")
+    
+    return None
+
+# ==================== ÇİFT KAYNAKLI ORAN SİSTEMİ ====================
+
+def fetch_odds_dual(area, comp, home, away):
+    """Çift kaynaklı oran sistemi - API-Football birincil, The Odds API yedek"""
+    
+    # 1. Önce API-Football dene (BİRİNCİL KAYNAK)
+    odds = fetch_odds_apifootball(area, comp, home, away)
+    if odds:
+        return odds, "APIFOOTBALL"
+    
+    # 2. Başarısız olursa The Odds API (YEDEK KAYNAK)
+    odds = fetch_odds_avg(area, comp, home, away)
+    if odds:
+        return odds, "ODDS_API"
+    
+    return None, "NONE"
+
+def fetch_odds_apifootball(area, comp, home, away):
+    """API-Football'dan oranları al (BİRİNCİL KAYNAK)"""
+    try:
+        # API-Football odds endpoint
+        fixture_id = find_fixture_id(area, comp, home, away)
+        if not fixture_id:
+            return None
+            
+        url = f"{APIFOOT_BASE}/odds"
+        params = {"fixture": fixture_id, "bookmaker": 1}  # 1 = Bet365
+        
+        response = _apifoot_get(url, params)
+        if response:
+            return parse_apifootball_odds(response)
+            
+    except Exception as e:
+        log(f"API-Football odds error: {e}")
+    
+    return None
+
+def fetch_odds_avg(area, comp, home, away):
+    """The Odds API yedek kaynak"""
+    try:
+        # Mevcut The Odds API implementasyonu buraya gelecek
+        # Örnek implementasyon:
+        url = "https://api.the-odds-api.com/v4/sports/upcoming/odds"
+        params = {
+            "regions": "eu",
+            "markets": "h2h",
+            "oddsFormat": "decimal",
+            "apiKey": ODDS_API_KEY
+        }
+        
+        response = http_get(url, params=params, timeout=10)
+        if response:
+            # Oranları parse et ve ilgili maçı bul
+            for odds_data in response:
+                if (odds_data.get('home_team') == home and 
+                    odds_data.get('away_team') == away):
+                    return parse_odds_api_odds(odds_data)
+                    
+    except Exception as e:
+        log(f"The Odds API backup error: {e}")
+    
+    return None
+
+# ==================== YEDEK SİSTEMLER ====================
+
+def get_team_value_transfermarkt_backup(team_name):
+    """Transfermarkt API yedek sistemi"""
+    try:
+        encoded_name = urllib.parse.quote(normalize_team_name(team_name))
+        url = f"https://tmapi.vercel.app/api/team/{encoded_name}"
+        
+        response = http_get(url, timeout=15)
+        if response and response.get("success"):
+            return response.get("data", {}).get("squad_value")
+            
+    except Exception as e:
+        log(f"Transfermarkt backup error: {e}")
+    
+    return None
+
+def get_fifa_ranking_backup(team_name):
+    """FIFA sıralaması yedek - Kaggle CSV"""
+    try:
+        # Kaggle dataset veya statik CSV
+        rankings = load_fifa_rankings_from_csv()
+        return rankings.get(team_name, 50)
+    except Exception as e:
+        log(f"FIFA ranking backup error: {e}")
+        return 50
+
+def get_uefa_coefficient_backup(team_name):
+    """UEFA katsayıları yedek - web scraping"""
+    try:
+        coefficients = scrape_uefa_coefficients()
+        return coefficients.get(team_name, 10.0)
+    except Exception as e:
+        log(f"UEFA coefficient backup error: {e}")
+        return 10.0
+
+# ==================== STATE TABANLI STORAGE ====================
+
+def update_external_data():
+    """Tüm external verileri otomatik günceller"""
+    
+    # Takım değerleri (günlük)
+    if needs_update("team_values"):
+        update_team_values()
+    
+    # FIFA sıralaması (aylık)
+    if needs_update("fifa_rankings"):
+        update_fifa_rankings()
+    
+    # UEFA katsayıları (haftalık)
+    if needs_update("uefa_coefficients"):
+        update_uefa_coefficients()
+    
+    save_state(STATE)
+
+def needs_update(data_type):
+    """Güncelleme gerekip gerekmediğini kontrol eder"""
+    last_updated = STATE["external_data"]["last_updated"].get(data_type)
+    if not last_updated:
+        return True
+    
+    last_dt = datetime.fromisoformat(last_updated)
+    now = datetime.now()
+    
+    update_intervals = {
+        "team_values": timedelta(days=1),
+        "fifa_rankings": timedelta(days=30),
+        "uefa_coefficients": timedelta(days=7)
+    }
+    
+    return (now - last_dt) >= update_intervals.get(data_type, timedelta(days=1))
+
+def get_team_value_feature(team_name, country):
+    """State'den takım değerini al"""
+    return STATE["external_data"]["team_values"].get(team_name, 30.0)
+
+def get_fifa_ranking(team_name):
+    """State'den FIFA sıralamasını al"""
+    return STATE["external_data"]["fifa_rankings"].get(team_name, 50)
+
+def get_uefa_coefficient(team_name):
+    """State'den UEFA katsayısını al"""
+    return STATE["external_data"]["uefa_coefficients"].get(team_name, 10.0)
+
+# ==================== GÜNCELLENMİŞ RATE_FIXTURE ====================
+
+def rate_fixture_enhanced(fx, odds_info):
+    """Geliştirilmiş fixture rating - akıllı feature seçimi ile"""
+    
+    # Maç türünü belirle
+    match_type = determine_match_type(fx["area"], fx["area"], fx["competition"])
+    
+    # Akıllı feature'ları seç
+    intelligent_features = get_intelligent_features(
+        fx["home"], fx["away"], fx["area"], fx["area"], match_type
+    )
+    
+    # Mevcut rate_fixture fonksiyonunu çağır ve feature'ları birleştir
+    base_rating = rate_fixture(fx, odds_info)
+    
+    # Intelligent feature'ları base rating'e entegre et
+    enhanced_rating = enhance_rating_with_features(base_rating, intelligent_features, match_type)
+    
+    return enhanced_rating
+
+def enhance_rating_with_features(base_rating, features, match_type):
+    """Temel rating'i intelligent feature'larla zenginleştir"""
+    
+    # Feature'ları confidence skoruna entegre et
+    confidence_boost = calculate_feature_boost(features, match_type)
+    base_rating["confidence"] = min(100, base_rating["confidence"] + confidence_boost)
+    
+    # Not kısmını güncelle
+    feature_notes = generate_feature_notes(features, match_type)
+    base_rating["note"] += f" | {feature_notes}"
+    
+    return base_rating
+
+def calculate_feature_boost(features, match_type):
+    """Feature'lara göre confidence boost hesaplar"""
+    boost = 0
+    
+    if match_type == "DOMESTIC_LEAGUE":
+        # Lig pozisyonu etkisi
+        if 'position_difference' in features:
+            pos_diff = features['position_difference']
+            if pos_diff >= 10:
+                boost += 5
+            elif pos_diff >= 5:
+                boost += 3
+                
+    elif match_type == "EUROPEAN_CUP":
+        # UEFA katsayısı etkisi
+        if 'uefa_coeff_ratio' in features:
+            ratio = features['uefa_coeff_ratio']
+            if ratio >= 2.0 or ratio <= 0.5:
+                boost += 4
+                
+    elif match_type == "INTERNATIONAL":
+        # FIFA sıralaması etkisi
+        if 'rank_difference' in features:
+            rank_diff = abs(features['rank_difference'])
+            if rank_diff >= 30:
+                boost += 6
+            elif rank_diff >= 15:
+                boost += 3
+    
+    return min(boost, 10)  # Maksimum 10 puan boost
+
+def generate_feature_notes(features, match_type):
+    """Feature'lara göre açıklama notları oluşturur"""
+    notes = []
+    
+    if match_type == "DOMESTIC_LEAGUE":
+        if 'position_difference' in features:
+            notes.append(f"Pozisyon Farkı: {features['position_difference']}")
+        if 'points_difference' in features:
+            notes.append(f"Puan Farkı: {features['points_difference']}")
+            
+    elif match_type == "EUROPEAN_CUP":
+        if 'uefa_coeff_ratio' in features:
+            notes.append(f"UEFA Katsayı Oranı: {features['uefa_coeff_ratio']:.2f}")
+            
+    elif match_type == "INTERNATIONAL":
+        if 'rank_difference' in features:
+            notes.append(f"FIFA Sıra Farkı: {features['rank_difference']}")
+        if 'fifa_power_ratio' in features:
+            notes.append(f"Güç Oranı: {features['fifa_power_ratio']:.2f}")
+    
+    return " | ".join(notes) if notes else "Akıllı Feature: Temel"
 
 # ==================== YENİ ÖZELLİKLER / NEW FEATURES ====================
 
@@ -1568,7 +1947,6 @@ def guess_sport_key(area, comp):
         if a in area_l and c in comp_l:
             return skey
     return None
-
 
 def fetch_odds_avg(area, comp, home, away):
     if not ODDS_KEY:
@@ -2889,8 +3267,12 @@ def enhanced_report_predictions(date_str):
     fixtures.sort(key=lambda x: x["utc_kickoff"] or datetime.now(timezone.utc))
     
     for fx in fixtures:
-        odds = fetch_odds_avg(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
-        rated = rate_fixture(fx, odds)
+        # AKILLI FEATURE SİSTEMİ: Geliştirilmiş oran sistemi
+        odds, odds_source = fetch_odds_dual(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
+        
+        # AKILLI FEATURE SİSTEMİ: Geliştirilmiş rating
+        rated = rate_fixture_enhanced(fx, odds)
+        
         record_prediction(
             fx, rated, rated["probs_model"], rated["probs_market"], rated["probs_blend"],
             rated["wx_adj"], rated["elo_adj"], rated["net_form"]
@@ -2903,7 +3285,8 @@ def enhanced_report_predictions(date_str):
             "note": rated["note"],
             "area": fx.get("area", ""),
             "competition": fx.get("competition", ""),
-            "time": (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M") if fx.get("utc_kickoff") else "Saat Yok"
+            "time": (fx["utc_kickoff"] or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%H:%M") if fx.get("utc_kickoff") else "Saat Yok",
+            "odds_source": odds_source
         }
         
         all_predictions.append(prediction_data)
@@ -2939,8 +3322,58 @@ def format_predictions_email(predictions, date_str):
     
     return "\n".join(lines)
 
+# ==================== YENİ STATE YAPISI ====================
+
+def initialize_external_data_state():
+    """External data state yapısını başlat"""
+    if "external_data" not in STATE:
+        STATE["external_data"] = {
+            "team_values": {},
+            "fifa_rankings": {},
+            "uefa_coefficients": {},
+            "last_updated": {
+                "team_values": None,
+                "fifa_rankings": None,
+                "uefa_coefficients": None
+            }
+        }
+
+# ==================== ANA ÇALIŞTIRMA ====================
+
+def main():
+    """Ana çalıştırma fonksiyonu"""
+    try:
+        # State'i yükle ve external data yapısını başlat
+        global STATE
+        STATE = load_state()
+        initialize_external_data_state()
+        
+        # External verileri güncelle
+        update_external_data()
+        
+        # Bugünün tahminlerini oluştur
+        today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
+        enhanced_report_predictions(today)
+        
+        # Schedule kontrolü - sonuç raporu için
+        if _time_reached_tr(RESULTS_HOUR, RESULTS_MINUTE):
+            fix_results_schedule()
+            
+    except Exception as e:
+        log(f"Main execution error: {e}")
+        raise
+
+def fix_results_schedule():
+    """Sonuç raporu schedule düzeltmesi"""
+    try:
+        now_tr = datetime.now(TR_TZ)
+        yesterday = _yesterday_str_tr(now_tr)
+        
+        # Dünün maçlarını bul ve sonuçları raporla
+        report_results(yesterday)
+        
+    except Exception as e:
+        log(f"Results schedule fix error: {e}")
+
 if __name__ == "__main__":
-    # TAHMİN MODU - SADECE TAHMİN YAP
-    mode = "PREDICT"
-    today = datetime.now(TR_TZ).strftime("%Y-%m-%d")
-    report_predictions(today)
+    main()
