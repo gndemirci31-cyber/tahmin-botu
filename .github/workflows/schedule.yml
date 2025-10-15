@@ -9,15 +9,20 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Manuel çalışma modu (AUTO / PREDICT / RESULTS)"
-        required: false
+        description: "Manuel çalışma modu"
+        required: true
+        type: choice
+        options:
+        - "AUTO"
+        - "PREDICT" 
+        - "RESULTS"
         default: "AUTO"
 
 permissions:
   contents: write
 
 concurrency:
-  group: tahmin-botu
+  group: tahmin-botu-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -44,7 +49,7 @@ jobs:
             pip install numpy scipy scikit-learn requests
           fi
 
-      - name: Sabah/Gece seçimi (cron'a göre)
+      - name: Çalışma Modunu Belirle
         id: pick
         env:
           SCHEDULE: ${{ github.event.schedule }}
@@ -52,28 +57,37 @@ jobs:
         run: |
           set -e
           echo "::notice::event.schedule='$SCHEDULE' input.mode='$INPUT_MODE'"
-          # Manuel mod verilmişse onu kullan
-          if [ "$INPUT_MODE" = "PREDICT" ] || [ "$INPUT_MODE" = "RESULTS" ]; then
-            echo "mode=$INPUT_MODE" >> "$GITHUB_OUTPUT"
+          
+          # Manuel mod seçimi
+          if [ "$INPUT_MODE" = "PREDICT" ]; then
+            echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+            echo "✅ PREDICT modu seçildi"
+            exit 0
+          elif [ "$INPUT_MODE" = "RESULTS" ]; then
+            echo "mode=RESULTS" >> "$GITHUB_OUTPUT" 
+            echo "✅ RESULTS modu seçildi"
             exit 0
           fi
-          # Zamanlayıcıdan geldiyse cron değerine göre karar ver
+          
+          # Schedule tetikleyicisi kontrolü
           if [ "$SCHEDULE" = "0 7 * * *" ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
+            echo "⏰ Schedule: PREDICT modu (10:00 TR)"
             exit 0
           elif [ "$SCHEDULE" = "0 1 * * *" ]; then
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            echo "⏰ Schedule: RESULTS modu (04:00 TR)" 
             exit 0
           fi
-          # Güvenlik: beklenmeyen durumda UTC saate göre
+          
+          # Varsayılan AUTO modu - UTC saatine göre
           HOUR="$(date -u +%H)"
-          if [ "$HOUR" = "07" ]; then
+          if [ "$HOUR" -ge 7 ] && [ "$HOUR" -lt 19 ]; then
             echo "mode=PREDICT" >> "$GITHUB_OUTPUT"
-          elif [ "$HOUR" = "01" ]; then
-            echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            echo "🤖 AUTO: PREDICT modu (gündüz)"
           else
-            # Varsayılan: RESULTS
             echo "mode=RESULTS" >> "$GITHUB_OUTPUT"
+            echo "🤖 AUTO: RESULTS modu (gece)"
           fi
 
       - name: Botu çalıştır
@@ -99,7 +113,7 @@ jobs:
           MODE:                  ${{ steps.pick.outputs.mode }}
 
           # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
-          TOP_N:                 ${{ vars.TOP_N                 || '5'   }}  # DEĞİŞTİ: 1 → 5 (En güçlü 5 seçim)
+          TOP_N:                 ${{ vars.TOP_N                 || '5'   }}
           MIN_CONF:              ${{ vars.MIN_CONF              || '0'   }}
           HIGH_ALERT:            ${{ vars.HIGH_ALERT            || '90'  }}
           SPLIT_HIGH_ALERT_MAIL: ${{ vars.SPLIT_HIGH_ALERT_MAIL || '0'   }}
@@ -124,26 +138,25 @@ jobs:
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
 
-          # Anti home-bias ayarları (mailer.py’deki yamayla uyumlu)
+          # Anti home-bias ayarları
           HOME_ADV_MAX:          ${{ vars.HOME_ADV_MAX          || '8'    }}
           MIN_MARKET_WEIGHT:     ${{ vars.MIN_MARKET_WEIGHT     || '0.60' }}
         run: |
           set -e
           mkdir -p snapshots
-          # mailer.py komut satırı modu bekliyorsa argümanla da geçir
-          python mailer.py --mode "${{ steps.pick.outputs.mode }}"
+          echo "🚀 Bot başlatılıyor: $MODE modu"
+          python mailer.py --mode "$MODE"
 
       - name: State'i kalıcılaştır (PREDICT ve RESULTS)
-        if: always()
+        if: always() && (steps.pick.outputs.mode == 'PREDICT' || steps.pick.outputs.mode == 'RESULTS')
         run: |
           set -e
           if [ -f model_state.json ] && [ -s model_state.json ]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            # Değişiklik var mı?
             if ! git diff --quiet -- model_state.json; then
               git add -f model_state.json
-              git commit -m "chore(state): nightly update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
+              git commit -m "chore(state): ${{ steps.pick.outputs.mode }} update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]"
               git push
               echo "✔ model_state.json commit/push edildi."
             else
