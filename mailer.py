@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ + ENSEMBLE LEARNING)
+Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ + ENSEMBLE LEARNING + SERVICE LOOP)
 """
 import json
 import os
@@ -12,6 +12,7 @@ import traceback
 import urllib.parse
 import random
 import logging
+import argparse
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import requests
@@ -65,48 +66,45 @@ MIN_CONF = int(os.getenv("MIN_CONF", "0"))  # Minimum güven seviyesi
 NIGPLALERT = int(os.getenv("NIGPLALERT", "99"))  # Yüksek güven uyarı eşiği
 HIGH_ALERT = 80  # Yüksek güven eşiği
 
+# --- SERVICE LOOP AYARLARI ---
+PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))  # TR 10:00
+RESULTS_HOUR = int(os.getenv("RESULTS_HOUR", "4"))  # TR 04:00 (ertesi gün)
+RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))
+
 def log(msg):
     print(f"{msg}", flush=True)
 
-def http_get(url, headers=None, params=None, timeout=25):
-    try:
-        r = requests.get(url, headers=headers or {}, params=params or {}, timeout=timeout)
-        if r.status_code == 200:
-            try:
-                return r.json()
-            except Exception:
-                return None
-        log(f"GET {url} -> {r.status_code}")
-    except Exception as e:
-        log(f"GET ERROR {url}: {e}")
-        return None
+# ==================== SERVICE LOOP FONKSİYONLARI ====================
 
-def to_dt_utc(s):
-    try:
-        if not s:
-            return None
-        return datetime.fromisoformat(str(s).replace("Z", "+00:00")).astimezone(timezone.utc)
-    except Exception:
-        return None
+def run_service_loop():
+    """Sürekli çalışır; TR 10:00'da bugünün tahmini, ertesi gün TR 04:00'da DÜNÜN sonuçlarını gönderir."""
+    log(f"SERVICE başlatıldı (TR hedefleri: {PREDICTION_HOUR:02d}:00 ve ertesi gün {RESULTS_HOUR:02d}:{RESULTS_MINUTE:02d} [düne ait])")
+    
+    # GitHub Actions'ta schedule çalıştığı için direkt tahmin yap
+    if MODE_ENV == "AUTO" or MODE_ENV == "PREDICT":
+        today = _today_str_tr()
+        log(f"🚀 Otomatik tahmin yapılıyor: {today}")
+        enhanced_report_predictions(today)
+    elif MODE_ENV == "RESULTS":
+        yesterday = _yesterday_str_tr()
+        log(f"📊 Sonuçlar raporlanıyor: {yesterday}")
+        report_results(yesterday)
+    else:
+        log("❌ Bilinmeyen MODE. PREDICT moduna geçiliyor...")
+        today = _today_str_tr()
+        enhanced_report_predictions(today)
 
-def safe_float(x, default=None):
-    try:
-        if x is None or x == "":
-            return default
-        return float(x)
-    except Exception:
-        return default
+def _today_str_tr(dt=None):
+    return (dt or datetime.now(TR_TZ)).strftime("%Y-%m-%d")
 
-def clamp(x, a, b):
-    return max(a, min(b, x))
+def _yesterday_str_tr(dt=None):
+    dt = (dt or datetime.now(TR_TZ)) - timedelta(days=1)
+    return dt.strftime("%Y-%m-%d")
 
-def norm_team(x: str):
-    return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc", "").strip()
-
-def season_for_today():
+def _time_reached_tr(target_h, target_m=0):
     now = datetime.now(TR_TZ)
-    y = now.year
-    return y if now.month >= 7 else (y - 1)
+    tgt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
+    return now >= tgt
 
 # ==================== ENSEMBLE SİSTEMİ ====================
 
@@ -476,6 +474,46 @@ def load_ensemble_model():
     return False
 
 # ==================== YARDIMCILAR / HELPERS ====================
+
+def http_get(url, headers=None, params=None, timeout=25):
+    try:
+        r = requests.get(url, headers=headers or {}, params=params or {}, timeout=timeout)
+        if r.status_code == 200:
+            try:
+                return r.json()
+            except Exception:
+                return None
+        log(f"GET {url} -> {r.status_code}")
+    except Exception as e:
+        log(f"GET ERROR {url}: {e}")
+        return None
+
+def to_dt_utc(s):
+    try:
+        if not s:
+            return None
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00")).astimezone(timezone.utc)
+    except Exception:
+        return None
+
+def safe_float(x, default=None):
+    try:
+        if x is None or x == "":
+            return default
+        return float(x)
+    except Exception:
+        return default
+
+def clamp(x, a, b):
+    return max(a, min(b, x))
+
+def norm_team(x: str):
+    return (x or "").lower().replace(".", " ").replace("-", " ").replace(" fc", "").strip()
+
+def season_for_today():
+    now = datetime.now(TR_TZ)
+    y = now.year
+    return y if now.month >= 7 else (y - 1)
 
 def _ensure_dir(p: Path) -> bool:
     """Klasör oluşturur - güvenli versiyon / Create directory - safe version"""
@@ -3429,7 +3467,7 @@ def main():
             if ensemble_system.is_trained:
                 save_ensemble_model()
         
-        # Otomatik modda çalıştır
+        # Service Loop'u çalıştır
         run_service_loop()
             
     except Exception as e:
@@ -3459,4 +3497,12 @@ def rate_fixture(fx, odds_info):
 # [MEVCUT KODUN GERİ KALAN KISMI]
 
 if __name__ == "__main__":
+    # Komut satırı argümanlarını işle
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=["AUTO", "PREDICT", "RESULTS"], default="AUTO")
+    args = parser.parse_args()
+    
+    MODE_ENV = args.mode
+    
+    # Ana fonksiyonu çalıştır
     main()
