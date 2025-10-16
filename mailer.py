@@ -88,7 +88,7 @@ def run_service_loop():
     elif MODE_ENV == "RESULTS":
         yesterday = _yesterday_str_tr()
         log(f"📊 Sonuçlar raporlanıyor: {yesterday}")
-        fetch_results(yesterday)  # DÜZELTİLDİ: report_results yerine fetch_results
+        fetch_results(yesterday)
     else:
         log("❌ Bilinmeyen MODE. PREDICT moduna geçiliyor...")
         today = _today_str_tr()
@@ -3588,7 +3588,7 @@ def fix_results_schedule():
         yesterday = _yesterday_str_tr(now_tr)
         
         # Dünün maçlarını bul ve sonuçları raporla
-        fetch_results(yesterday)  # DÜZELTİLDİ: report_results yerine fetch_results
+        fetch_results(yesterday)
         
     except Exception as e:
         log(f"Results schedule fix error: {e}")
