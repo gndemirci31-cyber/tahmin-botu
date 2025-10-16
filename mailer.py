@@ -88,7 +88,7 @@ def run_service_loop():
     elif MODE_ENV == "RESULTS":
         yesterday = _yesterday_str_tr()
         log(f"📊 Sonuçlar raporlanıyor: {yesterday}")
-        report_results(yesterday)
+        fetch_results(yesterday)
     else:
         log("❌ Bilinmeyen MODE. PREDICT moduna geçiliyor...")
         today = _today_str_tr()
