@@ -88,7 +88,7 @@ def run_service_loop():
     elif MODE_ENV == "RESULTS":
         yesterday = _yesterday_str_tr()
         log(f"📊 Sonuçlar raporlanıyor: {yesterday}")
-        fetch_results(yesterday)
+        fetch_results(yesterday)  # DÜZELTİLDİ: report_results yerine fetch_results
     else:
         log("❌ Bilinmeyen MODE. PREDICT moduna geçiliyor...")
         today = _today_str_tr()
@@ -3217,6 +3217,113 @@ def fetch_results(date_str):
     if not r:
         log("FD sonuç yok → API-Football sonuç deneniyor…")
         r = fetch_results_apifoot(date_str)
+    
+    # SONUÇ OLSUN OLMASIN MAİL GÖNDER
+    lines = [f"📊 Dünün Sonuçları — {date_str}"]
+    
+    if r:
+        for res in r:
+            # Tahminle eşleştir
+            pred = find_prediction_for_result(res)
+            
+            if pred:
+                # Sonuç durumunu belirle
+                if res["score_h"] > res["score_a"]:
+                    outcome_idx = 0  # Ev kazandı
+                    outcome_str = "1"
+                elif res["score_h"] == res["score_a"]:
+                    outcome_idx = 1  # Berabere
+                    outcome_str = "X"
+                else:
+                    outcome_idx = 2  # Deplasman kazandı
+                    outcome_str = "2"
+                
+                # Tahmin performansını değerlendir
+                pred_pick = pred.get("pick", "")
+                pred_conf = pred.get("conf_pct", 0)
+                is_correct = (pred_pick == outcome_str)
+                
+                # Brier skoru hesapla
+                brier = brier_score(pred.get("probs_blend"), outcome_idx)
+                
+                # Elo güncelle
+                result_hw = 1.0 if outcome_idx == 0 else (0.5 if outcome_idx == 1 else 0.0)
+                elo_update(res["area"], res["home"], res["away"], result_hw, 
+                          pred.get("home_advantage", ELO_HOME_ADV))
+                
+                # Öğrenme: w_mkt ayarı
+                if pred.get("probs_market"):
+                    market_probs = pred["probs_market"]
+                    model_probs = pred.get("probs_model", market_probs)
+                    actual = [0.0, 0.0, 0.0]
+                    actual[outcome_idx] = 1.0
+                    
+                    # Model ve market hatalarını karşılaştır
+                    model_err = sum((m - a)**2 for m, a in zip(model_probs, actual))
+                    market_err = sum((m - a)**2 for m, a in zip(market_probs, actual))
+                    
+                    if model_err < market_err:
+                        # Model daha iyi, w_mkt'yi azalt
+                        new_w = get_w_mkt() * (1.0 - LEARN_RATE)
+                    else:
+                        # Market daha iyi, w_mkt'yi artır
+                        new_w = get_w_mkt() * (1.0 + LEARN_RATE)
+                    
+                    set_w_mkt(new_w)
+                
+                # Gol ölçeğini güncelle
+                total_goals = res["score_h"] + res["score_a"]
+                area = res["area"]
+                expected_goals = base_total_goals(area)
+                if expected_goals > 0:
+                    goal_ratio = total_goals / expected_goals
+                    new_scale = get_goal_scale(area) * (1.0 + GOAL_LR * (goal_ratio - 1.0))
+                    set_goal_scale(area, new_scale)
+                
+                # Sonuç satırını oluştur
+                status = "✅ DOĞRU" if is_correct else "❌ YANLIŞ"
+                line = (f"- {res['home']} {res['score_h']}-{res['score_a']} {res['away']} | "
+                       f"Tahmin: {pred_pick}({pred_conf}%) | Sonuç: {outcome_str} | {status} | "
+                       f"Brier: {brier:.3f}" if brier else "N/A")
+                
+            else:
+                # Tahmin bulunamadı
+                line = (f"- {res['home']} {res['score_h']}-{res['score_a']} {res['away']} | "
+                       f"Tahmin: BULUNAMADI | Sonuç: {outcome_str}")
+            
+            lines.append(line)
+        
+        body = "\n".join(lines)
+        
+    else:
+        # SONUÇ YOKSA BİLE MAİL GÖNDER
+        body = f"📊 Dünün Sonuçları — {date_str}\n\nℹ️ {date_str} tarihi için sonuç bulunamadı veya maç oynanmadı."
+    
+    # METRİKLERİ EKLE
+    metrics = STATE.get("metrics", {})
+    total_pred = metrics.get("total_predictions", 0)
+    correct_pred = metrics.get("correct_predictions", 0)
+    accuracy = (correct_pred / total_pred * 100) if total_pred > 0 else 0
+    
+    body += f"\n\n📈 PERFORMANS METRİKLERİ:\n"
+    body += f"• Toplam Tahmin: {total_pred}\n"
+    body += f"• Doğru Tahmin: {correct_pred}\n"
+    body += f"• Doğruluk Oranı: {accuracy:.1f}%\n"
+    body += f"• Güncel w_mkt: {get_w_mkt():.3f}\n"
+    
+    # Ensemble durumu
+    if ensemble_system.is_trained:
+        body += f"• 🤖 Ensemble: AKTİF\n"
+    else:
+        body += f"• 🤖 Ensemble: EĞİTİM GEREKİYOR\n"
+    
+    # E-posta gönder
+    send_mail(f"Sonuç Raporu | {date_str}", body)
+    log(f"✅ Sonuç raporu gönderildi: {date_str}")
+    
+    # State'i kaydet
+    save_state(STATE)
+    
     return r
 
 # --- Raporlar ----------------------------------------------------------------
@@ -3481,7 +3588,7 @@ def fix_results_schedule():
         yesterday = _yesterday_str_tr(now_tr)
         
         # Dünün maçlarını bul ve sonuçları raporla
-        report_results(yesterday)
+        fetch_results(yesterday)  # DÜZELTİLDİ: report_results yerine fetch_results
         
     except Exception as e:
         log(f"Results schedule fix error: {e}")
@@ -3494,7 +3601,6 @@ def rate_fixture(fx, odds_info):
     return rate_fixture_with_ensemble(fx, odds_info)
 
 # Diğer gerekli fonksiyonlar burada kalacak...
-# [MEVCUT KODUN GERİ KALAN KISMI]
 
 if __name__ == "__main__":
     # Komut satırı argümanlarını işle
