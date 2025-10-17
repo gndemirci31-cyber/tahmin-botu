@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ + ENSEMBLE LEARNING + SERVICE LOOP)
+Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ + ENSEMBLE LEARNING + SERVICE LOOP + WEATHER API + TÜM LİG OTOMATİK)
 """
 import json
 import os
@@ -32,7 +32,7 @@ import xgboost as xgb
 import joblib
 
 # --- Model/version & retention ---
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.15-ensemble")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.15-ensemble-enhanced")
 STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
 FREEZE_MINUTES = int(os.getenv("FREEZE_MINUTES", "60"))
 
@@ -71,8 +71,553 @@ PREDICTION_HOUR = int(os.getenv("PREDICTION_HOUR", "10"))  # TR 10:00
 RESULTS_HOUR = int(os.getenv("RESULTS_HOUR", "4"))  # TR 04:00 (ertesi gün)
 RESULTS_MINUTE = int(os.getenv("RESULTS_MINUTE", "0"))
 
+# --- YENİ WEATHER API AYARLARI ---
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY", "")  # Ücretsiz WeatherAPI anahtarı
+WEATHER_CACHE_TTL = int(os.getenv("WEATHER_CACHE_TTL", "3600"))  # 1 saat cache
+
 def log(msg):
     print(f"{msg}", flush=True)
+
+# ==================== EKSİK API-FOOTBALL FONKSİYONLARI ====================
+
+def find_fixture_id(area, comp, home, away):
+    """API-Football'dan fixture ID bulur"""
+    try:
+        if not APIFOOT:
+            return None
+            
+        # Takım isimlerini normalize et
+        home_norm = normalize_team_name(home)
+        away_norm = normalize_team_name(away)
+        
+        # Önce direkt arama yap
+        url = f"{APIFOOT_BASE}/fixtures"
+        params = {
+            "league": get_league_id_for_country(area, comp),
+            "season": season_for_today(),
+            "team": _apifoot_find_team_id(home)
+        }
+        
+        response = _apifoot_get(url, params)
+        if response:
+            for fixture in response:
+                fixture_data = fixture.get('fixture', {})
+                teams = fixture.get('teams', {})
+                
+                fixture_home = normalize_team_name(teams.get('home', {}).get('name', ''))
+                fixture_away = normalize_team_name(teams.get('away', {}).get('name', ''))
+                
+                # Benzerlik kontrolü
+                home_sim = team_similarity(home_norm, fixture_home)
+                away_sim = team_similarity(away_norm, fixture_away)
+                
+                if home_sim >= 0.8 and away_sim >= 0.8:
+                    return fixture_data.get('id')
+        
+        # Fallback: tarih bazlı arama
+        today = datetime.now().strftime("%Y-%m-%d")
+        params = {"date": today, "league": get_league_id_for_country(area, comp)}
+        response = _apifoot_get(url, params)
+        
+        if response:
+            for fixture in response:
+                teams = fixture.get('teams', {})
+                fixture_home = normalize_team_name(teams.get('home', {}).get('name', ''))
+                fixture_away = normalize_team_name(teams.get('away', {}).get('name', ''))
+                
+                home_sim = team_similarity(home_norm, fixture_home)
+                away_sim = team_similarity(away_norm, fixture_away)
+                
+                if home_sim >= 0.8 and away_sim >= 0.8:
+                    return fixture.get('fixture', {}).get('id')
+                    
+    except Exception as e:
+        log(f"Fixture ID bulma hatası: {e}")
+    
+    return None
+
+def get_league_id_for_country(country, competition):
+    """Ülke ve lig adına göre API-Football lig ID'si döndürür"""
+    league_mapping = {
+        # Avrupa Ligleri
+        "England": {
+            "Premier League": 39,
+            "Championship": 40,
+            "League One": 41,
+            "League Two": 42,
+            "FA Cup": 45,
+            "EFL Cup": 48
+        },
+        "Spain": {
+            "La Liga": 140,
+            "La Liga 2": 141,
+            "Copa del Rey": 143
+        },
+        "Italy": {
+            "Serie A": 135,
+            "Serie B": 136,
+            "Coppa Italia": 137
+        },
+        "Germany": {
+            "Bundesliga": 78,
+            "2. Bundesliga": 79,
+            "DFB Pokal": 81
+        },
+        "France": {
+            "Ligue 1": 61,
+            "Ligue 2": 62,
+            "Coupe de France": 66
+        },
+        "Turkey": {
+            "Super Lig": 203,
+            "1. Lig": 204,
+            "Turkish Cup": 206
+        },
+        "Netherlands": {
+            "Eredivisie": 88,
+            "Eerste Divisie": 89,
+            "KNVB Beker": 92
+        },
+        "Portugal": {
+            "Primeira Liga": 94,
+            "Liga Portugal 2": 95,
+            "Taça de Portugal": 96
+        },
+        "Belgium": {
+            "Pro League": 144,
+            "Challenger Pro League": 145,
+            "Croky Cup": 146
+        },
+        # UEFA Competitions
+        "Europe": {
+            "Champions League": 2,
+            "Europa League": 3,
+            "Conference League": 848,
+            "Super Cup": 667
+        },
+        # International
+        "World": {
+            "World Cup": 1,
+            "Euro Championship": 4
+        }
+    }
+    
+    # Ülkeyi bul
+    for country_key, leagues in league_mapping.items():
+        if country_key.lower() in country.lower():
+            for comp_name, league_id in leagues.items():
+                if comp_name.lower() in competition.lower():
+                    return league_id
+    
+    # Fallback: competition bazlı arama
+    comp_lower = competition.lower()
+    if "premier" in comp_lower:
+        return 39
+    elif "championship" in comp_lower:
+        return 40
+    elif "la liga" in comp_lower:
+        return 140
+    elif "serie a" in comp_lower:
+        return 135
+    elif "bundesliga" in comp_lower:
+        return 78
+    elif "ligue 1" in comp_lower:
+        return 61
+    elif "super lig" in comp_lower:
+        return 203
+    
+    return None
+
+def parse_apifootball_odds(response):
+    """API-Football odds verisini parse eder"""
+    try:
+        if not response or len(response) == 0:
+            return None
+            
+        bookmakers = response[0].get('bookmakers', [])
+        home_odds = []
+        draw_odds = []
+        away_odds = []
+        
+        for bookmaker in bookmakers:
+            for bet in bookmaker.get('bets', []):
+                if bet.get('name') == 'Match Winner':
+                    for outcome in bet.get('values', []):
+                        if outcome.get('value') == 'Home':
+                            home_odds.append(float(outcome.get('odd', 0)))
+                        elif outcome.get('value') == 'Draw':
+                            draw_odds.append(float(outcome.get('odd', 0)))
+                        elif outcome.get('value') == 'Away':
+                            away_odds.append(float(outcome.get('odd', 0)))
+        
+        if home_odds and draw_odds and away_odds:
+            # Ortalama oranları al
+            avg_home = sum(home_odds) / len(home_odds)
+            avg_draw = sum(draw_odds) / len(draw_odds)
+            avg_away = sum(away_odds) / len(away_odds)
+            
+            # Olasılıkları hesapla
+            total_prob = (1/avg_home) + (1/avg_draw) + (1/avg_away)
+            prob_home = (1/avg_home) / total_prob
+            prob_draw = (1/avg_draw) / total_prob
+            prob_away = (1/avg_away) / total_prob
+            
+            return {
+                "odds": (avg_home, avg_draw, avg_away),
+                "probs": (prob_home, prob_draw, prob_away)
+            }
+            
+    except Exception as e:
+        log(f"API-Football odds parse hatası: {e}")
+    
+    return None
+
+def parse_apifootball_standings(response):
+    """API-Football standings verisini parse eder"""
+    try:
+        standings_data = {}
+        
+        for league_data in response:
+            league = league_data.get('league', {})
+            standings_list = league.get('standings', [])
+            
+            if standings_list and len(standings_list) > 0:
+                for team_data in standings_list[0]:
+                    team = team_data.get('team', {})
+                    team_name = team.get('name')
+                    
+                    if team_name:
+                        standings_data[team_name] = {
+                            'position': team_data.get('rank'),
+                            'points': team_data.get('points'),
+                            'goals_diff': team_data.get('goalsDiff'),
+                            'form': team_data.get('form')
+                        }
+        
+        return standings_data
+        
+    except Exception as e:
+        log(f"API-Football standings parse hatası: {e}")
+        return {}
+
+def parse_odds_api_odds(odds_data):
+    """The Odds API verisini parse eder"""
+    try:
+        bookmakers = odds_data.get('bookmakers', [])
+        home_odds = []
+        draw_odds = []
+        away_odds = []
+        
+        for bookmaker in bookmakers:
+            markets = bookmaker.get('markets', [])
+            for market in markets:
+                if market.get('key') == 'h2h':
+                    for outcome in market.get('outcomes', []):
+                        if outcome.get('name') == odds_data.get('home_team'):
+                            home_odds.append(outcome.get('price', 0))
+                        elif outcome.get('name') == odds_data.get('away_team'):
+                            away_odds.append(outcome.get('price', 0))
+                        elif outcome.get('name') == 'Draw':
+                            draw_odds.append(outcome.get('price', 0))
+        
+        if home_odds and draw_odds and away_odds:
+            avg_home = sum(home_odds) / len(home_odds)
+            avg_draw = sum(draw_odds) / len(draw_odds)
+            avg_away = sum(away_odds) / len(away_odds)
+            
+            total_prob = (1/avg_home) + (1/avg_draw) + (1/avg_away)
+            prob_home = (1/avg_home) / total_prob
+            prob_draw = (1/avg_draw) / total_prob
+            prob_away = (1/avg_away) / total_prob
+            
+            return {
+                "odds": (avg_home, avg_draw, avg_away),
+                "probs": (prob_home, prob_draw, prob_away)
+            }
+            
+    except Exception as e:
+        log(f"Odds API parse hatası: {e}")
+    
+    return None
+
+# ==================== TÜM LİG OTOMATİK VERİ TOPLAYICI ====================
+
+class UniversalDataCollector:
+    """Tüm ligleri kapsayan otomatik veri toplayıcı"""
+    
+    def __init__(self):
+        self.data_sources = {
+            'api_football': self._fetch_apifootball,
+            'football_data': self._fetch_football_data,
+            'the_odds_api': self._fetch_odds_api,
+            'open_liga_db': self._fetch_openligadb
+        }
+        self.fallback_chain = ['api_football', 'football_data', 'the_odds_api', 'open_liga_db']
+        
+    def fetch_fixtures_universal(self, date_str, country=None, competition=None):
+        """Tüm kaynaklardan fixture toplar"""
+        fixtures = []
+        
+        for source in self.fallback_chain:
+            try:
+                source_fixtures = self.data_sources[source](date_str, country, competition)
+                if source_fixtures:
+                    fixtures.extend(source_fixtures)
+                    log(f"✅ {source}: {len(source_fixtures)} fixture bulundu")
+                    
+                    # Önemli liglerde yeterli veri varsa dur
+                    if self._has_sufficient_data(fixtures, country, competition):
+                        break
+                        
+            except Exception as e:
+                log(f"❌ {source} hatası: {e}")
+                continue
+        
+        return self._deduplicate_fixtures(fixtures)
+    
+    def _fetch_apifootball(self, date_str, country=None, competition=None):
+        """API-Football'dan fixture al"""
+        if not APIFOOT:
+            return []
+            
+        fixtures = []
+        leagues = self._get_relevant_leagues(country, competition)
+        
+        for league_id in leagues:
+            url = f"{APIFOOT_BASE}/fixtures"
+            params = {"date": date_str, "league": league_id}
+            
+            response = _apifoot_get(url, params)
+            if response:
+                for item in response:
+                    fixture = self._parse_apifootball_fixture(item)
+                    if fixture:
+                        fixtures.append(fixture)
+        
+        return fixtures
+    
+    def _fetch_football_data(self, date_str, country=None, competition=None):
+        """Football-Data.org'dan fixture al"""
+        if not FD_TOKEN:
+            return []
+            
+        return fetch_fd_fixtures(date_str)
+    
+    def _fetch_odds_api(self, date_str, country=None, competition=None):
+        """The Odds API'dan fixture al"""
+        if not ODDS_KEY:
+            return []
+            
+        return fetch_odds_fixtures(date_str)
+    
+    def _fetch_openligadb(self, date_str, country=None, competition=None):
+        """OpenLigaDB'den fixture al (Almanya için)"""
+        if country and 'germany' not in country.lower():
+            return []
+            
+        return fetch_openligadb_day(date_str)
+    
+    def _get_relevant_leagues(self, country=None, competition=None):
+        """Ülke ve lige göre ilgili lig ID'lerini döndürür"""
+        base_leagues = [39, 40, 140, 135, 78, 61, 203, 88, 94, 144]  # Temel ligler
+        
+        if country:
+            country_leagues = {
+                'england': [39, 40, 41, 42, 45, 48],
+                'spain': [140, 141, 143],
+                'italy': [135, 136, 137],
+                'germany': [78, 79, 81],
+                'france': [61, 62, 66],
+                'turkey': [203, 204, 206],
+                'netherlands': [88, 89, 92],
+                'portugal': [94, 95, 96],
+                'belgium': [144, 145, 146]
+            }
+            
+            for country_key, leagues in country_leagues.items():
+                if country_key in country.lower():
+                    return leagues
+        
+        return base_leagues
+    
+    def _parse_apifootball_fixture(self, item):
+        """API-Football fixture parse"""
+        try:
+            fixture_data = item.get('fixture', {})
+            league_data = item.get('league', {})
+            teams_data = item.get('teams', {})
+            
+            return {
+                "source": "APIF_UNIVERSAL",
+                "utc_kickoff": to_dt_utc(fixture_data.get('date')),
+                "home": teams_data.get('home', {}).get('name'),
+                "away": teams_data.get('away', {}).get('name'),
+                "home_id": teams_data.get('home', {}).get('id'),
+                "away_id": teams_data.get('away', {}).get('id'),
+                "area": league_data.get('country', {}).get('name', 'Europe'),
+                "competition": league_data.get('name', ''),
+                "competition_id": league_data.get('id'),
+                "id": f"apif_universal:{fixture_data.get('id')}",
+            }
+        except Exception as e:
+            log(f"APIF universal parse hatası: {e}")
+            return None
+    
+    def _has_sufficient_data(self, fixtures, country, competition):
+        """Yeterli veri olup olmadığını kontrol et"""
+        if not fixtures:
+            return False
+            
+        # Önemli ligler için minimum fixture kontrolü
+        important_leagues = ['premier league', 'la liga', 'serie a', 'bundesliga', 'ligue 1']
+        
+        for fixture in fixtures:
+            comp_name = fixture.get('competition', '').lower()
+            if any(league in comp_name for league in important_leagues):
+                if len(fixtures) >= 5:  # Minimum 5 fixture
+                    return True
+        
+        return len(fixtures) >= 10  # Diğer ligler için 10 fixture
+    
+    def _deduplicate_fixtures(self, fixtures):
+        """Tekrar eden fixture'ları temizle"""
+        unique_fixtures = []
+        seen_matches = set()
+        
+        for fixture in fixtures:
+            match_key = f"{fixture['home']}|{fixture['away']}|{fixture['utc_kickoff']}"
+            if match_key not in seen_matches:
+                seen_matches.add(match_key)
+                unique_fixtures.append(fixture)
+        
+        return unique_fixtures
+
+# Universal collector instance
+universal_collector = UniversalDataCollector()
+
+# ==================== WEATHER API ENTEGRASYONU ====================
+
+class WeatherAPIProvider:
+    """Hızlı WeatherAPI entegrasyonu"""
+    
+    def __init__(self):
+        self.api_key = WEATHER_API_KEY
+        self.base_url = "http://api.weatherapi.com/v1"
+        self.cache = {}
+        self.cache_ttl = WEATHER_CACHE_TTL
+    
+    def get_weather_fast(self, city_name):
+        """Hızlı hava durumu bilgisi al (~200ms)"""
+        cache_key = f"weather_{city_name.lower()}"
+        current_time = time.time()
+        
+        # Cache kontrolü
+        if cache_key in self.cache:
+            cached_data, timestamp = self.cache[cache_key]
+            if current_time - timestamp < self.cache_ttl:
+                return cached_data
+        
+        try:
+            if not self.api_key:
+                return self._get_fallback_weather(city_name)
+            
+            # Hızlı API çağrısı
+            url = f"{self.base_url}/current.json"
+            params = {
+                "key": self.api_key,
+                "q": city_name,
+                "aqi": "no"
+            }
+            
+            start_time = time.time()
+            response = requests.get(url, params=params, timeout=2.0)  # 2 saniye timeout
+            
+            if response.status_code == 200:
+                data = response.json()
+                weather_data = self._parse_weather_data(data)
+                
+                # Cache'e kaydet
+                self.cache[cache_key] = (weather_data, current_time)
+                
+                response_time = (time.time() - start_time) * 1000
+                log(f"🌤️ WeatherAPI: {city_name} → {response_time:.0f}ms")
+                
+                return weather_data
+            else:
+                log(f"❌ WeatherAPI hatası: {response.status_code}")
+                return self._get_fallback_weather(city_name)
+                
+        except requests.exceptions.Timeout:
+            log(f"⏰ WeatherAPI timeout: {city_name}")
+            return self._get_fallback_weather(city_name)
+        except Exception as e:
+            log(f"❌ WeatherAPI genel hata: {e}")
+            return self._get_fallback_weather(city_name)
+    
+    def _parse_weather_data(self, data):
+        """WeatherAPI verisini parse et"""
+        current = data.get('current', {})
+        
+        return {
+            'temperature': current.get('temp_c'),
+            'precipitation': current.get('precip_mm', 0),
+            'wind_speed': current.get('wind_kph', 0) / 3.6,  # km/s -> m/s
+            'humidity': current.get('humidity'),
+            'condition': current.get('condition', {}).get('text', ''),
+            'last_updated': current.get('last_updated')
+        }
+    
+    def _get_fallback_weather(self, city_name):
+        """Fallback hava durumu bilgisi"""
+        # Basit fallback - şehre göre ortalama değerler
+        city_climate = {
+            'istanbul': {'temp': 15, 'precip': 0.5, 'wind': 3.0},
+            'london': {'temp': 10, 'precip': 1.0, 'wind': 4.0},
+            'madrid': {'temp': 18, 'precip': 0.1, 'wind': 2.0},
+            'rome': {'temp': 16, 'precip': 0.3, 'wind': 2.5},
+            'berlin': {'temp': 8, 'precip': 0.8, 'wind': 3.5},
+            'paris': {'temp': 12, 'precip': 0.6, 'wind': 3.2},
+            'amsterdam': {'temp': 9, 'precip': 0.9, 'wind': 4.2}
+        }
+        
+        city_lower = city_name.lower()
+        for city, climate in city_climate.items():
+            if city in city_lower:
+                return {
+                    'temperature': climate['temp'],
+                    'precipitation': climate['precip'],
+                    'wind_speed': climate['wind'],
+                    'humidity': 70,
+                    'condition': 'Partly cloudy',
+                    'source': 'FALLBACK'
+                }
+        
+        # Varsayılan değerler
+        return {
+            'temperature': 15,
+            'precipitation': 0.5,
+            'wind_speed': 3.0,
+            'humidity': 70,
+            'condition': 'Clear',
+            'source': 'DEFAULT'
+        }
+    
+    def get_weather_note(self, home_team):
+        """Takım için hava durumu notu oluştur"""
+        city = guess_city_from_team(home_team)
+        weather_data = self.get_weather_fast(city)
+        
+        if weather_data:
+            temp = weather_data['temperature']
+            precip = weather_data['precipitation']
+            wind = weather_data['wind_speed'] * 3.6  # m/s -> km/s
+            
+            return f"Hava: {temp:.0f}°C, yağış {precip:.1f}mm, rüzgâr {wind:.0f} km/s"
+        
+        return None
+
+# Weather provider instance
+weather_provider = WeatherAPIProvider()
 
 # ==================== SERVICE LOOP FONKSİYONLARI ====================
 
@@ -361,7 +906,8 @@ def rate_fixture_with_ensemble(fx, odds_info):
 
 def enhanced_report_predictions(date_str):
     """Ensemble entegreli tahmin raporu"""
-    fixtures = fetch_fixtures(date_str)
+    # fixtures = fetch_fixtures(date_str)  # Eskisi
+    fixtures = universal_collector.fetch_fixtures_universal(date_str)  # YENİ: Universal collector
     
     # Ensemble eğitimini kontrol et
     if not ensemble_system.is_trained:
@@ -2129,27 +2675,8 @@ def guess_city_from_team(team_name: str):
     return team_name  # fallback
 
 def fetch_weather_note(home_team):
-    city = guess_city_from_team(home_team)
-    geo = http_get("https://geocoding-api.open-meteo.com/v1/search", params={"name": city, "count": 1, "language": "en"})
-    if not geo or not geo.get("results"):
-        return None
-    lat = geo["results"][0]["latitude"]; lon = geo["results"][0]["longitude"]
-    wx = http_get("https://api.open-meteo.com/v1/forecast", params={
-        "latitude": lat,
-        "longitude": lon,
-        "hourly": "temperature_2m,precipitation,wind_speed_10m",
-        "timezone": "auto"
-    })
-    if not wx:
-        return None
-    try:
-        temps = wx["hourly"]["temperature_2m"][:6]
-        prec = wx["hourly"]["precipitation"][:6]
-        wind = wx["hourly"]["wind_speed_10m"][:6]
-        tavg = sum(temps)/len(temps); pavg = sum(prec)/len(prec); wavg = sum(wind)/len(wind)
-        return f"Hava: {tavg:.0f}°C, yağış {pavg:.1f}mm, rüzgâr {wavg:.0f} km/s"
-    except Exception:
-        return None
+    """YENİ: WeatherAPI entegrasyonu"""
+    return weather_provider.get_weather_note(home_team)
 
 def parse_weather(wx_text):
     if not wx_text:
@@ -2899,7 +3426,7 @@ def original_rate_fixture(fx, odds_info):
     lam_h = max(0.2, tot*0.5*ah + noise)
     lam_a = max(0.2, tot*0.5*(2 - ah) - noise)
     
-    # Hava (Akıllı Mod)
+    # Hava (Akıllı Mod) - YENİ: WeatherAPI entegrasyonu
     wx = None
     if (not WEATHER_SMART) or weather_enabled(area, fx.get("competition","")):
         wx = fetch_weather_note(fx["home"])
@@ -3456,7 +3983,8 @@ def enhanced_report_predictions(date_str):
     """
     Geliştirilmiş tahmin raporu - TOP_N özelliği ile
     """
-    fixtures = fetch_fixtures(date_str)
+    # fixtures = fetch_fixtures(date_str)  # Eskisi
+    fixtures = universal_collector.fetch_fixtures_universal(date_str)  # YENİ: Universal collector
     
     # State'i boş da olsa kalıcılaştır
     save_state(STATE)
