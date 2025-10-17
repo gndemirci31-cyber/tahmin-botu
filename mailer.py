@@ -3911,7 +3911,7 @@ def report_predictions(date_str):
 # --- TOP_N ÖZELLİĞİ İÇİN YENİ FONKSİYONLAR ---
 def get_top_n_predictions(predictions, n=TOP_N, min_confidence=MIN_CONF):
     """
-    En yüksek güvenilir N tahmini seçer
+    En yüksek güvenilirliğe sahip tahminleri filtreler
     
     Args:
         predictions: Tüm tahmin listesi
