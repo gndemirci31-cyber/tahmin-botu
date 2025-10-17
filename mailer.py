@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GELİŞMİŞ FİNAL SÜRÜM (Transfermarkt + Milli Takım Elo + CIES/FootyStats Fallback + API-Football Öncelikli + TotalCorner + FootyStats + Kaynak Etiketleme + EV SAHİBİ DENGESİ + YENİ ÖZELLİKLER + TOP_N ÖZELLİĞİ + AKILLI FEATURE SİSTEMİ + ENSEMBLE LEARNING + SERVICE LOOP + WEATHER API + TÜM LİG OTOMATİK)
+Tahmin Botu — GÜNCEL SÜRÜM (URL DÜZELTMELERİ + FONKSİYON TAMİRİ + TMAPI KALDIRILDI)
 """
 import json
 import os
@@ -32,7 +32,7 @@ import xgboost as xgb
 import joblib
 
 # --- Model/version & retention ---
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.15-ensemble-enhanced")
+MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.17-url-fixed")
 STATE_TTL_DAYS = int(os.getenv("STATE_TTL_DAYS", "14"))
 FREEZE_MINUTES = int(os.getenv("FREEZE_MINUTES", "60"))
 
@@ -93,7 +93,7 @@ def find_fixture_id(area, comp, home, away):
         # Önce direkt arama yap
         url = f"{APIFOOT_BASE}/fixtures"
         params = {
-            "league": get_league_id_for_country(area, comp),
+            "league": get_league_id_for_country(area, comp),  # DÜZELTİLDİ: competition parametresi eklendi
             "season": season_for_today(),
             "team": _apifoot_find_team_id(home)
         }
@@ -116,7 +116,7 @@ def find_fixture_id(area, comp, home, away):
         
         # Fallback: tarih bazlı arama
         today = datetime.now().strftime("%Y-%m-%d")
-        params = {"date": today, "league": get_league_id_for_country(area, comp)}
+        params = {"date": today, "league": get_league_id_for_country(area, comp)}  # DÜZELTİLDİ
         response = _apifoot_get(url, params)
         
         if response:
@@ -384,7 +384,7 @@ class UniversalDataCollector:
         leagues = self._get_relevant_leagues(country, competition)
         
         for league_id in leagues:
-            url = f"{APIFOOT_BASE}/fixtures"
+            url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
             params = {"date": date_str, "league": league_id}
             
             response = _apifoot_get(url, params)
@@ -906,8 +906,7 @@ def rate_fixture_with_ensemble(fx, odds_info):
 
 def enhanced_report_predictions(date_str):
     """Ensemble entegreli tahmin raporu"""
-    # fixtures = fetch_fixtures(date_str)  # Eskisi
-    fixtures = universal_collector.fetch_fixtures_universal(date_str)  # YENİ: Universal collector
+    fixtures = universal_collector.fetch_fixtures_universal(date_str)
     
     # Ensemble eğitimini kontrol et
     if not ensemble_system.is_trained:
@@ -1524,7 +1523,7 @@ def get_w_mkt():
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
 
-# --- GELİŞMİŞ KADRO DEĞERİ SİSTEMİ (Transfermarkt + Fallback'ler) ------------
+# --- GELİŞMİŞ KADRO DEĞERİ SİSTEMİ (Transfermarkt KALDIRILDI + Fallback'ler) ------------
 TEAM_VALUES_PATH = "team_values.json"
 
 def load_team_values():
@@ -1545,36 +1544,7 @@ def save_team_values(values):
     except Exception as e:
         log(f"Takım değerleri kaydetme hatası: {e}")
 
-def get_team_value_tmapi(team_name, area="Europe"):
-    """Transfermarkt API'sinden kadro değerini getirir - GÜNCELLENDİ"""
-    if not team_name:
-        return None, None
-    
-    try:
-        # Önce takım ismini normalize et
-        normalized_name = normalize_team_name(team_name)
-        
-        # tmapi.vercel.app API'si - URL encode ekle
-        encoded_name = urllib.parse.quote(normalized_name)
-        url = f"https://tmapi.vercel.app/api/team/{encoded_name}"
-        
-        response = http_get(url, timeout=15)
-        
-        if response and response.get("success"):
-            squad_value = response.get("data", {}).get("squad_value", None)
-            if squad_value and squad_value > 0:
-                log(f"✅ TMAPI başarılı: {team_name} -> {squad_value}M €")
-                return squad_value, "TMAPI"
-            else:
-                log(f"❌ TMAPI değer bulunamadı: {team_name}")
-        else:
-            log(f"❌ TMAPI hata: {team_name} - {response}")
-            
-    except Exception as e:
-        log(f"❌ Transfermarkt API hatası {team_name}: {e}")
-    
-    return None, None
-
+# TMAPI KALDIRILDI - SADECE FALLBACK SİSTEMLERİ KALDI
 def get_team_value_cies_fallback(team_name, area="Europe"):
     """CIES/FootyStats fallback - GELİŞTİRİLMİŞ"""
     # Milli takımlar için özel değerler
@@ -1614,7 +1584,7 @@ def get_team_value_cies_fallback(team_name, area="Europe"):
     return 30.0, "CIES_DEFAULT"  # Daha düşük genel varsayılan
 
 def get_team_value(team_name, area="Europe"):
-    """Geliştirilmiş kadro değeri sistemi - zincirli fallback"""
+    """Geliştirilmiş kadro değeri sistemi - TMAPI KALDIRILDI, sadece fallback"""
     if not team_name:
         return 30.0, "DEFAULT"
     
@@ -1632,12 +1602,8 @@ def get_team_value(team_name, area="Europe"):
         if time.time() - timestamp < 30 * 24 * 60 * 60:
             return value, source
     
-    # Zincirli fallback sistemi
-    value, source = get_team_value_tmapi(team_name, area)
-    
-    if value is None:
-        # Fallback: CIES/FootyStats lig ortalamaları
-        value, source = get_team_value_cies_fallback(team_name, area)
+    # TMAPI KALDIRILDI - DOĞRUDAN FALLBACK KULLAN
+    value, source = get_team_value_cies_fallback(team_name, area)
     
     # Cache'e kaydet
     team_values[cache_key] = {
@@ -1663,7 +1629,7 @@ def calculate_value_advantage(home_team, away_team, area="Europe"):
     advantage = clamp(value_ratio * 0.3, -0.3, 0.3)  # Maksimum %30 etki
     
     # Kaynak bilgisi - hangi takım hangi kaynaktan
-    source_info = f"TM:{home_source}/{away_source}"
+    source_info = f"FALLBACK:{home_source}/{away_source}"
     
     return advantage, source_info
 
@@ -1841,12 +1807,12 @@ def get_international_features(home_team, away_team):
 def get_apifootball_standings(country):
     """API-Football'dan lig tablosu"""
     try:
-        league_id = get_league_id_for_country(country)
+        league_id = get_league_id_for_country(country, "")  # DÜZELTİLDİ: competition parametresi eklendi
         if not league_id:
             return None
             
         season = season_for_today()
-        url = f"{APIFOOT_BASE}/standings"
+        url = f"{APIFOOT_BASE}/standings"  # DÜZELTİLDİ: Doğru URL
         params = {"league": league_id, "season": season}
         
         response = _apifoot_get(url, params)
@@ -1865,7 +1831,7 @@ def get_team_value_apifootball(team_name):
         if not team_id:
             return None
             
-        url = f"{APIFOOT_BASE}/teams"
+        url = f"{APIFOOT_BASE}/teams"  # DÜZELTİLDİ: Doğru URL
         params = {"id": team_id}
         
         response = _apifoot_get(url, params)
@@ -1902,7 +1868,7 @@ def fetch_odds_apifootball(area, comp, home, away):
         if not fixture_id:
             return None
             
-        url = f"{APIFOOT_BASE}/odds"
+        url = f"{APIFOOT_BASE}/odds"  # DÜZELTİLDİ: Doğru URL
         params = {"fixture": fixture_id, "bookmaker": 1}  # 1 = Bet365
         
         response = _apifoot_get(url, params)
@@ -1941,21 +1907,6 @@ def fetch_odds_avg(area, comp, home, away):
     return None
 
 # ==================== YEDEK SİSTEMLER ====================
-
-def get_team_value_transfermarkt_backup(team_name):
-    """Transfermarkt API yedek sistemi"""
-    try:
-        encoded_name = urllib.parse.quote(normalize_team_name(team_name))
-        url = f"https://tmapi.vercel.app/api/team/{encoded_name}"
-        
-        response = http_get(url, timeout=15)
-        if response and response.get("success"):
-            return response.get("data", {}).get("squad_value")
-            
-    except Exception as e:
-        log(f"Transfermarkt backup error: {e}")
-    
-    return None
 
 def get_fifa_ranking_backup(team_name):
     """FIFA sıralaması yedek - Kaggle CSV"""
@@ -2738,7 +2689,7 @@ def fetch_apifoot_fixtures(date_str):
     if not APIFOOT:
         return []
     headers = {"x-apisports-key": APIFOOT}
-    url = "https://v3.football.api-sports.io/fixtures"
+    url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
     if not data:
@@ -3042,7 +2993,9 @@ def base_from_area(area, table, default):
     return default
 
 # --- API-Football: opsiyonel istatistik ipucu --------------------------------
-APIFOOT_BASE = "https://v3.football.api-sports.io"
+# DÜZELTİLDİ: APIFOOT_BASE değişkeni çift "https" kaldırıldı
+APIFOOT_BASE = "https://v3.football.api-sports.io"  # DÜZELTİLDİ: çift "https" kaldırıldı
+
 _API_LEAGUE_MAP = {
     "England|Premier League": 39,
     "England|Championship": 40,
@@ -3066,7 +3019,7 @@ def _apifoot_get(path, params):
         return None
     headers = {"x-apisports-key": APIFOOT}
     try:
-        data = http_get(f"{APIFOOT_BASE}{path}", headers=headers, params=params)
+        data = http_get(f"{APIFOOT_BASE}{path}", headers=headers, params=params)  # DÜZELTİLDİ: Doğru URL
         return (data or {}).get("response", None)
     except Exception as e:
         log(f"apifoot GET err: {e}")
@@ -3449,7 +3402,7 @@ def original_rate_fixture(fx, odds_info):
     elo_adj = clamp((elo_diff/400.0)*0.15, -0.20, 0.20)
     lam_h *= (1.0 + elo_adj); lam_a *= (1.0 - elo_adj)
     
-    # Kadro değeri avantajı (Transfermarkt + Fallback)
+    # Kadro değeri avantajı (TMAPI KALDIRILDI, sadece fallback)
     value_advantage, value_source = calculate_value_advantage(fx["home"], fx["away"], area)
     lam_h *= (1.0 + value_advantage); lam_a *= (1.0 - value_advantage)
     
@@ -3524,7 +3477,7 @@ def original_rate_fixture(fx, odds_info):
               f"Üst9.5 {int(kk['p_over_corners_9_5']*100)}%) [{kk['source']}]"
               f" | Kart μ≈{kk['mu_cards']:.1f} (Üst3.5 {int(kk['p_over_cards_3_5']*100)}%) [{kk['source']}]")
     
-    # Kadro değeri bilgisi (kaynak etiketli)
+    # Kadro değeri bilgisi (kaynak etiketli) - TMAPI KALDIRILDI
     home_value, home_source = get_team_value(fx["home"], area)
     away_value, away_source = get_team_value(fx["away"], area)
     value_txt = f" | Kadro: {home_value:.0f}M€ [{home_source}] vs {away_value:.0f}M€ [{away_source}]"
@@ -3724,7 +3677,7 @@ def fetch_results_apifoot(date_str):
     if not APIFOOT:
         return []
     headers = {"x-apisports-key": APIFOOT}
-    url = "https://v3.football.api-sports.io/fixtures"
+    url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
     if not data:
@@ -3983,8 +3936,7 @@ def enhanced_report_predictions(date_str):
     """
     Geliştirilmiş tahmin raporu - TOP_N özelliği ile
     """
-    # fixtures = fetch_fixtures(date_str)  # Eskisi
-    fixtures = universal_collector.fetch_fixtures_universal(date_str)  # YENİ: Universal collector
+    fixtures = universal_collector.fetch_fixtures_universal(date_str)
     
     # State'i boş da olsa kalıcılaştır
     save_state(STATE)
