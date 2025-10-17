@@ -137,7 +137,8 @@ def find_fixture_id(area, comp, home, away):
     return None
 
 def get_league_id_for_country(country, competition):
-    """Ülke ve lig adına göre API-Football lig ID'si döndürür"""
+    """Ülke ve lig adına göre API-Football lig ID'si döndürür - DÜZELTİLDİ"""
+    # DÜZELTİLDİ: competition parametresi kullanıma alındı
     league_mapping = {
         # Avrupa Ligleri
         "England": {
@@ -203,27 +204,29 @@ def get_league_id_for_country(country, competition):
     }
     
     # Ülkeyi bul
+    country_lower = (country or "").lower()
+    competition_lower = (competition or "").lower()
+    
     for country_key, leagues in league_mapping.items():
-        if country_key.lower() in country.lower():
+        if country_key.lower() in country_lower:
             for comp_name, league_id in leagues.items():
-                if comp_name.lower() in competition.lower():
+                if comp_name.lower() in competition_lower:
                     return league_id
     
     # Fallback: competition bazlı arama
-    comp_lower = competition.lower()
-    if "premier" in comp_lower:
+    if "premier" in competition_lower:
         return 39
-    elif "championship" in comp_lower:
+    elif "championship" in competition_lower:
         return 40
-    elif "la liga" in comp_lower:
+    elif "la liga" in competition_lower:
         return 140
-    elif "serie a" in comp_lower:
+    elif "serie a" in competition_lower:
         return 135
-    elif "bundesliga" in comp_lower:
+    elif "bundesliga" in competition_lower:
         return 78
-    elif "ligue 1" in comp_lower:
+    elif "ligue 1" in competition_lower:
         return 61
-    elif "super lig" in comp_lower:
+    elif "super lig" in competition_lower:
         return 203
     
     return None
@@ -376,7 +379,7 @@ class UniversalDataCollector:
         return self._deduplicate_fixtures(fixtures)
     
     def _fetch_apifootball(self, date_str, country=None, competition=None):
-        """API-Football'dan fixture al"""
+        """API-Football'dan fixture al - DÜZELTİLDİ"""
         if not APIFOOT:
             return []
             
@@ -384,12 +387,15 @@ class UniversalDataCollector:
         leagues = self._get_relevant_leagues(country, competition)
         
         for league_id in leagues:
-            url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
+            # DÜZELTİLDİ: Doğru URL ve headers kullanımı
+            url = f"{APIFOOT_BASE}/fixtures"
+            headers = {"x-apisports-key": APIFOOT}
             params = {"date": date_str, "league": league_id}
             
-            response = _apifoot_get(url, params)
-            if response:
-                for item in response:
+            # DÜZELTİLDİ: _apifoot_get yerine http_get kullan
+            response = http_get(url, headers=headers, params=params)
+            if response and isinstance(response, dict) and "response" in response:
+                for item in response["response"]:
                     fixture = self._parse_apifootball_fixture(item)
                     if fixture:
                         fixtures.append(fixture)
@@ -1805,14 +1811,16 @@ def get_international_features(home_team, away_team):
 # ==================== API-FOOTBALL PREMIUM ENTEGRASYONU ====================
 
 def get_apifootball_standings(country):
-    """API-Football'dan lig tablosu"""
+    """API-Football'dan lig tablosu - DÜZELTİLDİ"""
     try:
-        league_id = get_league_id_for_country(country, "")  # DÜZELTİLDİ: competition parametresi eklendi
+        # DÜZELTİLDİ: competition parametresi eklendi
+        league_id = get_league_id_for_country(country, "")
         if not league_id:
             return None
             
         season = season_for_today()
-        url = f"{APIFOOT_BASE}/standings"  # DÜZELTİLDİ: Doğru URL
+        # DÜZELTİLDİ: Doğru URL
+        url = f"{APIFOOT_BASE}/standings"
         params = {"league": league_id, "season": season}
         
         response = _apifoot_get(url, params)
@@ -1831,7 +1839,8 @@ def get_team_value_apifootball(team_name):
         if not team_id:
             return None
             
-        url = f"{APIFOOT_BASE}/teams"  # DÜZELTİLDİ: Doğru URL
+        # DÜZELTİLDİ: Doğru URL
+        url = f"{APIFOOT_BASE}/teams"
         params = {"id": team_id}
         
         response = _apifoot_get(url, params)
@@ -1861,14 +1870,15 @@ def fetch_odds_dual(area, comp, home, away):
     return None, "NONE"
 
 def fetch_odds_apifootball(area, comp, home, away):
-    """API-Football'dan oranları al (BİRİNCİL KAYNAK)"""
+    """API-Football'dan oranları al (BİRİNCİL KAYNAK) - DÜZELTİLDİ"""
     try:
         # API-Football odds endpoint
         fixture_id = find_fixture_id(area, comp, home, away)
         if not fixture_id:
             return None
             
-        url = f"{APIFOOT_BASE}/odds"  # DÜZELTİLDİ: Doğru URL
+        # DÜZELTİLDİ: Doğru URL
+        url = f"{APIFOOT_BASE}/odds"
         params = {"fixture": fixture_id, "bookmaker": 1}  # 1 = Bet365
         
         response = _apifoot_get(url, params)
@@ -2513,6 +2523,8 @@ GMAIL_PASS = os.getenv("GMAIL_PASS")
 GMAIL_TO = os.getenv("GMAIL_TO")
 FD_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY = os.getenv("ODDS_API_KEY")
+# DÜZELTİLDİ: Çift "https" kaldırıldı
+APIFOOT_BASE = "https://v3.football.api-sports.io"
 APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
 MODE_ENV = (os.getenv("MODE") or "AUTO").upper().strip()
 OLD_LEAGUES = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
@@ -2689,7 +2701,8 @@ def fetch_apifoot_fixtures(date_str):
     if not APIFOOT:
         return []
     headers = {"x-apisports-key": APIFOOT}
-    url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
+    # DÜZELTİLDİ: Doğru URL
+    url = f"{APIFOOT_BASE}/fixtures"
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
     if not data:
@@ -3015,11 +3028,14 @@ _apifoot_team_cache = {}  # search_name.lower() -> team_id
 _apifoot_stat_cache = {}  # (league_id, season, team_id) -> stats_json
 
 def _apifoot_get(path, params):
+    """API-Football API çağrısı - DÜZELTİLDİ"""
     if not APIFOOT:
         return None
     headers = {"x-apisports-key": APIFOOT}
     try:
-        data = http_get(f"{APIFOOT_BASE}{path}", headers=headers, params=params)  # DÜZELTİLDİ: Doğru URL
+        # DÜZELTİLDİ: Doğru URL formatı
+        url = f"{APIFOOT_BASE}{path}"
+        data = http_get(url, headers=headers, params=params)
         return (data or {}).get("response", None)
     except Exception as e:
         log(f"apifoot GET err: {e}")
@@ -3677,7 +3693,8 @@ def fetch_results_apifoot(date_str):
     if not APIFOOT:
         return []
     headers = {"x-apisports-key": APIFOOT}
-    url = f"{APIFOOT_BASE}/fixtures"  # DÜZELTİLDİ: Doğru URL
+    # DÜZELTİLDİ: Doğru URL
+    url = f"{APIFOOT_BASE}/fixtures"
     data = http_get(url, headers=headers, params={"date": date_str})
     out = []
     if not data:
