@@ -1220,6 +1220,17 @@ def get_intelligent_features(home_team, away_team, home_country, away_country, m
     
     return features
 
+def get_team_value_feature(team_name, country):
+    """State'den takım değerini al - DÜZELTİLMİŞ VERSİYON"""
+    # State kontrolü ekle
+    if "external_data" not in STATE:
+        initialize_external_data_state()
+    
+    if "team_values" not in STATE["external_data"]:
+        return 30.0  # Default değer
+    
+    return STATE["external_data"]["team_values"].get(team_name, 30.0)
+
 def get_league_features(home_team, away_team, country):
     """Aynı ligdeki takımlar için lig tablosu bilgileri"""
     features = {}
@@ -1456,16 +1467,26 @@ def needs_update(data_type):
     
     return (now - last_dt) >= update_intervals.get(data_type, timedelta(days=1))
 
-def get_team_value_feature(team_name, country):
-    """State'den takım değerini al"""
-    return STATE["external_data"]["team_values"].get(team_name, 30.0)
-
 def get_fifa_ranking(team_name):
     """State'den FIFA sıralamasını al"""
+    # State kontrolü ekle
+    if "external_data" not in STATE:
+        initialize_external_data_state()
+    
+    if "fifa_rankings" not in STATE["external_data"]:
+        return 50  # Default değer
+    
     return STATE["external_data"]["fifa_rankings"].get(team_name, 50)
 
 def get_uefa_coefficient(team_name):
     """State'den UEFA katsayısını al"""
+    # State kontrolü ekle
+    if "external_data" not in STATE:
+        initialize_external_data_state()
+    
+    if "uefa_coefficients" not in STATE["external_data"]:
+        return 10.0  # Default değer
+    
     return STATE["external_data"]["uefa_coefficients"].get(team_name, 10.0)
 
 # ==================== GÜNCELLENMİŞ RATE_FIXTURE ====================
@@ -1616,7 +1637,7 @@ class DixonColesModel:
         lambda_home = home_attack * away_defense
         lambda_away = away_attack * home_defense
         
-        # Dixon-Coles düzeltmesi / Dixon-Coles correction
+        # Dixon-Coles düzeltmesı / Dixon-Coles correction
         if GOAL_MODEL == "DC":
             # Beraberlik olasılığı iyileştirmesi / Draw probability improvement
             draw_bias = 1.0 + self.rho
@@ -3287,9 +3308,15 @@ def fetch_results(date_str):
                        f"Brier: {brier:.3f}" if brier else "N/A")
                 
             else:
-                # Tahmin bulunamadı
-                line = (f"- {res['home']} {res['score_h']}-{res['score_a']} {res['away']} | "
-                       f"Tahmin: BULUNAMADI | Sonuç: {outcome_str}")
+                # Tahmin bulunamadı, ama sonuç belli
+                if res["score_h"] > res["score_a"]:
+                    outcome_str = "1"
+                elif res["score_h"] == res["score_a"]:
+                    outcome_str = "X" 
+                else:
+                    outcome_str = "2"
+                
+                line = f"- {res['home']} {res['score_h']}-{res['score_a']} {res['away']} | Tahmin: BULUNAMADI | Sonuç: {outcome_str}"
             
             lines.append(line)
         
@@ -3497,18 +3524,14 @@ def format_predictions_email(predictions, date_str):
 # ==================== YENİ STATE YAPISI ====================
 
 def initialize_external_data_state():
-    """External data state yapısını başlat"""
+    """External data state yapısını başlat - GÜNCELLENDİ"""
     if "external_data" not in STATE:
-        STATE["external_data"] = {
-            "team_values": {},
-            "fifa_rankings": {},
-            "uefa_coefficients": {},
-            "last_updated": {
-                "team_values": None,
-                "fifa_rankings": None,
-                "uefa_coefficients": None
-            }
-        }
+        STATE["external_data"] = {}
+    
+    STATE["external_data"].setdefault("team_values", {})
+    STATE["external_data"].setdefault("fifa_rankings", {})
+    STATE["external_data"].setdefault("uefa_coefficients", {})
+    STATE["external_data"].setdefault("last_updated", {})
 
 # ==================== YENİ FONKSİYONLAR ====================
 
@@ -3563,6 +3586,9 @@ def main():
     try:
         global STATE
         STATE = load_state()
+        
+        # EXTERNAL DATA STATE'İNİ BAŞLAT - YENİ EKLENDİ
+        initialize_external_data_state()
         
         # Ensemble modelini yükle
         load_ensemble_model()
