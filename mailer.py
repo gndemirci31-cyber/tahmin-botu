@@ -612,9 +612,7 @@ def fetch_results_fixed(date_str):
 
 # ==================== URL NORMALIZASYON FONKSİYONU ====================
 def normalize_url(base, endpoint):
-    """URL çiftleşme hatasını önler - YENİ EKLENDİ"""
-    if base.endswith(endpoint.split('/')[0]):
-        return base
+    """URL çiftleşme hatasını önler - DÜZELTİLDİ"""
     base = base.rstrip('/')
     endpoint = endpoint.lstrip('/')
     return f"{base}/{endpoint}"
@@ -2089,7 +2087,7 @@ def get_w_mkt():
     try:
         return float(STATE.get("w_mkt", W_MKT_INIT))
     except:
-        return W_MKT_INIT
+    return W_MKT_INIT
 
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
