@@ -2087,7 +2087,7 @@ def get_w_mkt():
     try:
         return float(STATE.get("w_mkt", W_MKT_INIT))
     except:
-    return W_MKT_INIT
+        return W_MKT_INIT
 
 def set_w_mkt(val):
     STATE["w_mkt"] = float(clamp(val, 0.0, 0.8))
