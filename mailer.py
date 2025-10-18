@@ -78,6 +78,129 @@ WEATHER_CACHE_TTL = int(os.getenv("WEATHER_CACHE_TTL", "3600"))  # 1 saat cache
 def log(msg):
     print(f"{msg}", flush=True)
 
+# ==================== EKSİK FONKSİYONLAR DÜZELTMESİ ====================
+
+def _today_str_tr():
+    """Bugünün tarihini TR zaman diliminde 'YYYY-MM-DD' formatında döndürür"""
+    return datetime.now(TR_TZ).strftime("%Y-%m-%d")
+
+def _yesterday_str_tr(now=None):
+    """Dünün tarihini TR zaman diliminde 'YYYY-MM-DD' formatında döndürür"""
+    if now is None:
+        now = datetime.now(TR_TZ)
+    yesterday = now - timedelta(days=1)
+    return yesterday.strftime("%Y-%m-%d")
+
+def _apifoot_get(path, params):
+    """API-Football API çağrısı - EKSİK FONKSİYON EKLENDİ"""
+    if not APIFOOT:
+        return None
+    headers = {"x-apisports-key": APIFOOT}
+    try:
+        url = normalize_url(APIFOOT_BASE, path)
+        data = http_get(url, headers=headers, params=params)
+        return (data or {}).get("response", None)
+    except Exception as e:
+        log(f"apifoot GET err: {e}")
+        return None
+
+def calculate_value_advantage(home_team, away_team, area):
+    """Takım değeri avantajı hesaplar - EKSİK FONKSİYON EKLENDİ"""
+    try:
+        home_value, home_source = get_team_value(home_team, area)
+        away_value, away_source = get_team_value(away_team, area)
+        
+        if home_value == 0 and away_value == 0:
+            return 0.0, "NO_DATA"
+        
+        value_ratio = home_value / max(away_value, 0.1)
+        advantage = math.log(value_ratio) * 0.1  # Log scale advantage
+        
+        return clamp(advantage, -0.15, 0.15), f"VALUE_{home_source}_{away_source}"
+    except Exception as e:
+        log(f"Value advantage calculation error: {e}")
+        return 0.0, "ERROR"
+
+def make_prediction(date_str):
+    """Tahmin yapma fonksiyonu - EKSİK FONKSİYON EKLENDİ"""
+    try:
+        fixtures = universal_collector.fetch_fixtures_universal(date_str)
+        predictions = []
+        
+        for fx in fixtures:
+            odds, odds_source = fetch_odds_dual(fx.get("area",""), fx.get("competition",""), fx["home"], fx["away"])
+            rated = rate_fixture_enhanced(fx, odds)
+            
+            predictions.append({
+                "match": f"{fx['home']} vs {fx['away']}",
+                "prediction": rated["pick"],
+                "confidence": rated["confidence"],
+                "note": rated["note"],
+                "area": fx.get("area", ""),
+                "competition": fx.get("competition", ""),
+                "time": get_fixture_time_fallback(fx)
+            })
+        
+        return predictions
+    except Exception as e:
+        log(f"Make prediction error: {e}")
+        return []
+
+def log_prediction_success(predictions):
+    """Başarılı tahmin logu - EKSİK FONKSİYON EKLENDİ"""
+    log(f"✅ {len(predictions)} tahmin başarıyla oluşturuldu")
+
+def log_prediction_failure():
+    """Tahmin başarısızlık logu - EKSİK FONKSİYON EKLENDİ"""
+    log("❌ Tahmin oluşturulamadı")
+
+def debug_api_connection():
+    """API bağlantı test fonksiyonu - YENİ EKLENDİ"""
+    log("🔍 API Bağlantı Debug...")
+    log(f"📡 Base URL: {APIFOOT_BASE}")
+    log(f"🔑 Key Length: {len(APIFOOT) if APIFOOT else 'MISSING'}")
+    
+    # Status endpoint'ini test et
+    test_response = test_api_connection()
+    if test_response:
+        log("✅ API Bağlantı BAŞARILI")
+    else:
+        log("❌ API Bağlantı BAŞARISIZ")
+
+def test_api_connection():
+    """API bağlantı testi - YENİ EKLENDİ"""
+    try:
+        url = f"{APIFOOT_BASE}/status"
+        headers = {"x-apisports-key": APIFOOT}
+        response = http_get(url, headers=headers)
+        return response is not None
+    except Exception as e:
+        log(f"API connection test error: {e}")
+        return False
+
+def clear_old_cache():
+    """Eski cache'leri temizle - YENİ EKLENDİ"""
+    try:
+        current_time = time.time()
+        # 1 saatten eski cache'leri temizle
+        cache_ttl = 3600
+        
+        # API-Football cache temizleme
+        global _apifoot_team_cache, _apifoot_stat_cache, _odds_cache
+        
+        if current_time % 3600 < 60:  # Her saat başı temizle
+            _apifoot_team_cache.clear()
+            _apifoot_stat_cache.clear()
+            
+            # Eski odds cache'lerini temizle
+            for key in list(_odds_cache.keys()):
+                if current_time - _odds_cache[key]["ts"] > cache_ttl:
+                    del _odds_cache[key]
+                    
+        log("🔄 Cache temizlendi")
+    except Exception as e:
+        log(f"Cache clearance error: {e}")
+
 # ==================== DEĞİŞKEN DÜZELTMELERİ ====================
 # APIFOOT değişkeni düzeltildi - APIFOOTBALL_KEY kullanılacak
 APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
@@ -3413,50 +3536,6 @@ _API_LEAGUE_MAP = {
 _apifoot_team_cache = {}  # search_name.lower() -> team_id
 _apifoot_stat_cache = {}  # (league_id, season, team_id) -> stats_json
 
-def _apifoot_get(path, params):
-    """API-Football API çağrısı - DÜZELTİLDİ"""
-    if not APIFOOT:
-        return None
-    headers = {"x-apisports-key": APIFOOT}
-    try:
-        url = normalize_url(APIFOOT_BASE, path)  # DÜZELTİLDİ
-        data = http_get(url, headers=headers, params=params)
-        return (data or {}).get("response", None)
-    except Exception as e:
-        log(f"apifoot GET err: {e}")
-        return None
-
-def _apifoot_find_team_id(team_name):
-    if not team_name:
-        return None
-    key = (team_name or "").strip().lower()
-    ent = _apifoot_team_cache.get(key)
-    if ent is not None:
-        return ent
-    resp = _apifoot_get("/teams", {"search": team_name})
-    tid = None
-    try:
-        if resp:
-            tid = ((resp[0] or {}).get("team") or {}).get("id")
-    except Exception:
-        tid = None
-    _apifoot_team_cache[key] = tid
-    return tid
-
-def _apifoot_team_statistics(league_id, season, team_id):
-    if not (league_id and season and team_id):
-        return None
-    cache_key = (league_id, season, team_id)
-    if cache_key in _apifoot_stat_cache:
-        return _apifoot_stat_cache[cache_key]
-    resp = _apifoot_get("/teams/statistics", {
-        "league": league_id,
-        "season": season,
-        "team": team_id
-    })
-    _apifoot_stat_cache[cache_key] = resp[0] if (resp and len(resp)>0) else None
-    return _apifoot_stat_cache[cache_key]
-
 def _apifoot_hint_cards_corners(area, comp, home, away):
     if not APIFOOT:
         return None
@@ -4470,6 +4549,12 @@ def main():
         
         # EXTERNAL DATA STATE'İNİ BAŞLAT - YENİ EKLENDİ
         initialize_external_data_state()
+        
+        # API bağlantı testi
+        debug_api_connection()
+        
+        # Cache temizleme
+        clear_old_cache()
         
         # Ensemble modelini yükle
         load_ensemble_model()
