@@ -1429,6 +1429,29 @@ class FootballEnsemble:
 # Ensemble sistemini başlat
 ensemble_system = FootballEnsemble()
 
+def load_ensemble_model():
+    """Ensemble modelini diskten yükler"""
+    try:
+        model_path = "ensemble_model.pkl"
+        if os.path.exists(model_path):
+            global ensemble_system
+            ensemble_system = joblib.load(model_path)
+            log("✅ Ensemble modeli yüklendi")
+            return True
+    except Exception as e:
+        log(f"❌ Ensemble model yükleme hatası: {e}")
+    return False
+
+def save_ensemble_model():
+    """Ensemble modelini diske kaydeder"""
+    try:
+        joblib.dump(ensemble_system, "ensemble_model.pkl")
+        log("✅ Ensemble modeli kaydedildi")
+        return True
+    except Exception as e:
+        log(f"❌ Ensemble model kaydetme hatası: {e}")
+    return False
+
 # ==================== GÜNCELLENMİŞ TAHMİN FONKSİYONLARI ====================
 
 def rate_fixture_with_ensemble(fx, odds_info):
