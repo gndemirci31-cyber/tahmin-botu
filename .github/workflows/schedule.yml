@@ -28,12 +28,12 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 25  # ↑ 20'den 25'e çıkarıldı
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # state push için geçmiş gerekir
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -92,39 +92,28 @@ jobs:
 
       - name: Botu çalıştır
         env:
-          # Mail bilgileri (Actions Secrets'tan)
+          # Mail bilgileri
           GMAIL_USER:            ${{ secrets.GMAIL_USER }}
           GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
           GMAIL_TO:              ${{ secrets.GMAIL_TO }}
 
-          # API-Football v3 entegrasyonu
+          # API-Football v3 entegrasyonu - YENİ HEADERS FORMATI
           APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
-          APIFOOTBALL_HOST:      ${{ vars.APIFOOTBALL_HOST || 'v3.football.api-sports.io' }}
 
           # İsteğe bağlı: The Odds API (oranlar)
           ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
 
           # Yeni özellikler
           WEATHER_API_KEY:       ${{ secrets.WEATHER_API_KEY || '' }}
-          MODEL_VERSION:         ${{ vars.MODEL_VERSION || 'v2025.10.18-api-v3-integration' }}
-
-          # Fallback veri kaynakları
-          CARDS_URLS:            ${{ secrets.CARDS_URLS }}
-          CORNERS_URLS:          ${{ secrets.CORNERS_URLS }}
-          RESULTS_URLS:          ${{ secrets.RESULTS_URLS }}
-          FOOTYSTATS_API_KEY:    ${{ secrets.FOOTYSTATS_API_KEY }}
+          MODEL_VERSION:         ${{ vars.MODEL_VERSION || 'v2025.10.18-api-v3-simplified' }}
 
           # Çalışma modu
           MODE:                  ${{ steps.pick.outputs.mode }}
 
-          # --- Opsiyonel ayarlar (yoksa güvenli varsayılanlar)
+          # --- Opsiyonel ayarlar
           TOP_N:                 ${{ vars.TOP_N                 || '5'   }}
           MIN_CONF:              ${{ vars.MIN_CONF              || '0'   }}
           HIGH_ALERT:            ${{ vars.HIGH_ALERT            || '90'  }}
-          SPLIT_HIGH_ALERT_MAIL: ${{ vars.SPLIT_HIGH_ALERT_MAIL || '0'   }}
-
-          OLD_LEAGUES:           ${{ vars.OLD_LEAGUES           || 'bundesliga,bundesliga2' }}
-          ODDS_TTL_MIN:          ${{ vars.ODDS_TTL_MIN          || '15'  }}
 
           ELO_K:                 ${{ vars.ELO_K                 || '24'  }}
           ELO_HOME_ADV:          ${{ vars.ELO_HOME_ADV          || '40'  }}
@@ -132,11 +121,10 @@ jobs:
           FORM_DAYS:             ${{ vars.FORM_DAYS             || '120' }}
           ALLOW_STATE_FILE:      ${{ vars.ALLOW_STATE_FILE      || '1'   }}
 
-          # Otomatik öğrenme & eşleştirme
+          # Otomatik öğrenme
           W_MKT_INIT:            ${{ vars.W_MKT_INIT            || '0.45' }}
           LEARN_RATE:            ${{ vars.LEARN_RATE            || '0.05' }}
           GOAL_LR:               ${{ vars.GOAL_LR               || '0.02'  }}
-          PRED_MATCH_WINDOW_HRS: ${{ vars.PRED_MATCH_WINDOW_HRS || '48'    }}
 
           # Table/Streak ayarları
           TABLE_WEIGHT:          ${{ vars.TABLE_WEIGHT          || '0.12' }}
