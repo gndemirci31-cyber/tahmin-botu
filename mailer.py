@@ -43,7 +43,7 @@ COMPLETE_LEAGUE_IDS = {
 # === YENİ API FOOTBALL AYARLARI ===
 APIFOOTBALL_BASE_URL = "https://v3.football.api-sports.io/"
 HEADERS = {
-    'x-rapidapi-key': os.getenv('APIFOOTBALL_KEY', 'f6570111b0cdddb86828ef25179e6ce7'),
+    'x-apisports-key': os.getenv('APIFOOTBALL_KEY', 'f6570111b0cdddb86828ef25179e6ce7'),
     'x-rapidapi-host': 'v3.football.api-sports.io'
 }
 APIFOOTBALL_HEADERS = HEADERS
@@ -98,9 +98,8 @@ def log(msg):
 # ==================== YENİ API FOOTBALL FONKSİYONLARI ====================
 
 def get_api_football_fixtures(date_str):
-    """SEZONSUZ - O GÜNÜN TÜM MAÇLARINI AL ve HEDEF LİGLERİ FİLTRELE"""
+    """SEZONSUZ - 14 LİG + KADIN/U21 FİLTRELEME"""
     try:
-        # Tüm maçları al (sezonsuz)
         url = f"https://v3.football.api-sports.io/fixtures?date={date_str}"
         response = requests.get(url, headers=HEADERS)
         
@@ -108,11 +107,46 @@ def get_api_football_fixtures(date_str):
             data = response.json()
             all_matches = data.get('response', [])
             
-            # Sadece hedef ligleri filtrele
-            target_ids = list(COMPLETE_LEAGUE_IDS.values())
-            filtered_matches = [m for m in all_matches if str(m['league']['id']) in target_ids]
+            # 14 HEDEF LİG
+            TARGET_LEAGUES = {
+                'Premier League': '39', 'La Liga': '140', 'Serie A': '135',
+                'Bundesliga': '78', 'Ligue 1': '61', 'Eredivisie': '88',
+                'Belgian Pro League': '144', 'Scottish Premiership': '179',
+                'Süper Lig': '203', 'Segunda División': '141', 'Serie B': '136',
+                '2. Bundesliga': '79', 'Segunda Liga': '95', 'Challenger Pro League': '145'
+            }
             
-            log(f"🎯 {date_str}: {len(all_matches)} maç → {len(filtered_matches)} hedef lig maçı")
+            target_ids = [str(id) for id in TARGET_LEAGUES.values()]
+            
+            # FİLTRELEME
+            filtered_matches = []
+            for match in all_matches:
+                league_id = str(match['league']['id'])
+                league_name = match['league']['name']
+                home_team = match['teams']['home']['name']
+                away_team = match['teams']['away']['name']
+                
+                # 1. SADECE HEDEF LİGLER
+                if league_id not in target_ids:
+                    continue
+                
+                # 2. KADIN MAÇLARINI FİLTRELE
+                if any(word in league_name.lower() for word in ['women', 'kadın', 'femin', 'damen', 'femminile']):
+                    continue
+                
+                # 3. U21/U19 MAÇLARINI FİLTRELE
+                if any(word in league_name.lower() for word in ['u21', 'u19', 'u23', 'youth', 'genç']):
+                    continue
+                
+                # 4. REZERV/B TAKIM FİLTRELE
+                if any(word in home_team.lower() for word in [' ii', ' 2', ' b', ' reserve', ' u21']):
+                    continue
+                if any(word in away_team.lower() for word in [' ii', ' 2', ' b', ' reserve', ' u21']):
+                    continue
+                
+                filtered_matches.append(match)
+            
+            log(f"🎯 {len(all_matches)} maç → {len(filtered_matches)} filtreli maç")
             return filtered_matches
             
         else:
@@ -120,7 +154,18 @@ def get_api_football_fixtures(date_str):
             return []
             
     except Exception as e:
-        log(f"API-Football error: {e}")
+        log(f"❌ API error: {e}")
+        return []
+
+def get_fixtures_from_apis(date_str):
+    """SADECE API-FOOTBALL KULLAN"""
+    try:
+        log(f"🔍 API-Football maçları aranıyor: {date_str}")
+        fixtures = get_api_football_fixtures(date_str)
+        log(f"✅ API-Football sonuç: {len(fixtures)} maç")
+        return fixtures
+    except Exception as e:
+        log(f"❌ API-Football hatası: {e}")
         return []
 
 def get_matches_from_api(start_date, end_date, league_id=None):
