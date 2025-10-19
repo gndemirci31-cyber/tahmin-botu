@@ -44,7 +44,6 @@ COMPLETE_LEAGUE_IDS = {
 APIFOOTBALL_BASE_URL = "https://v3.football.api-sports.io/"
 HEADERS = {
     'x-apisports-key': os.getenv('APIFOOTBALL_KEY', 'f6570111b0cdddb86828ef25179e6ce7'),
-    'x-rapidapi-host': 'v3.football.api-sports.io'
 }
 
 # --- Model/version & retention ---
