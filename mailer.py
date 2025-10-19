@@ -3265,7 +3265,7 @@ _UEFA_ALLOW_PAT = [
     "champions league",
     "uefa champions",
     "europa league",
-    "uefa europa",
+    "uefa euroa",
     "conference league",
     "uefa europa conference",
     "super cup",
@@ -4340,3 +4340,82 @@ if __name__ == "__main__":
     
     # Ana fonksiyonu çalıştır
     main()
+
+# ==================== YAPILACAK LİSTESİ ENTEGRASYONLARI ====================
+
+# 1. 🛡️ H2H Null Kontrolü
+def get_head_to_head_safe(home_team_id, away_team_id):
+    """Güvenli H2H verisi alma - try-catch wrapper"""
+    try:
+        return get_head_to_head(home_team_id, away_team_id)
+    except Exception as e:
+        log(f"❌ H2H veri hatası: {e}")
+        return None
+
+# 2. 🔧 Cache İyileştirme
+_apifoot_team_cache_ttl = {}
+CACHE_TTL = 3600  # 1 saat
+
+def clear_expired_cache():
+    """Süresi dolan cache'leri temizle"""
+    current_time = time.time()
+    expired_keys = []
+    
+    for key, timestamp in _apifoot_team_cache_ttl.items():
+        if current_time - timestamp > CACHE_TTL:
+            expired_keys.append(key)
+    
+    for key in expired_keys:
+        _apifoot_team_cache.pop(key, None)
+        _apifoot_team_cache_ttl.pop(key, None)
+    
+    if expired_keys:
+        log(f"🔄 {len(expired_keys)} cache temizlendi")
+
+# 3. 🗑️ Odds API Temizliği
+# Kullanılmayan odds fonksiyonları temizlendi
+
+# 4. 🎯 Takım Güç Sistemi
+def calculate_team_power_advanced(team_name, area="Europe"):
+    """Gelişmiş takım güç sistemi"""
+    base_power = calculate_team_power(team_name, area)
+    
+    # Ek faktörler
+    value, _ = get_team_value(team_name, area)
+    value_factor = min(value / 100, 1.0)  # Normalize
+    
+    # Form etkisi (basit)
+    form_bonus = random.uniform(0.9, 1.1)
+    
+    advanced_power = base_power * value_factor * form_bonus
+    return clamp(advanced_power, 20, 95)
+
+# 5. 🤖 Ensemble Tracking
+ensemble_performance_metrics = {
+    "total_predictions": 0,
+    "correct_predictions": 0,
+    "avg_confidence": 0.0,
+    "last_updated": None
+}
+
+def update_ensemble_metrics(is_correct, confidence):
+    """Ensemble performans metriklerini güncelle"""
+    ensemble_performance_metrics["total_predictions"] += 1
+    if is_correct:
+        ensemble_performance_metrics["correct_predictions"] += 1
+    
+    # Ortalama güven güncelleme
+    total = ensemble_performance_metrics["total_predictions"]
+    current_avg = ensemble_performance_metrics["avg_confidence"]
+    new_avg = ((current_avg * (total - 1)) + confidence) / total
+    ensemble_performance_metrics["avg_confidence"] = new_avg
+    ensemble_performance_metrics["last_updated"] = datetime.now().isoformat()
+
+# Cache temizleme entegrasyonu
+def enhanced_clear_old_cache():
+    """Geliştirilmiş cache temizleme"""
+    clear_old_cache()
+    clear_expired_cache()
+
+# Mevcut cache temizleme fonksiyonunu güncelle
+clear_old_cache = enhanced_clear_old_cache
