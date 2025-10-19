@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GÜNCEL SÜRÜM (TÜM HATALAR DÜZELTİLDİ + TÜM ÖZELLİKLER ENTEGRE + API FOOTBALL v3 GÜNCELLEMESİ)
+Tahmin Botu — GÜNCEL SÜRÜM (API-FOOTBALL v3 ENTEGRASYONU + TÜM DÜZELTMELER)
 """
 import json
 import os
@@ -93,8 +93,12 @@ def get_matches_from_api(start_date, end_date, league_id=None):
     if league_id:
         params['league'] = league_id
         
-    response = requests.get(f"{APIFOOTBALL_BASE_URL}fixtures", 
-                           headers=APIFOOTBALL_HEADERS, params=params, timeout=30)
+    response = requests.get(
+        f"{APIFOOTBALL_BASE_URL}fixtures", 
+        headers=APIFOOTBALL_HEADERS, 
+        params=params, 
+        timeout=30
+    )
     
     if response.status_code == 200:
         return response.json().get('response', [])
@@ -109,8 +113,12 @@ def get_matches_from_api(start_date, end_date, league_id=None):
 def get_leagues_from_api():
     """YENİ: API Football v3'ten lig bilgilerini çeker"""
     params = {'season': '2024'}
-    response = requests.get(f"{APIFOOTBALL_BASE_URL}leagues", 
-                           headers=APIFOOTBALL_HEADERS, params=params, timeout=30)
+    response = requests.get(
+        f"{APIFOOTBALL_BASE_URL}leagues", 
+        headers=APIFOOTBALL_HEADERS, 
+        params=params, 
+        timeout=30
+    )
     
     if response.status_code == 200:
         return response.json().get('response', [])
@@ -150,11 +158,16 @@ def _apifoot_get(path, params):
     """API-Football API çağrısı - EKSİK FONKSİYON EKLENDİ"""
     if not APIFOOT:
         return None
-    headers = {"x-apisports-key": APIFOOT}
     try:
-        url = normalize_url(APIFOOT_BASE, path)
-        data = http_get(url, headers=headers, params=params)
-        return (data or {}).get("response", None)
+        url = f"{APIFOOTBALL_BASE_URL}{path.lstrip('/')}"
+        response = requests.get(
+            url, 
+            headers=APIFOOTBALL_HEADERS, 
+            params=params, 
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json().get("response", None)
     except Exception as e:
         log(f"apifoot GET err: {e}")
         return None
@@ -212,7 +225,7 @@ def log_prediction_failure():
 def debug_api_connection():
     """API bağlantı test fonksiyonu - YENİ EKLENDİ"""
     log("🔍 API Bağlantı Debug...")
-    log(f"📡 Base URL: {APIFOOT_BASE}")
+    log(f"📡 Base URL: {APIFOOTBALL_BASE_URL}")
     log(f"🔑 Key Length: {len(APIFOOT) if APIFOOT else 'MISSING'}")
     
     # Status endpoint'ini test et
@@ -225,10 +238,13 @@ def debug_api_connection():
 def test_api_connection():
     """API bağlantı testi - YENİ EKLENDİ"""
     try:
-        url = f"{APIFOOT_BASE}/status"
-        headers = {"x-apisports-key": APIFOOT}
-        response = http_get(url, headers=headers)
-        return response is not None
+        url = f"{APIFOOTBALL_BASE_URL}status"
+        response = requests.get(
+            url, 
+            headers=APIFOOTBALL_HEADERS, 
+            timeout=30
+        )
+        return response.status_code == 200
     except Exception as e:
         log(f"API connection test error: {e}")
         return False
@@ -259,7 +275,6 @@ def clear_old_cache():
 # ==================== DEĞİŞKEN DÜZELTMELERİ ====================
 # APIFOOT değişkeni düzeltildi - APIFOOTBALL_KEY kullanılacak
 APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
-APIFOOT_BASE = "https://v3.football.api-sports.io"
 
 # Diğer secrets
 GMAIL_USER = os.getenv("GMAIL_USER")
@@ -676,17 +691,17 @@ def normalize_url(base, endpoint):
 
 # API-Football endpoint mapping
 APIFOOTBALL_ENDPOINTS = {
-    'head_to_head': '/fixtures/headtohead',
-    'predictions': '/predictions', 
-    'injuries': '/injuries',
-    'topscorers': '/players/topscorers',
-    'lineups': '/fixtures/lineups',
-    'standings': '/standings',
-    'fixtures': '/fixtures',
-    'teams': '/teams',
-    'players': '/players',
-    'transfers': '/transfers',
-    'statistics': '/fixtures/statistics'
+    'head_to_head': 'fixtures/headtohead',
+    'predictions': 'predictions', 
+    'injuries': 'injuries',
+    'topscorers': 'players/topscorers',
+    'lineups': 'fixtures/lineups',
+    'standings': 'standings',
+    'fixtures': 'fixtures',
+    'teams': 'teams',
+    'players': 'players',
+    'transfers': 'transfers',
+    'statistics': 'fixtures/statistics'
 }
 
 def get_football_data(feature_type, **params):
@@ -719,52 +734,56 @@ def _apifootball_get(feature_type, params):
     if not endpoint:
         return None
         
-    url = normalize_url(APIFOOT_BASE, endpoint)
-    headers = {"x-apisports-key": APIFOOT}
+    url = f"{APIFOOTBALL_BASE_URL}{endpoint}"
     
-    return http_get(url, headers=headers, params=params)
+    try:
+        response = requests.get(
+            url, 
+            headers=APIFOOTBALL_HEADERS, 
+            params=params, 
+            timeout=30
+        )
+        if response.status_code == 200:
+            return response.json().get('response', [])
+    except Exception as e:
+        log(f"API-Football GET error: {e}")
+    
+    return None
 
 def get_head_to_head(home_team_id, away_team_id):
     """Son 5 karşılaşmayı getir"""
-    url = normalize_url(APIFOOT_BASE, "/fixtures/headtohead")
     params = {"h2h": f"{home_team_id}-{away_team_id}", "last": 5}
-    return _apifoot_get(url, params)
+    return _apifoot_get("fixtures/headtohead", params)
 
 def get_api_predictions(fixture_id):
     """API-Football'ın AI tahminlerini al"""
-    url = normalize_url(APIFOOT_BASE, "/predictions")
     params = {"fixture": fixture_id}
-    return _apifoot_get(url, params)
+    return _apifoot_get("predictions", params)
 
 def get_injuries(fixture_id):
     """Maçtaki sakat oyuncuları getir"""
-    url = normalize_url(APIFOOT_BASE, "/injuries")
     params = {"fixture": fixture_id}
-    return _apifoot_get(url, params)
+    return _apifoot_get("injuries", params)
 
 def get_top_scorers(league_id, season):
     """Lig gol krallarını getir"""
-    url = normalize_url(APIFOOT_BASE, "/players/topscorers")
     params = {"league": league_id, "season": season}
-    return _apifoot_get(url, params)
+    return _apifoot_get("players/topscorers", params)
 
 def get_lineups(fixture_id):
     """Maç kadrolarını getir"""
-    url = normalize_url(APIFOOT_BASE, "/fixtures/lineups")
     params = {"fixture": fixture_id}
-    return _apifoot_get(url, params)
+    return _apifoot_get("fixtures/lineups", params)
 
 def get_transfers(team_id):
     """Takım transferlerini getir"""
-    url = normalize_url(APIFOOT_BASE, "/transfers")
     params = {"team": team_id}
-    return _apifoot_get(url, params)
+    return _apifoot_get("transfers", params)
 
 def get_fixture_statistics(fixture_id):
     """Maç istatistiklerini getir"""
-    url = normalize_url(APIFOOT_BASE, "/fixtures/statistics")
     params = {"fixture": fixture_id}
-    return _apifoot_get(url, params)
+    return _apifoot_get("fixtures/statistics", params)
 
 def _football_data_get(feature_type, params):
     """Football-Data.org fallback"""
@@ -796,14 +815,13 @@ def find_fixture_id(area, comp, home, away):
         away_norm = normalize_team_name(away)
         
         # Önce direkt arama yap
-        url = normalize_url(APIFOOT_BASE, "/fixtures")  # DÜZELTİLDİ
         params = {
             "league": get_league_id_for_country(area, comp),
             "season": season_for_today(),
             "team": _apifoot_find_team_id(home)
         }
         
-        response = _apifoot_get(url, params)
+        response = _apifoot_get("fixtures", params)
         if response:
             for fixture in response:
                 fixture_data = fixture.get('fixture', {})
@@ -822,7 +840,7 @@ def find_fixture_id(area, comp, home, away):
         # Fallback: tarih bazlı arama
         today = datetime.now().strftime("%Y-%m-%d")
         params = {"date": today, "league": get_league_id_for_country(area, comp)}
-        response = _apifoot_get(url, params)
+        response = _apifoot_get("fixtures", params)
         
         if response:
             for fixture in response:
@@ -1089,16 +1107,25 @@ class UniversalDataCollector:
         leagues = self._get_relevant_leagues(country, competition)
         
         for league_id in leagues:
-            url = normalize_url(APIFOOT_BASE, "/fixtures")  # DÜZELTİLDİ
-            headers = {"x-apisports-key": APIFOOT}
             params = {"date": date_str, "league": league_id}
             
-            response = http_get(url, headers=headers, params=params)
-            if response and isinstance(response, dict) and "response" in response:
-                for item in response["response"]:
-                    fixture = self._parse_apifootball_fixture(item)
-                    if fixture:
-                        fixtures.append(fixture)
+            try:
+                response = requests.get(
+                    f"{APIFOOTBALL_BASE_URL}fixtures",
+                    headers=APIFOOTBALL_HEADERS,
+                    params=params,
+                    timeout=30
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if "response" in data:
+                        for item in data["response"]:
+                            fixture = self._parse_apifootball_fixture(item)
+                            if fixture:
+                                fixtures.append(fixture)
+            except Exception as e:
+                log(f"API-Football fixture error: {e}")
+                continue
         
         return fixtures
     
@@ -1212,7 +1239,7 @@ class WeatherAPIProvider:
                 return self._get_fallback_weather(city_name)
             
             # Hızlı API çağrısı
-            url = normalize_url(self.base_url, "/current.json")  # DÜZELTİLDİ
+            url = f"{self.base_url}/current.json"
             params = {
                 "key": self.api_key,
                 "q": city_name,
@@ -1220,7 +1247,7 @@ class WeatherAPIProvider:
             }
             
             start_time = time.time()
-            response = requests.get(url, params=params, timeout=2.0)  # 2 saniye timeout
+            response = requests.get(url, params=params, timeout=30)
             
             if response.status_code == 200:
                 data = response.json()
@@ -2391,12 +2418,17 @@ def get_apifootball_standings(country):
             return None
             
         season = season_for_today()
-        url = normalize_url(APIFOOT_BASE, "/standings")  # DÜZELTİLDİ
-        params = {"league": league_id, "season": season}
         
-        response = _apifoot_get(url, params)
-        if response:
-            return parse_apifootball_standings(response)
+        response = requests.get(
+            f"{APIFOOTBALL_BASE_URL}standings",
+            headers=APIFOOTBALL_HEADERS,
+            params={"league": league_id, "season": season},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            return parse_apifootball_standings(data.get('response', []))
             
     except Exception as e:
         log(f"API-Football standings error: {e}")
@@ -2410,12 +2442,17 @@ def get_team_value_apifootball(team_name):
         if not team_id:
             return None
             
-        url = normalize_url(APIFOOT_BASE, "/teams")  # DÜZELTİLDİ
-        params = {"id": team_id}
+        response = requests.get(
+            f"{APIFOOTBALL_BASE_URL}teams",
+            headers=APIFOOTBALL_HEADERS,
+            params={"id": team_id},
+            timeout=30
+        )
         
-        response = _apifoot_get(url, params)
-        if response and response[0]:
-            return response[0].get('team', {}).get('market_value')
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('response'):
+                return data['response'][0].get('team', {}).get('market_value')
             
     except Exception as e:
         log(f"API-Football team value error: {e}")
@@ -2447,12 +2484,16 @@ def fetch_odds_apifootball(area, comp, home, away):
         if not fixture_id:
             return None
             
-        url = normalize_url(APIFOOT_BASE, "/odds")  # DÜZELTİLDİ
-        params = {"fixture": fixture_id, "bookmaker": 1}  # 1 = Bet365
+        response = requests.get(
+            f"{APIFOOTBALL_BASE_URL}odds",
+            headers=APIFOOTBALL_HEADERS,
+            params={"fixture": fixture_id, "bookmaker": 1},  # 1 = Bet365
+            timeout=30
+        )
         
-        response = _apifoot_get(url, params)
-        if response:
-            return parse_apifootball_odds(response)
+        if response.status_code == 200:
+            data = response.json()
+            return parse_apifootball_odds(data.get('response', []))
             
     except Exception as e:
         log(f"API-Football odds error: {e}")
@@ -2468,10 +2509,10 @@ def fetch_odds_avg(area, comp, home, away):
             "regions": "eu",
             "markets": "h2h",
             "oddsFormat": "decimal",
-            "apiKey": ODDS_API_KEY
+            "apiKey": ODDS_KEY
         }
         
-        response = http_get(url, params=params, timeout=10)
+        response = http_get(url, params=params, timeout=30)
         if response:
             # Oranları parse et ve ilgili maçı bul
             for odds_data in response:
@@ -3268,9 +3309,8 @@ def fetch_fd_fixtures(date_str):
 def fetch_apifoot_fixtures(date_str):
     if not APIFOOT:
         return []
-    headers = {"x-apisports-key": APIFOOT}
-    url = normalize_url(APIFOOT_BASE, "/fixtures")  # DÜZELTİLDİ
-    data = http_get(url, headers=headers, params={"date": date_str})
+    url = f"{APIFOOTBALL_BASE_URL}fixtures"
+    data = http_get(url, headers=APIFOOTBALL_HEADERS, params={"date": date_str})
     out = []
     if not data:
         log(f"APIF fixtures (TR={date_str}) -> 0 (boş/erişilemedi)")
@@ -3762,7 +3802,7 @@ def _apifoot_standings(league_id, season):
     key = (league_id, season)
     if key in _APIF_STANDINGS_CACHE:
         return _APIF_STANDINGS_CACHE[key]
-    resp = _apifoot_get("/standings", {"league": league_id, "season": season})
+    resp = _apifoot_get("standings", {"league": league_id, "season": season})
     by_id = {}; total = None
     try:
         lg = ((resp or [{}])[0] or {}).get("league", {}) if resp else {}
@@ -4214,9 +4254,8 @@ def fetch_results_fd(date_str):
 def fetch_results_apifoot(date_str):
     if not APIFOOT:
         return []
-    headers = {"x-apisports-key": APIFOOT}
-    url = normalize_url(APIFOOT_BASE, "/fixtures")  # DÜZELTİLDİ
-    data = http_get(url, headers=headers, params={"date": date_str})
+    url = f"{APIFOOTBALL_BASE_URL}fixtures"
+    data = http_get(url, headers=APIFOOTBALL_HEADERS, params={"date": date_str})
     out = []
     if not data:
         return out
