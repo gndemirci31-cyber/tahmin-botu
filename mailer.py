@@ -158,7 +158,7 @@ def get_fixtures_from_apis(date_str):
     """SADECE API-FOOTBALL KULLAN"""
     try:
         log(f"🔍 API-Football maçları aranıyor: {date_str}")
-        fixtures = get_api_football_fixtures(date_str)
+        fixtures = get_api_football_fixtures(date_str)  #
         log(f"✅ API-Football sonuç: {len(fixtures)} maç")
         return fixtures
     except Exception as e:
