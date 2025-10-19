@@ -46,7 +46,6 @@ HEADERS = {
     'x-apisports-key': os.getenv('APIFOOTBALL_KEY', 'f6570111b0cdddb86828ef25179e6ce7'),
     'x-rapidapi-host': 'v3.football.api-sports.io'
 }
-APIFOOTBALL_HEADERS = HEADERS
 
 # --- Model/version & retention ---
 MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.18-full-integration")
@@ -75,7 +74,6 @@ ELO_MODE = os.getenv("ELO_MODE", "single")  # split|single
 
 # --- Ortak yardımcılar -------------------------------------------------------
 TR_TZ = timezone(timedelta(hours=3))  # Türkiye
-HEADERS_JSON = {"Accept": "application/json"}
 
 # --- TOP_N AYARI ---
 TOP_N = int(os.getenv("TOP_N", "5"))  # En güçlü tahmin sayısı
@@ -176,7 +174,7 @@ def get_matches_from_api(start_date, end_date, league_id=None):
         
     response = requests.get(
         f"{APIFOOTBALL_BASE_URL}fixtures", 
-        headers=APIFOOTBALL_HEADERS, 
+        headers=HEADERS, 
         params=params, 
         timeout=30
     )
@@ -196,7 +194,7 @@ def get_leagues_from_api():
     params = {'season': '2024'}
     response = requests.get(
         f"{APIFOOTBALL_BASE_URL}leagues", 
-        headers=APIFOOTBALL_HEADERS, 
+        headers=HEADERS, 
         params=params, 
         timeout=30
     )
@@ -243,7 +241,7 @@ def _apifoot_get(path, params):
         url = f"{APIFOOTBALL_BASE_URL}{path.lstrip('/')}"
         response = requests.get(
             url, 
-            headers=APIFOOTBALL_HEADERS, 
+            headers=HEADERS, 
             params=params, 
             timeout=30
         )
@@ -322,7 +320,7 @@ def test_api_connection():
         url = f"{APIFOOTBALL_BASE_URL}status"
         response = requests.get(
             url, 
-            headers=APIFOOTBALL_HEADERS, 
+            headers=HEADERS, 
             timeout=30
         )
         return response.status_code == 200
@@ -338,16 +336,11 @@ def clear_old_cache():
         cache_ttl = 3600
         
         # API-Football cache temizleme
-        global _apifoot_team_cache, _apifoot_stat_cache, _odds_cache
+        global _apifoot_team_cache, _apifoot_stat_cache
         
         if current_time % 3600 < 60:  # Her saat başı temizle
             _apifoot_team_cache.clear()
             _apifoot_stat_cache.clear()
-            
-            # Eski odds cache'lerini temizle
-            for key in list(_odds_cache.keys()):
-                if current_time - _odds_cache[key]["ts"] > cache_ttl:
-                    del _odds_cache[key]
                     
         log("🔄 Cache temizlendi")
     except Exception as e:
@@ -361,7 +354,6 @@ APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
 GMAIL_TO = os.getenv("GMAIL_TO")
-FD_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY = os.getenv("ODDS_API_KEY")
 MODE_ENV = (os.getenv("MODE") or "AUTO").upper().strip()
 
@@ -689,7 +681,7 @@ def run_service_loop():
 def fetch_results_fixed(date_str):
     """Düzeltilmiş sonuç raporu - State tahminleriyle performans ölçümü"""
     # YENİ: API Football v3 kullanımı
-    api_results = fetch_results_fd(date_str) or fetch_results_apifoot(date_str)
+    api_results = fetch_results_apifoot(date_str)
     
     lines = [f"📊 Dünün Sonuçları — {date_str}"]
     
@@ -792,19 +784,7 @@ def get_football_data(feature_type, **params):
     if data:
         return data, "APIFOOTBALL"
     
-    # 2. FALLBACK: Football-Data.org
-    data = _football_data_get(feature_type, params) 
-    if data:
-        return data, "FOOTBALL_DATA"
-    
-    # 3. FALLBACK: Web Scraping
-    data = _web_scraping_get(feature_type, params)
-    if data:
-        return data, "WEB_SCRAPING"
-    
-    # 4. FALLBACK: Statik Veriler
-    data = _static_data_get(feature_type, params)
-    return data, "STATIC"
+    return None, "NONE"
 
 def _apifootball_get(feature_type, params):
     """API-Football'dan veri çek"""
@@ -820,7 +800,7 @@ def _apifootball_get(feature_type, params):
     try:
         response = requests.get(
             url, 
-            headers=APIFOOTBALL_HEADERS, 
+            headers=HEADERS, 
             params=params, 
             timeout=30
         )
@@ -865,23 +845,6 @@ def get_fixture_statistics(fixture_id):
     """Maç istatistiklerini getir"""
     params = {"fixture": fixture_id}
     return _apifoot_get("fixtures/statistics", params)
-
-def _football_data_get(feature_type, params):
-    """Football-Data.org fallback"""
-    if not FD_TOKEN:
-        return None
-    # Football-Data.org implementasyonu
-    return None
-
-def _web_scraping_get(feature_type, params):
-    """Web scraping fallback"""
-    # Web scraping implementasyonu
-    return None
-
-def _static_data_get(feature_type, params):
-    """Statik veri fallback"""
-    # Statik veri implementasyonu
-    return None
 
 # ==================== EKSİK API-FOOTBALL FONKSİYONLARI ====================
 
@@ -1150,12 +1113,9 @@ class UniversalDataCollector:
     
     def __init__(self):
         self.data_sources = {
-            'api_football': self._fetch_apifootball,  # BİRİNCİL KAYNAK
-            'football_data': self._fetch_football_data,  # FALLBACK
-            'the_odds_api': self._fetch_odds_api,  # FALLBACK
-            'open_liga_db': self._fetch_openligadb  # FALLBACK
+            'api_football': self._fetch_apifootball  # BİRİNCİL KAYNAK
         }
-        self.fallback_chain = ['api_football', 'football_data', 'the_odds_api', 'open_liga_db']
+        self.fallback_chain = ['api_football']  # SADECE API-FOOTBALL
         
     def fetch_fixtures_universal(self, date_str, country=None, competition=None):
         """Tüm kaynaklardan fixture toplar - API-FOOTBALL BİRİNCİL"""
@@ -1167,11 +1127,6 @@ class UniversalDataCollector:
                 if source_fixtures:
                     fixtures.extend(source_fixtures)
                     log(f"✅ {source}: {len(source_fixtures)} fixture bulundu")
-                    
-                    # API-Football başarılı olduysa dur (BİRİNCİL KAYNAK)
-                    if source == 'api_football' and source_fixtures:
-                        log("🎯 API-Football birincil kaynak - diğer kaynaklara geçilmiyor")
-                        break
                         
             except Exception as e:
                 log(f"❌ {source} hatası: {e}")
@@ -1193,7 +1148,7 @@ class UniversalDataCollector:
             try:
                 response = requests.get(
                     f"{APIFOOTBALL_BASE_URL}fixtures",
-                    headers=APIFOOTBALL_HEADERS,
+                    headers=HEADERS,
                     params=params,
                     timeout=30
                 )
@@ -1209,27 +1164,6 @@ class UniversalDataCollector:
                 continue
         
         return fixtures
-    
-    def _fetch_football_data(self, date_str, country=None, competition=None):
-        """Football-Data.org'dan fixture al - FALLBACK"""
-        if not FD_TOKEN:
-            return []
-            
-        return fetch_fd_fixtures(date_str)
-    
-    def _fetch_odds_api(self, date_str, country=None, competition=None):
-        """The Odds API'dan fixture al - FALLBACK"""
-        if not ODDS_KEY:
-            return []
-            
-        return fetch_odds_fixtures(date_str)
-    
-    def _fetch_openligadb(self, date_str, country=None, competition=None):
-        """OpenLigaDB'den fixture al (Almanya için) - FALLBACK"""
-        if country and 'germany' not in country.lower():
-            return []
-            
-        return fetch_openligadb_day(date_str)
     
     def _get_relevant_leagues(self, country=None, competition=None):
         """Ülke ve lige göre ilgili lig ID'lerini döndürür"""
@@ -2502,7 +2436,7 @@ def get_apifootball_standings(country):
         
         response = requests.get(
             f"{APIFOOTBALL_BASE_URL}standings",
-            headers=APIFOOTBALL_HEADERS,
+            headers=HEADERS,
             params={"league": league_id, "season": season},
             timeout=30
         )
@@ -2525,7 +2459,7 @@ def get_team_value_apifootball(team_name):
             
         response = requests.get(
             f"{APIFOOTBALL_BASE_URL}teams",
-            headers=APIFOOTBALL_HEADERS,
+            headers=HEADERS,
             params={"id": team_id},
             timeout=30
         )
@@ -2567,7 +2501,7 @@ def fetch_odds_apifootball(area, comp, home, away):
             
         response = requests.get(
             f"{APIFOOTBALL_BASE_URL}odds",
-            headers=APIFOOTBALL_HEADERS,
+            headers=HEADERS,
             params={"fixture": fixture_id, "bookmaker": 1},  # 1 = Bet365
             timeout=30
         )
@@ -3211,10 +3145,8 @@ def is_allowed_competition(area_name: str, comp_name: str) -> bool:
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASS = os.getenv("GMAIL_PASS")
 GMAIL_TO = os.getenv("GMAIL_TO")
-FD_TOKEN = os.getenv("FOOTBALL_DATA_TOKEN")
 ODDS_KEY = os.getenv("ODDS_API_KEY")
-# DÜZELTİLDİ: Çift "https" kaldırıldı
-APIFOOT_BASE = "https://v3.football.api-sports.io"  # DÜZELTİLDİ
+APIFOOT_BASE = "https://v3.football.api-sports.io"
 APIFOOT = (os.getenv("APIFOOTBALL_KEY") or "").strip()
 MODE_ENV = (os.getenv("MODE") or "AUTO").upper().strip()
 OLD_LEAGUES = [x.strip() for x in (os.getenv("OLD_LEAGUES", "bundesliga,bundesliga2").split(",")) if x.strip()]
@@ -3344,374 +3276,7 @@ def parse_weather(wx_text):
         pass
     return (wind, precip)
 
-# --- Football-Data (fixtures) ------------------------------------------------
-def fetch_fd_fixtures(date_str):
-    if not FD_TOKEN:
-        return []
-    url = "https://api.football-data.org/v4/matches"
-    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-    tr_day = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=TR_TZ)
-    from_utc = (tr_day - timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
-    to_utc = (tr_day + timedelta(days=1)).astimezone(timezone.utc).strftime("%Y-%m-%d")
-    data = http_get(url, headers=headers, params={"dateFrom": from_utc, "dateTo": to_utc})
-    out = []
-    if data and data.get("matches"):
-        for m in data["matches"]:
-            dtp = to_dt_utc(m.get("utcDate"))
-            if not dtp:
-                continue
-            if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
-                continue
-            if m.get("status") not in ("SCHEDULED", "TIMED"):
-                continue
-            comp = m.get("competition", {}) or {}
-            area = (comp.get("area", {}) or {}).get("name", "")
-            cname = (comp.get("name") or "")
-            if not is_allowed_competition(area, cname):
-                continue
-            ht = m.get("homeTeam", {}) or {}
-            at = m.get("awayTeam", {}) or {}
-            out.append({
-                "source": "FD",
-                "utc_kickoff": dtp,
-                "home": ht.get("name"),
-                "away": at.get("name"),
-                "home_id": ht.get("id"),
-                "away_id": at.get("id"),
-                "area": area,
-                "competition": cname,
-                "competition_id": comp.get("id"),
-                "id": m.get("id"),
-            })
-    log(f"FD fixtures (TR={date_str}) -> {len(out)}")
-    return out
-
 # --- 2. Fallback: API-Football (tarih bazlı) ---------------------------------
-def fetch_apifoot_fixtures(date_str):
-    if not APIFOOT:
-        return []
-    url = f"{APIFOOTBALL_BASE_URL}fixtures"
-    data = http_get(url, headers=APIFOOTBALL_HEADERS, params={"date": date_str})
-    out = []
-    if not data:
-        log(f"APIF fixtures (TR={date_str}) -> 0 (boş/erişilemedi)")
-        return out
-    try:
-        for item in (data.get("response") or []):
-            status = (((item.get("fixture") or {}).get("status") or {}).get("short") or "").upper()
-            if status not in ("NS", "TBD", "PST", "SUSP", "1H", "HT", "2H"):
-                continue
-            dtp = to_dt_utc((item.get("fixture") or {}).get("date"))
-            if not dtp:
-                continue
-            if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
-                continue
-            lg = (item.get("league") or {})
-            area = (lg.get("country") or "Europe")
-            cname = (lg.get("name") or "")
-            if not is_allowed_competition(area, cname):
-                continue
-            tms = (item.get("teams") or {})
-            home = (tms.get("home") or {})
-            away = (tms.get("away") or {})
-            out.append({
-                "source": "APIF",
-                "utc_kickoff": dtp,
-                "home": home.get("name"),
-                "away": away.get("name"),
-                "home_id": home.get("id"),
-                "away_id": away.get("id"),
-                "area": area,
-                "competition": cname,
-                "competition_id": None,
-                "id": f"apif:{item.get('fixture',{}).get('id')}",
-            })
-    except Exception as e:
-        log(f"APIF fixtures parse err: {e}")
-    log(f"APIF fixtures (TR={date_str}) -> {len(out)}")
-    return out
-
-# --- OpenLigaDB fallback (yalnız Almanya alt ligleri) ------------------------
-def fetch_openligadb_day(date_str):
-    y, m, d = date_str.split("-")
-    leagues = [(lg.strip(), int(y)) for lg in OLD_LEAGUES if lg.strip()]
-    out = []
-    for lg, season in leagues:
-        url = f"https://www.openligadb.de/api/getmatchdata/{lg}/{season}"
-        data = http_get(url)
-        if not data:
-            continue
-        for mm in data:
-            dt = mm.get("MatchDateTimeUTC") or mm.get("MatchDateTime")
-            dtp = to_dt_utc(dt) if dt else None
-            if not dtp:
-                continue
-            if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
-                continue
-            comp = mm.get("LeagueName") or lg
-            if not is_allowed_competition("Germany", comp):
-                continue
-            out.append({
-                "source":"OLD",
-                "utc_kickoff": dtp,
-                "home": mm.get("Team1",{}).get("TeamName"),
-                "away": mm.get("Team2",{}).get("TeamName"),
-                "home_id": None,
-                "away_id": None,
-                "area": "Germany",
-                "competition": comp,
-                "competition_id": None,
-                "id": f"old:{mm.get('MatchID')}",
-            })
-    log(f"OpenLigaDB fixtures (TR={date_str}) -> {len(out)}")
-    return out
-
-# --- 4. Fallback: The Odds API (cache) ---------------------------------------
-_odds_cache = {}  # {skey: {"ts": epoch, "data": list}}
-
-def _fetch_odds_sport_cached(skey):
-    now = time.time()
-    ent = _odds_cache.get(skey)
-    if ent and (now - ent["ts"] < ODDS_TTL_MIN*60):
-        return ent["data"]
-    url = f"https://api.the-odds-api.com/v4/sports/{skey}/odds/"
-    params = {"regions":"eu,uk","markets":"h2h","oddsFormat":"decimal","apiKey":ODDS_KEY}
-    data = http_get(url, params=params) if ODDS_KEY else None
-    _odds_cache[skey] = {"ts": now, "data": data or []}
-    return _odds_cache[skey]["data"]
-
-def fetch_odds_fixtures(date_str):
-    if not ODDS_KEY:
-        return []
-    keys = [
-        ("soccer_epl", "England", "Premier League"),
-        ("soccer_efl_championship", "England", "Championship"),
-        ("soccer_spain_la_liga", "Spain", "La Liga"),
-        ("soccer_italy_serie_a", "Italy", "Serie A"),
-        ("soccer_france_ligue_one", "France", "Ligue 1"),
-        ("soccer_germany_bundesliga", "Germany", "Bundesliga"),
-        ("soccer_turkey_super_league", "Turkey", "Super Lig"),
-        ("soccer_uefa_champs_league", "Europe", "UEFA Champions League"),
-        ("soccer_uefa_europa_league", "Europe", "UEFA Europa League"),
-    ]
-    out = []
-    for skey, area, comp in keys:
-        data = _fetch_odds_sport_cached(skey)
-        if not data or not isinstance(data, list):
-            continue
-        for ev in data:
-            dtp = to_dt_utc(ev.get("commence_time"))
-            if not dtp:
-                continue
-            if dtp.astimezone(TR_TZ).strftime("%Y-%m-%d") != date_str:
-                continue
-            out.append({
-                "source": "ODDS",
-                "utc_kickoff": dtp,
-                "home": ev.get("home_team"),
-                "away": ev.get("away_team"),
-                "home_id": None,
-                "away_id": None,
-                "area": area,
-                "competition": comp,
-                "competition_id": None,
-                "id": f"odds:{skey}:{ev.get('id','')}",
-            })
-    log(f"OddsAPI fixtures (TR={date_str}) -> {len(out)}")
-    return out
-
-# --- Fikstür toplayıcı zincir ------------------------------------------------
-def fetch_fixtures(date_str):
-    fixtures = fetch_fd_fixtures(date_str)
-    if not fixtures:
-        log("FD boş → API-Football fallback deneniyor…")
-        fixtures = fetch_apifoot_fixtures(date_str)
-    if not fixtures:
-        log("API-Football da boş → OpenLigaDB fallback deneniyor…")
-        fixtures = fetch_openligadb_day(date_str)
-    if not fixtures:
-        log("OpenLigaDB de boş → The Odds API event fallback deneniyor…")
-        fixtures = fetch_odds_fixtures(date_str)
-    
-    # YENİ EKLENEN KOD: Saat bilgisi kontrolü ve loglama
-    for fixture in fixtures:
-        if not fixture.get("utc_kickoff"):
-            log(f"⚠️ Saat bilgisi yok: {fixture.get('home')} vs {fixture.get('away')}")
-    
-    return fixtures
-
-# --- Odds (avg) --------------------------------------------------------------
-
-# --- Guess sport key for The Odds API --------------------------------------
-def guess_sport_key(area, comp):
-    area_l = (area or "").lower()
-    comp_l = (comp or "").lower()
-    mapping = {
-        ("england", "premier league"): "soccer_epl",
-        ("england", "championship"): "soccer_efl_championship",
-        ("spain", "la liga"): "soccer_spain_la_liga",
-        ("italy", "serie a"): "soccer_italy_serie_a",
-        ("germany", "bundesliga"): "soccer_germany_bundesliga",
-        ("france", "ligue 1"): "soccer_france_ligue_one",
-        ("turkey", "super lig"): "soccer_turkey_super_league",
-        ("europe", "uefa champions league"): "soccer_uefa_champs_league",
-        ("europe", "uefa europa league"): "soccer_uefa_europa_league",
-    }
-    for (a, c), skey in mapping.items():
-        if a in area_l and c in comp_l:
-            return skey
-    return None
-
-def fetch_odds_avg(area, comp, home, away):
-    if not ODDS_KEY:
-        return None
-    skey = guess_sport_key(area, comp)
-    if not skey:
-        return None
-    data = _fetch_odds_sport_cached(skey)
-    if not data or not isinstance(data, list):
-        return None
-    
-    def norm(x):
-        return (x or "").lower().replace(".", "").replace("-", " ").replace(" fc","").strip()
-    
-    h, a = norm(home), norm(away)
-    best = None
-    for ev in data:
-        comps = ev.get("bookmakers", [])
-        if not comps:
-            continue
-        t1 = norm(ev.get("home_team")); t2 = norm(ev.get("away_team"))
-        # Geliştirilmiş takım eşleştirme - benzerlik kullan
-        h_sim = team_similarity(h, t1)
-        a_sim = team_similarity(a, t2)
-        if h_sim >= 0.75 and a_sim >= 0.75:  # %75 benzerlik eşiği
-            prices = {"home":[], "draw":[], "away":[]}
-            for bk in comps:
-                for mk in bk.get("markets", []):
-                    for o in mk.get("outcomes", []):
-                        nm = (o.get("name") or "").lower()
-                        price = safe_float(o.get("price"), 0)
-                        if nm in ("home","1"):
-                            prices["home"].append(price)
-                        elif nm in ("draw","x"):
-                            prices["draw"].append(price)
-                        elif nm in ("away","2"):
-                            prices["away"].append(price)
-            if prices["home"] and prices["draw"] and prices["away"]:
-                best = (
-                    sum(prices["home"])/len(prices["home"]),
-                    sum(prices["draw"])/len(prices["draw"]),
-                    sum(prices["away"])/len(prices["away"]),
-                )
-                break
-    if not best:
-        return None
-    o1, ox, o2 = best
-    inv = (1/o1) + (1/ox) + (1/o2)
-    p1, px, p2 = (1/o1)/inv, (1/ox)/inv, (1/o2)/inv
-    return {"odds": (o1, ox, o2), "probs": (p1, px, p2)}
-
-# --- Poisson + Lig tabanı ----------------------------------------------------
-LEAGUE_GOAL_BASE = {
-    "Turkey": 2.60,
-    "England": 2.75,
-    "Spain": 2.50,
-    "Italy": 2.70,
-    "France": 2.55,
-    "Germany": 3.05,
-    "Brazil": 2.35,
-    "Europe": 2.70,
-}
-
-def base_total_goals(area):
-    base = 2.60
-    for k, v in LEAGUE_GOAL_BASE.items():
-        if k.lower() in (area or "").lower():
-            base = v
-            break
-    scale = get_goal_scale(area)
-    return clamp(base * scale, 1.5, 3.8)
-
-def poisson_prob(lambda_h, lambda_a):
-    def pois(m, lam):
-        return (lam**m) * math.exp(-lam) / math.factorial(m)
-    p_home = p_draw = p_away = 0.0
-    for gh in range(0, 11):
-        ph = pois(gh, lambda_h)
-        for ga in range(0, 11):
-            pa = pois(ga, lambda_a)
-            if gh > ga:
-                p_home += ph*pa
-            elif gh == ga:
-                p_draw += ph*pa
-            else:
-                p_away += ph*pa
-    return p_home, p_draw, p_away
-
-def poisson_over_prob(lam, line_int):
-    lam = max(0.05, lam)
-    start = int(line_int) + 1
-    s = 0.0; m = start
-    while m <= start + 40:
-        s += (lam**m) * math.exp(-lam) / math.factorial(m)
-        m += 1
-    return clamp(s, 0.0, 1.0)
-
-def blend_model_market(model_probs, market_probs):
-    if not market_probs:
-        return model_probs
-    w = get_w_mkt()
-    return tuple((1-w)*m + w*mk for m, mk in zip(model_probs, market_probs))
-
-# --- Kart / Korner bazları ---------------------------------------------------
-LEAGUE_CARD_BASE = {
-    "Germany": 4.7,
-    "Turkey": 5.1,
-    "England": 4.1,
-    "Spain": 5.0,
-    "Italy": 4.8,
-    "France": 4.3,
-    "Brazil": 5.2,
-    "Europe": 4.6
-}
-
-LEAGUE_CORNER_BASE = {
-    "Germany": 9.4,
-    "Turkey": 9.2,
-    "England": 10.1,
-    "Spain": 9.1,
-    "Italy": 9.5,
-    "France": 9.0,
-    "Brazil": 8.7,
-    "Europe": 9.2
-}
-
-def base_from_area(area, table, default):
-    for k, v in table.items():
-        if k.lower() in (area or "").lower():
-            return v
-    return default
-
-# --- API-Football: opsiyonel istatistik ipucu --------------------------------
-# DÜZELTİLDİ: APIFOOT_BASE değişkeni çift "https" kaldırıldı
-APIFOOT_BASE = "https://v3.football.api-sports.io"  # DÜZELTİLDİ
-
-_API_LEAGUE_MAP = {
-    "England|Premier League": 39,
-    "England|Championship": 40,
-    "Spain|La Liga": 140,
-    "Spain|La Liga 2": 141,
-    "Italy|Serie A": 135,
-    "Italy|Serie B": 136,
-    "France|Ligue 1": 61,
-    "France|Ligue 2": 62,
-    "Germany|Bundesliga": 78,
-    "Germany|2. Bundesliga": 79,
-    "Turkey|Super Lig": 203,
-    "Turkey|1. Lig": 204,
-}
-
 _apifoot_team_cache = {}  # search_name.lower() -> team_id
 _apifoot_stat_cache = {}  # (league_id, season, team_id) -> stats_json
 
@@ -3782,100 +3347,18 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         return None
 
 # --- Standings/Streak (FD varsa FD, yoksa APIF) ------------------------------
-_STANDINGS_CACHE = {}
-_STREAK_CACHE = {}
 _APIF_STANDINGS_CACHE = {}
 _APIF_FIXTURES_CACHE = {}
 
 def _fd_team_matches(team_id, days=120):
-    if not (FD_TOKEN and team_id):
-        return []
-    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-    to_dt = datetime.utcnow().date()
-    from_dt = to_dt - timedelta(days=days)
-    url = f"https://api.football-data.org/v4/teams/{team_id}/matches"
-    data = http_get(url, headers=headers, params={
-        "status": "FINISHED",
-        "dateFrom": from_dt.isoformat(),
-        "dateTo": to_dt.isoformat()
-    })
-    if not data or not data.get("matches"):
-        return []
-    ms = []
-    for m in data["matches"]:
-        dtp = to_dt_utc(m.get("utcDate"))
-        if not dtp:
-            continue
-        ms.append((dtp, m))
-    ms.sort(key=lambda x: x[0], reverse=True)
-    return [m for _, m in ms]
+    """Takım maçlarını getir - GÜNCELLENDİ"""
+    # Football-Data.org kaldırıldı, sadece API-Football kullan
+    return []
 
 def _form_adjust_from_matches(team_id, area, team_name):
-    matches = _fd_team_matches(team_id, days=FORM_DAYS)
-    if not matches:
-        return (0.0, "")
-    n = 0; score_sum = 0.0
-    for m in matches:
-        ht = (m.get("homeTeam", {}) or {}).get("name", "")
-        at = (m.get("awayTeam", {}) or {}).get("name", "")
-        score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
-        gh = score.get("home"); ga = score.get("away")
-        if gh is None or ga is None:
-            continue
-        gh = int(gh); ga = int(ga)
-        is_home = (ht == team_name)
-        gf = gh if is_home else ga
-        ga_ = ga if is_home else gh
-        opp_name = at if is_home else ht
-        opp_elo = elo_get(area, opp_name)
-        w = 1.0 + clamp((opp_elo - 1500.0) / 1000.0, -0.2, 0.2)
-        score_sum += (gf - ga_) * w
-        n += 1
-        if n >= FORM_LOOKBACK:
-            break
-    adj = 0.0 if n == 0 else clamp(math.tanh((score_sum / n) / 3.0) * 0.12, -0.15, 0.15)
-    txt = f"FormAdj {('+' if adj>=0 else '')}{int(adj*100)}%"
-    return (adj, txt)
-
-def _fd_competition_standings(comp_id):
-    if not (FD_TOKEN and comp_id):
-        return None
-    if comp_id in _STANDINGS_CACHE:
-        return _STANDINGS_CACHE[comp_id]
-    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-    url = f"https://api.football-data.org/v4/competitions/{comp_id}/standings"
-    data = http_get(url, headers=headers)
-    by_id = {}; total_teams = None
-    try:
-        for st in (data.get("standings") or []):
-            if (st.get("type") or "").upper() != "TOTAL":
-                continue
-            table = st.get("table") or []
-            total_teams = len(table)
-            for row in table:
-                team = (row.get("team") or {})
-                tid = team.get("id")
-                pos = safe_float(row.get("position"), None)
-                if tid is not None:
-                    by_id[int(tid)] = {"position": int(pos) if pos else None}
-        if by_id and total_teams:
-            _STANDINGS_CACHE[comp_id] = {"total_teams": total_teams, "by_id": by_id}
-            return _STANDINGS_CACHE[comp_id]
-    except Exception as e:
-        log(f"standings parse err: {e}")
-    return None
-
-def _table_strength(comp_id, team_id):
-    st = _fd_competition_standings(comp_id)
-    if not (st and team_id):
-        return (None, None, None)
-    row = (st["by_id"].get(int(team_id))) if isinstance(team_id, int) or str(team_id).isdigit() else None
-    if not row or not row.get("position"):
-        return (None, None, None)
-    N = st["total_teams"] or 20
-    pos = row["position"]
-    rank_pct = (N - pos) / (N - 1) if N > 1 else 0.5
-    return (rank_pct, pos, N)
+    """Form adjustment - GÜNCELLENDİ"""
+    # Football-Data.org kaldırıldı, basit form sistemi
+    return (0.0, "")
 
 def _apifoot_standings(league_id, season):
     if not APIFOOT or not league_id or not season:
@@ -3916,64 +3399,9 @@ def _apif_get_position_by_name(league_id, season, team_name):
         return (None, st.get("total_teams") if st else None)
     return (row.get("position"), st.get("total_teams"))
 
-def _fd_recent_streak(team_id, team_name):
-    if not team_id:
-        return (0.0, "")
-    if team_id in _STREAK_CACHE:
-        return _STREAK_CACHE[team_id]
-    ms = _fd_team_matches(team_id, days=min(FORM_DAYS, 120))
-    if not ms:
-        _STREAK_CACHE[team_id] = (0.0, "")
-        return (0.0, "")
-    
-    def outcome(m, team_name):
-        score = (m.get("score", {}) or {}).get("fullTime", {}) or {}
-        gh = score.get("home"); ga = score.get("away")
-        if gh is None or ga is None:
-            return None
-        ht = (m.get("homeTeam", {}) or {}).get("name", "")
-        is_home = (ht == team_name)
-        if is_home:
-            return "W" if gh>ga else "D" if gh==ga else "L"
-        else:
-            return "W" if ga>gh else "D" if ga==gh else "L"
-    
-    streak_char = None; count = 0
-    for m in ms:
-        res = outcome(m, team_name)
-        if res is None:
-            continue
-        if streak_char is None:
-            streak_char = res
-            if res == "D":
-                count = 0; break
-            count = 1
-        else:
-            if res == streak_char:
-                count += 1
-            else:
-                break
-        if count >= 6:
-            break
-    
-    if streak_char == "W":
-        score = min(count, 5) * STREAK_UNIT; txt = f"W{count}"
-    elif streak_char == "L":
-        score = -min(count, 5) * STREAK_UNIT; txt = f"L{count}"
-    else:
-        score = 0.0; txt = "D0"
-    score = clamp(score, -STREAK_MAX, STREAK_MAX)
-    _STREAK_CACHE[team_id] = (score, txt)
-    return (score, txt)
-
 def _streak_from_any(fix):
-    if fix.get("home_id") and fix.get("away_id"):
-        hs, hs_txt = _fd_recent_streak(fix.get("home_id"), fix.get("home"))
-        as_, as_txt = _fd_recent_streak(fix.get("away_id"), fix.get("away"))
-        net = clamp(hs - as_, -STREAK_MAX, STREAK_MAX)
-        if hs_txt or as_txt:
-            return net, f" | Streak {hs_txt}/{as_txt} (Adj {int(net*100)}%)"
-    
+    """Streak hesaplama - GÜNCELLENDİ"""
+    # Football-Data.org kaldırıldı, sadece API-Football kullan
     lig_key = f"{(fix.get('area') or '').strip()}|{(fix.get('competition') or '').strip()}"
     lig_id = _API_LEAGUE_MAP.get(lig_key)
     if not lig_id:
@@ -4080,26 +3508,18 @@ def original_rate_fixture(fx, odds_info):
     
     # TableAdj
     table_adj, table_txt = (0.0, "")
-    if fx.get("competition_id") and fx.get("home_id") and fx.get("away_id"):
-        h_rankpct, h_pos, N = _table_strength(fx["competition_id"], fx["home_id"])
-        a_rankpct, a_pos, _ = _table_strength(fx["competition_id"], fx["away_id"])
-        if (h_rankpct is not None) and (a_rankpct is not None):
+    lig_key = f"{(fx.get('area') or '').strip()}|{(fx.get('competition') or '').strip()}"
+    lig_id = _API_LEAGUE_MAP.get(lig_key)
+    if lig_id:
+        ssn = season_for_today()
+        h_pos, N = _apif_get_position_by_name(lig_id, ssn, fx.get("home"))
+        a_pos, _ = _apif_get_position_by_name(lig_id, ssn, fx.get("away"))
+        if h_pos and a_pos and N:
+            h_rankpct = (N - h_pos) / (N - 1) if N > 1 else 0.5
+            a_rankpct = (N - a_pos) / (N - 1) if N > 1 else 0.5
             diff = h_rankpct - a_rankpct
             table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
             table_txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
-    else:
-        lig_key = f"{(fx.get('area') or '').strip()}|{(fx.get('competition') or '').strip()}"
-        lig_id = _API_LEAGUE_MAP.get(lig_key)
-        if lig_id:
-            ssn = season_for_today()
-            h_pos, N = _apif_get_position_by_name(lig_id, ssn, fx.get("home"))
-            a_pos, _ = _apif_get_position_by_name(lig_id, ssn, fx.get("away"))
-            if h_pos and a_pos and N:
-                h_rankpct = (N - h_pos) / (N - 1) if N > 1 else 0.5
-                a_rankpct = (N - a_pos) / (N - 1) if N > 1 else 0.5
-                diff = h_rankpct - a_rankpct
-                table_adj = clamp(diff * TABLE_WEIGHT, -TABLE_WEIGHT, TABLE_WEIGHT)
-                table_txt = f" | Table {h_pos}/{N} vs {a_pos}/{N} (Adj {int(table_adj*100)}%)"
     lam_h *= (1.0 + table_adj); lam_a *= (1.0 - table_adj)
     
     # Streak
@@ -4299,44 +3719,11 @@ def send_mail(subject, body):
     log(f"Mail gönderildi: {subject}")
 
 # --- Sonuç çekiciler ---------------------------------------------------------
-def fetch_results_fd(date_str):
-    if not FD_TOKEN:
-        return []
-    url = "https://api.football-data.org/v4/matches"
-    headers = {"X-Auth-Token": FD_TOKEN, **HEADERS_JSON}
-    data = http_get(url, headers=headers, params={"dateFrom": date_str, "dateTo": date_str})
-    out = []
-    if not data or not data.get("matches"):
-        return out
-    for m in data["matches"]:
-        comp = m.get("competition", {}) or {}
-        area = (comp.get("area", {}) or {}).get("name", "")
-        cname = comp.get("name", "")
-        if not is_allowed_competition(area, cname):
-            continue
-        score_ft = ((m.get("score") or {}).get("fullTime") or {})
-        gh, ga = score_ft.get("home"), score_ft.get("away")
-        if gh is None or ga is None:
-            # bazen PENS vs, yine de fulltime al
-            continue
-        out.append({
-            "area": area,
-            "competition": cname,
-            "home": (m.get("homeTeam") or {}).get("name"),
-            "away": (m.get("awayTeam") or {}).get("name"),
-            "score_h": int(gh),
-            "score_a": int(ga),
-            "id_key": f"FD:{m.get('id')}",
-            "date": date_str
-        })
-    log(f"FD results {date_str} -> {len(out)}")
-    return out
-
 def fetch_results_apifoot(date_str):
     if not APIFOOT:
         return []
     url = f"{APIFOOTBALL_BASE_URL}fixtures"
-    data = http_get(url, headers=APIFOOTBALL_HEADERS, params={"date": date_str})
+    data = http_get(url, headers=HEADERS, params={"date": date_str})
     out = []
     if not data:
         return out
@@ -4372,10 +3759,7 @@ def fetch_results_apifoot(date_str):
     return out
 
 def fetch_results(date_str):
-    r = fetch_results_fd(date_str)
-    if not r:
-        log("FD sonuç yok → API-Football sonuç deneniyor…")
-        r = fetch_results_apifoot(date_str)
+    r = fetch_results_apifoot(date_str)
     
     # SONUÇ OLSUN OLMASIN MAİL GÖNDER
     lines = [f"📊 Dünün Sonuçları — {date_str}"]
