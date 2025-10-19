@@ -28,7 +28,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25  # ↑ 20'den 25'e çıkarıldı
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            pip install numpy scipy scikit-learn requests
+            pip install numpy scipy scikit-learn requests xgboost joblib
           fi
 
       - name: Çalışma Modunu Belirle
@@ -97,13 +97,18 @@ jobs:
           GMAIL_PASS:            ${{ secrets.GMAIL_PASS }}
           GMAIL_TO:              ${{ secrets.GMAIL_TO }}
 
-          # Zorunlu kaynak: API-Football (FD'yi bilerek boş bırakıyoruz)
+          # API-Football v3 entegrasyonu
           APIFOOTBALL_KEY:       ${{ secrets.APIFOOTBALL_KEY }}
+          APIFOOTBALL_HOST:      ${{ vars.APIFOOTBALL_HOST || 'v3.football.api-sports.io' }}
 
           # İsteğe bağlı: The Odds API (oranlar)
           ODDS_API_KEY:          ${{ secrets.ODDS_API_KEY }}
 
-          # Fallback veri kaynakları (CSV/JSON linkleri - opsiyonel)
+          # Yeni özellikler
+          WEATHER_API_KEY:       ${{ secrets.WEATHER_API_KEY || '' }}
+          MODEL_VERSION:         ${{ vars.MODEL_VERSION || 'v2025.10.18-api-v3-integration' }}
+
+          # Fallback veri kaynakları
           CARDS_URLS:            ${{ secrets.CARDS_URLS }}
           CORNERS_URLS:          ${{ secrets.CORNERS_URLS }}
           RESULTS_URLS:          ${{ secrets.RESULTS_URLS }}
@@ -138,9 +143,8 @@ jobs:
           STREAK_UNIT:           ${{ vars.STREAK_UNIT           || '0.02' }}
           STREAK_MAX:            ${{ vars.STREAK_MAX            || '0.08' }}
 
-          # Anti home-bias ayarları
-          HOME_ADV_MAX:          ${{ vars.HOME_ADV_MAX          || '8'    }}
-          MIN_MARKET_WEIGHT:     ${{ vars.MIN_MARKET_WEIGHT     || '0.60' }}
+          # Ensemble ayarları
+          ENSEMBLE_MIN_TRAINING: ${{ vars.ENSEMBLE_MIN_TRAINING || '50' }}
         run: |
           set -e
           mkdir -p snapshots
@@ -151,19 +155,21 @@ jobs:
         if: always()
         run: |
           set -e
-          if [ -f model_state.json ] && [ -s model_state.json ]; then
-            git config user.name  "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            
-            # Değişiklik kontrolü yap, her zaman push etmeye çalış
-            git add -f model_state.json
-            # Değişiklik yoksa commit başarısız olur, bu normal
-            git commit -m "chore(state): auto-update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]" || echo "ℹ state'te değişiklik yok - commit gerekmez"
-            
-            # Her durumda push dene (branch güncel olabilir)
-            git push || echo "ℹ push gerekmez (branch güncel)"
-            
-            echo "✅ State kalıcılaştırma tamamlandı"
-          else
-            echo "ℹ model_state.json bulunamadı veya boş"
-          fi
+          # Yeni state dosyalarını da kontrol et
+          STATE_FILES="model_state.json team_values.json national_elo.json ensemble_model.pkl"
+          
+          for file in $STATE_FILES; do
+            if [ -f "$file" ] && [ -s "$file" ]; then
+              git add -f "$file"
+              echo "✅ $file eklendi"
+            fi
+          done
+          
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Değişiklik kontrolü
+          git commit -m "chore(state): auto-update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]" || echo "ℹ state'te değişiklik yok - commit gerekmez"
+          git push || echo "ℹ push gerekmez (branch güncel)"
+          
+          echo "✅ Tüm state dosyaları kalıcılaştırıldı"
