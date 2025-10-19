@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GÜNCEL SÜRÜM (TÜM HATALAR DÜZELTİLDİ + TÜM ÖZELLİKLER ENTEGRE)
+Tahmin Botu — GÜNCEL SÜRÜM (TÜM HATALAR DÜZELTİLDİ + TÜM ÖZELLİKLER ENTEGRE + API FOOTBALL v3 GÜNCELLEMESİ)
 """
 import json
 import os
@@ -30,6 +30,13 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import joblib
+
+# === YENİ API FOOTBALL AYARLARI ===
+APIFOOTBALL_BASE_URL = "https://v3.football.api-sports.io/"
+APIFOOTBALL_HEADERS = {
+    'x-rapidapi-key': os.environ.get('APIFOOTBALL_KEY'),
+    'x-rapidapi-host': os.environ.get('APIFOOTBALL_HOST', 'v3.football.api-sports.io')
+}
 
 # --- Model/version & retention ---
 MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.18-full-integration")
@@ -77,6 +84,54 @@ WEATHER_CACHE_TTL = int(os.getenv("WEATHER_CACHE_TTL", "3600"))  # 1 saat cache
 
 def log(msg):
     print(f"{msg}", flush=True)
+
+# ==================== YENİ API FOOTBALL FONKSİYONLARI ====================
+
+def get_matches_from_api(start_date, end_date, league_id=None):
+    """YENİ: API Football v3'ten maç verilerini çeker"""
+    params = {'date': start_date, 'season': '2024'}
+    if league_id:
+        params['league'] = league_id
+        
+    response = requests.get(f"{APIFOOTBALL_BASE_URL}fixtures", 
+                           headers=APIFOOTBALL_HEADERS, params=params, timeout=30)
+    
+    if response.status_code == 200:
+        return response.json().get('response', [])
+    elif response.status_code == 429:
+        print("⚠️ Rate limit aşıldı")
+    elif response.status_code == 403:
+        print("❌ API Key hatası")
+    else:
+        print(f"❌ API Hatası: {response.status_code}")
+    return []
+
+def get_leagues_from_api():
+    """YENİ: API Football v3'ten lig bilgilerini çeker"""
+    params = {'season': '2024'}
+    response = requests.get(f"{APIFOOTBALL_BASE_URL}leagues", 
+                           headers=APIFOOTBALL_HEADERS, params=params, timeout=30)
+    
+    if response.status_code == 200:
+        return response.json().get('response', [])
+    elif response.status_code == 429:
+        print("⚠️ Rate limit aşıldı")
+    elif response.status_code == 403:
+        print("❌ API Key hatası")
+    else:
+        print(f"❌ Lig API Hatası: {response.status_code}")
+    return []
+
+def process_match_data(match):
+    """YENİ: API Football v3 JSON formatını işler"""
+    return {
+        'id': match['fixture']['id'],
+        'date': match['fixture']['date'],
+        'home_team': match['teams']['home']['name'],
+        'away_team': match['teams']['away']['name'],
+        'league_name': match['league']['name'],
+        'country': match['country']['name']
+    }
 
 # ==================== EKSİK FONKSİYONLAR DÜZELTMESİ ====================
 
@@ -537,7 +592,7 @@ def run_service_loop():
 # ==================== GELİŞMİŞ SONUÇ RAPORU ====================
 def fetch_results_fixed(date_str):
     """Düzeltilmiş sonuç raporu - State tahminleriyle performans ölçümü"""
-    # API'lerden gerçek sonuçları al
+    # YENİ: API Football v3 kullanımı
     api_results = fetch_results_fd(date_str) or fetch_results_apifoot(date_str)
     
     lines = [f"📊 Dünün Sonuçları — {date_str}"]
@@ -1768,7 +1823,12 @@ def http_get(url, headers=None, params=None, timeout=25):
                 return r.json()
             except Exception:
                 return None
-        log(f"GET {url} -> {r.status_code}")
+        elif r.status_code == 429:
+            print("⚠️ Rate limit aşıldı")
+        elif r.status_code == 403:
+            print("❌ API Key hatası")
+        else:
+            log(f"GET {url} -> {r.status_code}")
     except Exception as e:
         log(f"GET ERROR {url}: {e}")
         return None
@@ -2267,7 +2327,7 @@ def get_league_features(home_team, away_team, country):
     features = {}
     
     try:
-        # API-Football'dan lig pozisyonları
+        # YENİ: API Football v3 kullanımı
         standings = get_apifootball_standings(country)
         
         if standings:
