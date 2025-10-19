@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tahmin Botu — GÜNCEL SÜRÜM (API-FOOTBALL v3 ENTEGRASYONU + TÜM DÜZELTMELER)
+Tahmin Botu — GÜNCELLENMİŞ SÜRÜM (API-FOOTBALL v3 + EKSİK FONKSİYONLAR ENTEGRE)
 """
 import json
 import os
@@ -30,6 +30,167 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import joblib
+
+# ==================== YENİ EKLENEN LİG BAZLI ORTALAMALAR ====================
+
+# Lig bazlı gol ortalamaları
+LEAGUE_GOAL_BASE = {
+    "premier league": 2.8, "la liga": 2.6, "serie a": 2.7, "bundesliga": 3.2,
+    "ligue 1": 2.5, "super lig": 2.4, "eredivisie": 3.1, "primeira liga": 2.5,
+    "pro league": 2.7, "championship": 2.6, "scottish premiership": 2.8
+}
+
+# Lig bazlı kart ortalamaları  
+LEAGUE_CARD_BASE = {
+    "premier league": 4.2, "la liga": 5.1, "serie a": 4.8, "bundesliga": 4.0,
+    "ligue 1": 4.5, "super lig": 5.5, "eredivisie": 3.8, "primeira liga": 5.2,
+    "pro league": 4.3, "championship": 4.6
+}
+
+# Lig bazlı korner ortalamaları
+LEAGUE_CORNER_BASE = {
+    "premier league": 10.2, "la liga": 9.8, "serie a": 9.5, "bundesliga": 10.5,
+    "ligue 1": 9.2, "super lig": 9.0, "eredivisie": 10.8, "primeira liga": 9.6,
+    "pro league": 9.4, "championship": 10.1
+}
+
+# API Lig Mapping
+_API_LEAGUE_MAP = {
+    "England|Premier League": 39, "England|Championship": 40,
+    "Spain|La Liga": 140, "Spain|La Liga 2": 141,
+    "Italy|Serie A": 135, "Italy|Serie B": 136,
+    "Germany|Bundesliga": 78, "Germany|2. Bundesliga": 79,
+    "France|Ligue 1": 61, "France|Ligue 2": 62,
+    "Turkey|Super Lig": 203, "Turkey|1. Lig": 204,
+    "Netherlands|Eredivisie": 88, "Netherlands|Eerste Divisie": 89,
+    "Portugal|Primeira Liga": 94, "Portugal|Liga Portugal 2": 95,
+    "Belgium|Pro League": 144, "Belgium|Challenger Pro League": 145,
+    "Europe|Champions League": 2, "Europe|Europa League": 3,
+    "Europe|Conference League": 848, "Europe|Super Cup": 667,
+    "Europe|European Championship": 4, "World|World Cup": 1
+}
+
+# ==================== YENİ EKLENEN FONKSİYONLAR ====================
+
+def base_total_goals(area):
+    """Lig bazlı gol ortalaması"""
+    area_lower = area.lower() if area else "europe"
+    for league, goals in LEAGUE_GOAL_BASE.items():
+        if league in area_lower:
+            return goals
+    return 2.7  # Varsayılan
+
+def base_from_area(area, base_dict, default):
+    """Lig bazlı değer al"""
+    area_lower = area.lower() if area else "europe"
+    for league, value in base_dict.items():
+        if league in area_lower:
+            return value
+    return default
+
+def _apifoot_find_team_id(team_name):
+    """Takım ID bulma - Basitleştirilmiş"""
+    if not APIFOOT or not team_name:
+        return None
+    
+    # Basit cache kontrolü
+    cache_key = team_name.lower()
+    if cache_key in _apifoot_team_cache:
+        return _apifoot_team_cache[cache_key]
+    
+    try:
+        # Takım arama
+        params = {"search": team_name}
+        response = requests.get(
+            f"{APIFOOTBALL_BASE_URL}teams",
+            headers=HEADERS,
+            params=params,
+            timeout=20
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('response'):
+                team_id = data['response'][0]['team']['id']
+                _apifoot_team_cache[cache_key] = team_id
+                return team_id
+    except Exception as e:
+        log(f"Team ID bulma hatası: {e}")
+    
+    return None
+
+def poisson_prob(lam_h, lam_a):
+    """Poisson dağılımına göre 1/X/2 olasılıkları"""
+    p_home = 0.0
+    p_draw = 0.0
+    p_away = 0.0
+    
+    # Basit Poisson hesaplama
+    for goals_h in range(0, 10):
+        for goals_a in range(0, 10):
+            prob = (math.exp(-lam_h) * (lam_h ** goals_h) / math.factorial(goals_h)) * \
+                   (math.exp(-lam_a) * (lam_a ** goals_a) / math.factorial(goals_a))
+            
+            if goals_h > goals_a:
+                p_home += prob
+            elif goals_h == goals_a:
+                p_draw += prob
+            else:
+                p_away += prob
+    
+    # Normalizasyon
+    total = p_home + p_draw + p_away
+    if total > 0:
+        return (p_home/total, p_draw/total, p_away/total)
+    else:
+        return (0.33, 0.34, 0.33)
+
+def blend_model_market(model_probs, market_probs):
+    """Model ve market olasılıklarını birleştir"""
+    if market_probs is None:
+        return model_probs
+    
+    w_mkt = get_w_mkt()
+    w_model = 1.0 - w_mkt
+    
+    p_home = model_probs[0] * w_model + market_probs[0] * w_mkt
+    p_draw = model_probs[1] * w_model + market_probs[1] * w_mkt  
+    p_away = model_probs[2] * w_model + market_probs[2] * w_mkt
+    
+    return (p_home, p_draw, p_away)
+
+def poisson_over_prob(mu, threshold):
+    """Poisson dağılımında over olasılığı"""
+    if mu <= 0:
+        return 0.0
+    
+    p_under = 0.0
+    for k in range(0, int(threshold) + 1):
+        p_under += (math.exp(-mu) * (mu ** k)) / math.factorial(k)
+    
+    return 1.0 - p_under
+
+def _apifoot_team_statistics(league_id, season, team_id):
+    """Takım istatistikleri - Basitleştirilmiş"""
+    if not APIFOOT or not league_id or not season or not team_id:
+        return None
+    
+    cache_key = (league_id, season, team_id)
+    if cache_key in _apifoot_stat_cache:
+        return _apifoot_stat_cache[cache_key]
+    
+    try:
+        params = {"league": league_id, "season": season, "team": team_id}
+        response = _apifoot_get("teams/statistics", params)
+        if response:
+            _apifoot_stat_cache[cache_key] = response
+            return response
+    except Exception as e:
+        log(f"Team statistics error: {e}")
+    
+    return None
+
+# ==================== ORİJİNAL KODUN DEVAMI ====================
 
 # === YENİ LİG LİSTESİ ===
 COMPLETE_LEAGUE_IDS = {
