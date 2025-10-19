@@ -1139,28 +1139,35 @@ class UniversalDataCollector:
             return []
             
         fixtures = []
-        leagues = self._get_relevant_leagues(country, competition)
         
-        for league_id in leagues:
-            params = {"date": date_str, "league": league_id}
-            
-            try:
-                response = requests.get(
-                    f"{APIFOOTBALL_BASE_URL}fixtures",
-                    headers=HEADERS,
-                    params=params,
-                    timeout=30
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    if "response" in data:
-                        for item in data["response"]:
+        ### DÜZELTME: Tüm maçları çekip belirtilen ligleri filtrele
+        # HEDEF LİG ID LİSTESİ - 24 lig
+        TARGET_LEAGUE_IDS = ['39','140','135','78','61','88','144','179','203','141','136','79','95','145','2','3','848','667','4','5','6','7','1','9']
+        
+        # Tüm maçları çek (lig parametresi YOK)
+        params = {"date": date_str}
+        
+        try:
+            response = requests.get(
+                f"{APIFOOTBALL_BASE_URL}fixtures",
+                headers=HEADERS,
+                params=params,
+                timeout=30
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if "response" in data:
+                    for item in data["response"]:
+                        # Lig ID kontrolü - sadece hedef liglerdeki maçları al
+                        league_id = str(item.get('league', {}).get('id'))
+                        if league_id in TARGET_LEAGUE_IDS:
                             fixture = self._parse_apifootball_fixture(item)
                             if fixture:
                                 fixtures.append(fixture)
-            except Exception as e:
-                log(f"API-Football fixture error: {e}")
-                continue
+                            
+                    log(f"🎯 API-Football: {len(data['response'])} maç → {len(fixtures)} hedef lig maçı")
+        except Exception as e:
+            log(f"API-Football fixture error: {e}")
         
         return fixtures
     
@@ -1194,6 +1201,13 @@ class UniversalDataCollector:
             league_data = item.get('league', {})
             teams_data = item.get('teams', {})
             
+            ### DÜZELTME: Country string/dict desteği
+            country_data = league_data.get('country', {})
+            if isinstance(country_data, str):
+                area = country_data
+            else:
+                area = country_data.get('name', 'Europe') if country_data else 'Europe'
+            
             return {
                 "source": "APIF_UNIVERSAL",
                 "utc_kickoff": to_dt_utc(fixture_data.get('date')),
@@ -1201,7 +1215,7 @@ class UniversalDataCollector:
                 "away": teams_data.get('away', {}).get('name'),
                 "home_id": teams_data.get('home', {}).get('id'),
                 "away_id": teams_data.get('away', {}).get('id'),
-                "area": league_data.get('country', {}).get('name', 'Europe'),
+                "area": area,
                 "competition": league_data.get('name', ''),
                 "competition_id": league_data.get('id'),
                 "id": f"apif_universal:{fixture_data.get('id')}",
