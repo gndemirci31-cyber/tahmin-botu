@@ -113,7 +113,7 @@ def get_api_football_fixtures(date_str):
                 '2. Bundesliga': '79', 'Segunda Liga': '95', 'Challenger Pro League': '145'
             }
             
-            target_ids = [str(id) for id in TARGET_LEAGUES.values()]
+            target_ids = [str(id) for id in COMPLETE_LEAGUE_IDS.values()]
             
             # FİLTRELEME
             filtered_matches = []
