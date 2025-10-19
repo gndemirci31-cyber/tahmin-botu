@@ -1166,7 +1166,7 @@ class UniversalDataCollector:
     
     def _get_relevant_leagues(self, country=None, competition=None):
         """Ülke ve lige göre ilgili lig ID'lerini döndürür"""
-        base_leagues = [39, 40, 140, 135, 78, 61, 203, 88, 94, 144]  # Temel ligler
+        base_leagues = [39, 40, 140, 135, 78, 61, 203, 88, 94, 144, 179, 141, 136, 79, 95, 145]  # Temel ligler
         
         if country:
             country_leagues = {
