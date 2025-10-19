@@ -31,12 +31,22 @@ from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import joblib
 
+# === YENİ LİG LİSTESİ ===
+COMPLETE_LEAGUE_IDS = {
+    'Premier League': '39', 'La Liga': '140', 'Serie A': '135',
+    'Bundesliga': '78', 'Ligue 1': '61', 'Eredivisie': '88',
+    'Belgian Pro League': '144', 'Scottish Premiership': '179',
+    'Süper Lig': '203', 'Segunda División': '141', 'Serie B': '136',
+    '2. Bundesliga': '79', 'Segunda Liga': '95', 'Challenger Pro League': '145'
+}
+
 # === YENİ API FOOTBALL AYARLARI ===
 APIFOOTBALL_BASE_URL = "https://v3.football.api-sports.io/"
-APIFOOTBALL_HEADERS = {
-    'x-rapidapi-key': os.environ.get('APIFOOTBALL_KEY'),
-    'x-rapidapi-host': os.environ.get('APIFOOTBALL_HOST', 'v3.football.api-sports.io')
+HEADERS = {
+    'x-rapidapi-key': os.getenv('APIFOOTBALL_KEY', 'f6570111b0cdddb86828ef25179e6ce7'),
+    'x-rapidapi-host': 'v3.football.api-sports.io'
 }
+APIFOOTBALL_HEADERS = HEADERS
 
 # --- Model/version & retention ---
 MODEL_VERSION = os.getenv("MODEL_VERSION", "v2025.10.18-full-integration")
@@ -86,6 +96,32 @@ def log(msg):
     print(f"{msg}", flush=True)
 
 # ==================== YENİ API FOOTBALL FONKSİYONLARI ====================
+
+def get_api_football_fixtures(date_str):
+    """SEZONSUZ - O GÜNÜN TÜM MAÇLARINI AL ve HEDEF LİGLERİ FİLTRELE"""
+    try:
+        # Tüm maçları al (sezonsuz)
+        url = f"https://v3.football.api-sports.io/fixtures?date={date_str}"
+        response = requests.get(url, headers=HEADERS)
+        
+        if response.status_code == 200:
+            data = response.json()
+            all_matches = data.get('response', [])
+            
+            # Sadece hedef ligleri filtrele
+            target_ids = list(COMPLETE_LEAGUE_IDS.values())
+            filtered_matches = [m for m in all_matches if str(m['league']['id']) in target_ids]
+            
+            log(f"🎯 {date_str}: {len(all_matches)} maç → {len(filtered_matches)} hedef lig maçı")
+            return filtered_matches
+            
+        else:
+            log(f"❌ API Error: {response.status_code}")
+            return []
+            
+    except Exception as e:
+        log(f"API-Football error: {e}")
+        return []
 
 def get_matches_from_api(start_date, end_date, league_id=None):
     """YENİ: API Football v3'ten maç verilerini çeker"""
@@ -2671,7 +2707,7 @@ def calculate_feature_boost(features, match_type):
     return min(boost, 10)  # Maksimum 10 puan boost
 
 def generate_feature_notes(features, match_type):
-    """Feature'lara göre açıklama notları oluşturur"""
+    """Feature'lara göre açıklama notları oluşturr"""
     notes = []
     
     if match_type == "DOMESTIC_LEAGUE":
