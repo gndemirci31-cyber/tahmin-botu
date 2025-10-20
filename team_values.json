@@ -470,63 +470,63 @@
     "timestamp": 1760903576.6700573
   },
   "Belgium:standard liege": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960112.8723788
-  },
-  "Belgium:antwerp": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960112.8733835
-  },
-  "Turkey:eyüpspor": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960115.1867821
+    "timestamp": 1760981756.4587674
+  },
+  "Belgium:antwerp": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1760981756.4597752
+  },
+  "Turkey:eyüpspor": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1760981758.6611676
   },
   "Turkey:kasimpasa": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960115.187782
+    "timestamp": 1760981758.6621478
   },
   "Spain:cadiz": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960117.6415231
-  },
-  "Spain:burgos": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960117.6425023
+    "timestamp": 1760981761.1550975
+  },
+  "Spain:burgos": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1760981761.1561074
   },
   "Italy:cremonese": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960119.7856143
+    "timestamp": 1760981763.1749344
   },
   "Italy:udinese": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960119.786571
+    "timestamp": 1760981763.17586
   },
   "England:west ham united": {
     "value": 65,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760960121.8646913
+    "timestamp": 1760981765.1216059
   },
   "England:brentford": {
     "value": 30,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760960121.8656933
+    "timestamp": 1760981765.1225882
   },
   "Spain:alaves": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960123.963483
+    "timestamp": 1760981767.1522264
   },
   "Spain:valencia": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760960123.9644816
+    "timestamp": 1760981767.1532347
   }
 }
