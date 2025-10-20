@@ -1226,46 +1226,6 @@ def parse_apifootball_standings(response):
         log(f"API-Football standings parse hatası: {e}")
         return {}
 
-def parse_odds_api_odds(odds_data):
-    """The Odds API verisini parse eder"""
-    try:
-        bookmakers = odds_data.get('bookmakers', [])
-        home_odds = []
-        draw_odds = []
-        away_odds = []
-        
-        for bookmaker in bookmakers:
-            markets = bookmaker.get('markets', [])
-            for market in markets:
-                if market.get('key') == 'h2h':
-                    for outcome in market.get('outcomes', []):
-                        if outcome.get('name') == odds_data.get('home_team'):
-                            home_odds.append(outcome.get('price', 0))
-                        elif outcome.get('name') == odds_data.get('away_team'):
-                            away_odds.append(outcome.get('price', 0))
-                        elif outcome.get('name') == 'Draw':
-                            draw_odds.append(outcome.get('price', 0))
-        
-        if home_odds and draw_odds and away_odds:
-            avg_home = sum(home_odds) / len(home_odds)
-            avg_draw = sum(draw_odds) / len(draw_odds)
-            avg_away = sum(away_odds) / len(away_odds)
-            
-            total_prob = (1/avg_home) + (1/avg_draw) + (1/avg_away)
-            prob_home = (1/avg_home) / total_prob
-            prob_draw = (1/avg_draw) / total_prob
-            prob_away = (1/avg_away) / total_prob
-            
-            return {
-                "odds": (avg_home, avg_draw, avg_away),
-                "probs": (prob_home, prob_draw, prob_away)
-            }
-            
-    except Exception as e:
-        log(f"Odds API parse hatası: {e}")
-    
-    return None
-
 # ==================== TÜM LİG OTOMATİK VERİ TOPLAYICI (API-FOOTBALL BİRİNCİL) ====================
 
 class UniversalDataCollector:
@@ -2651,17 +2611,12 @@ def get_team_value_apifootball(team_name):
 # ==================== ÇİFT KAYNAKLI ORAN SİSTEMİ ====================
 
 def fetch_odds_dual(area, comp, home, away):
-    """Çift kaynaklı oran sistemi - API-Football birincil, The Odds API yedek"""
+    """Çift kaynaklı oran sistemi - API-Football birincil"""
     
     # 1. Önce API-Football dene (BİRİNCİL KAYNAK)
     odds = fetch_odds_apifootball(area, comp, home, away)
     if odds:
         return odds, "APIFOOTBALL"
-    
-    # 2. Başarısız olursa The Odds API (YEDEK KAYNAK)
-    odds = fetch_odds_avg(area, comp, home, away)
-    if odds:
-        return odds, "ODDS_API"
     
     return None, "NONE"
 
@@ -2686,31 +2641,6 @@ def fetch_odds_apifootball(area, comp, home, away):
             
     except Exception as e:
         log(f"API-Football odds error: {e}")
-    
-    return None
-
-def fetch_odds_avg(area, comp, home, away):
-    """The Odds API yedek kaynak"""
-    try:
-        # Mevcut The Odds API implementasyonu buraya gelecek
-        url = "https://api.the-odds-api.com/v4/sports/upcoming/odds"
-        params = {
-            "regions": "eu",
-            "markets": "h2h",
-            "oddsFormat": "decimal",
-            "apiKey": ODDS_KEY
-        }
-        
-        response = http_get(url, params=params, timeout=30)
-        if response:
-            # Oranları parse et ve ilgili maçı bul
-            for odds_data in response:
-                if (odds_data.get('home_team') == home and 
-                    odds_data.get('away_team') == away):
-                    return parse_odds_api_odds(odds_data)
-                    
-    except Exception as e:
-        log(f"The Odds API backup error: {e}")
     
     return None
 
@@ -4372,10 +4302,7 @@ def clear_expired_cache():
     if expired_keys:
         log(f"🔄 {len(expired_keys)} cache temizlendi")
 
-# 3. 🗑️ Odds API Temizliği
-# Kullanılmayan odds fonksiyonları temizlendi
-
-# 4. 🎯 Takım Güç Sistemi
+# 3. 🎯 Takım Güç Sistemi
 def calculate_team_power_advanced(team_name, area="Europe"):
     """Gelişmiş takım güç sistemi"""
     base_power = calculate_team_power(team_name, area)
@@ -4390,7 +4317,7 @@ def calculate_team_power_advanced(team_name, area="Europe"):
     advanced_power = base_power * value_factor * form_bonus
     return clamp(advanced_power, 20, 95)
 
-# 5. 🤖 Ensemble Tracking
+# 4. 🤖 Ensemble Tracking
 ensemble_performance_metrics = {
     "total_predictions": 0,
     "correct_predictions": 0,
