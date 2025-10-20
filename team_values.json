@@ -470,63 +470,63 @@
     "timestamp": 1760903576.6700573
   },
   "Belgium:standard liege": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908990.874441
+    "timestamp": 1760945586.1792495
   },
   "Belgium:antwerp": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908990.8753295
+    "timestamp": 1760945586.1801891
   },
   "Turkey:eyüpspor": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908993.628764
+    "timestamp": 1760945589.1648028
   },
   "Turkey:kasimpasa": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908993.6297164
+    "timestamp": 1760945589.1656783
   },
   "Spain:cadiz": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908996.3708632
+    "timestamp": 1760945592.2744794
   },
   "Spain:burgos": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908996.3717747
+    "timestamp": 1760945592.2754507
   },
   "Italy:cremonese": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908998.4972556
+    "timestamp": 1760945595.1281323
   },
   "Italy:udinese": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760908998.4982414
+    "timestamp": 1760945595.129118
   },
   "England:west ham united": {
     "value": 65,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760909000.5987628
+    "timestamp": 1760945598.0134642
   },
   "England:brentford": {
     "value": 30,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760909000.5997636
+    "timestamp": 1760945598.0144584
   },
   "Spain:alaves": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760909002.736448
+    "timestamp": 1760945600.8883922
   },
   "Spain:valencia": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760909002.7373965
+    "timestamp": 1760945600.8893373
   }
 }
