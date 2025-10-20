@@ -470,63 +470,63 @@
     "timestamp": 1760903576.6700573
   },
   "Belgium:standard liege": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945586.1792495
+    "timestamp": 1760960112.8723788
   },
   "Belgium:antwerp": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945586.1801891
+    "timestamp": 1760960112.8733835
   },
   "Turkey:eyüpspor": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945589.1648028
+    "timestamp": 1760960115.1867821
   },
   "Turkey:kasimpasa": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945589.1656783
+    "timestamp": 1760960115.187782
   },
   "Spain:cadiz": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945592.2744794
+    "timestamp": 1760960117.6415231
   },
   "Spain:burgos": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945592.2754507
-  },
-  "Italy:cremonese": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945595.1281323
+    "timestamp": 1760960117.6425023
+  },
+  "Italy:cremonese": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1760960119.7856143
   },
   "Italy:udinese": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945595.129118
+    "timestamp": 1760960119.786571
   },
   "England:west ham united": {
     "value": 65,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760945598.0134642
+    "timestamp": 1760960121.8646913
   },
   "England:brentford": {
     "value": 30,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1760945598.0144584
+    "timestamp": 1760960121.8656933
   },
   "Spain:alaves": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945600.8883922
+    "timestamp": 1760960123.963483
   },
   "Spain:valencia": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760945600.8893373
+    "timestamp": 1760960123.9644816
   }
 }
