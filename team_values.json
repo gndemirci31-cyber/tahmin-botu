@@ -532,91 +532,91 @@
   "World:kairat almaty": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049103.9495451
+    "timestamp": 1761068802.909027
   },
   "World:pafos": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049103.9504702
+    "timestamp": 1761068802.9100826
   },
   "World:barcelona": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049106.2798042
+    "timestamp": 1761068805.3468046
   },
   "World:olympiakos piraeus": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049106.280836
-  },
-  "World:union st gilloise": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049109.5080056
+    "timestamp": 1761068805.3478549
+  },
+  "World:union st gilloise": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761068808.5497115
   },
   "World:inter": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049109.5089312
+    "timestamp": 1761068808.550733
   },
   "World:psv eindhoven": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049113.1506536
+    "timestamp": 1761068812.283015
   },
   "World:napoli": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049113.151577
+    "timestamp": 1761068812.2840989
   },
   "World:leverkusen": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049115.525517
+    "timestamp": 1761068814.6174126
   },
   "World:paris saint germain": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049115.5265431
+    "timestamp": 1761068814.6185286
   },
   "World:arsenal": {
     "value": 150,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761049117.826798
+    "timestamp": 1761068816.9745336
   },
   "World:atletico madrid": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049117.827828
+    "timestamp": 1761068816.9755774
   },
   "World:fc copenhagen": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049120.2123454
+    "timestamp": 1761068819.3236995
   },
   "World:borussia dortmund": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049120.2132688
+    "timestamp": 1761068819.3247757
   },
   "World:villarreal": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049122.5561478
+    "timestamp": 1761068821.734174
   },
   "World:manchester": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049122.5570865
+    "timestamp": 1761068821.7353404
   },
   "World:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761049124.895182
+    "timestamp": 1761068824.1576903
   },
   "World:benfica": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761049124.8960984
+    "timestamp": 1761068824.1587203
   }
 }
