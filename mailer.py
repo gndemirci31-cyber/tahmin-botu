@@ -72,6 +72,161 @@ _API_LEAGUE_MAP = {
     "Europe|European Championship": 4, "World|World Cup": 1
 }
 
+# ==================== EKSİK FONKSİYONLARIN TAMAMLANMASI ====================
+
+def base_total_goals(area):
+    """Lig bazlı gol ortalaması"""
+    area_lower = area.lower() if area else "europe"
+    for league, goals in LEAGUE_GOAL_BASE.items():
+        if league in area_lower:
+            return goals
+    return 2.7  # Varsayılan
+
+def base_from_area(area, base_dict, default):
+    """Lig bazlı değer al"""
+    area_lower = area.lower() if area else "europe"
+    for league, value in base_dict.items():
+        if league in area_lower:
+            return value
+    return default
+
+def _apifoot_find_team_id(team_name):
+    """Takım ID bulma - Basitleştirilmiş"""
+    if not APIFOOT or not team_name:
+        return None
+    
+    # Basit cache kontrolü
+    cache_key = team_name.lower()
+    if cache_key in _apifoot_team_cache:
+        return _apifoot_team_cache[cache_key]
+    
+    try:
+        # Takım arama
+        params = {"search": team_name}
+        response = requests.get(
+            f"{APIFOOTBALL_BASE_URL}teams",
+            headers=HEADERS,
+            params=params,
+            timeout=20
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('response'):
+                team_id = data['response'][0]['team']['id']
+                _apifoot_team_cache[cache_key] = team_id
+                return team_id
+    except Exception as e:
+        log(f"Team ID bulma hatası: {e}")
+    
+    return None
+
+def poisson_prob(lam_h, lam_a):
+    """Poisson dağılımına göre 1/X/2 olasılıkları - OPTİMİZE EDİLMİŞ"""
+    # Optimize edilmiş Poisson hesaplama
+    max_goals = 8  # Pratik limit
+    
+    # Home win olasılığı
+    p_home = 0.0
+    for goals_h in range(0, max_goals + 1):
+        for goals_a in range(0, goals_h):  # Sadece home win durumları
+            prob = (math.exp(-lam_h) * (lam_h ** goals_h) / math.factorial(goals_h)) * \
+                   (math.exp(-lam_a) * (lam_a ** goals_a) / math.factorial(goals_a))
+            p_home += prob
+    
+    # Away win olasılığı
+    p_away = 0.0
+    for goals_a in range(0, max_goals + 1):
+        for goals_h in range(0, goals_a):  # Sadece away win durumları
+            prob = (math.exp(-lam_h) * (lam_h ** goals_h) / math.factorial(goals_h)) * \
+                   (math.exp(-lam_a) * (lam_a ** goals_a) / math.factorial(goals_a))
+            p_away += prob
+    
+    # Draw olasılığı
+    p_draw = 0.0
+    for goals in range(0, max_goals + 1):
+        prob = (math.exp(-lam_h) * (lam_h ** goals) / math.factorial(goals)) * \
+               (math.exp(-lam_a) * (lam_a ** goals) / math.factorial(goals))
+        p_draw += prob
+    
+    # Normalizasyon
+    total = p_home + p_draw + p_away
+    if total > 0.9:  # Yeterli olasılık toplandı
+        return (p_home, p_draw, p_away)
+    else:
+        # Fallback: Basit formül
+        p_home_simple = 1.0 / (1.0 + 10.0 ** ((lam_a - lam_h) / 400.0))
+        p_away_simple = 1.0 - p_home_simple
+        p_draw_simple = 0.25  # Sabit beraberlik olasılığı
+        p_home_adj = p_home_simple * (1 - p_draw_simple)
+        p_away_adj = p_away_simple * (1 - p_draw_simple)
+        return (p_home_adj, p_draw_simple, p_away_adj)
+
+def blend_model_market(model_probs, market_probs):
+    """Model ve market olasılıklarını birleştir"""
+    if market_probs is None:
+        return model_probs
+    
+    w_mkt = clamp(get_w_mkt(), 0.0, 1.0)  # Weight kontrolü
+    w_model = 1.0 - w_mkt
+    
+    p_home = model_probs[0] * w_model + market_probs[0] * w_mkt
+    p_draw = model_probs[1] * w_model + market_probs[1] * w_mkt  
+    p_away = model_probs[2] * w_model + market_probs[2] * w_mkt
+    
+    # Normalizasyon
+    total = p_home + p_draw + p_away
+    if total > 0:
+        return (p_home/total, p_draw/total, p_away/total)
+    else:
+        return model_probs
+
+def poisson_over_prob(mu, threshold):
+    """Poisson dağılımında over olasılığı"""
+    if mu <= 0:
+        return 0.0
+    
+    # Threshold'u integer'a çevir
+    threshold_int = int(threshold)
+    if threshold_int < 0:
+        return 1.0
+    
+    p_under = 0.0
+    for k in range(0, threshold_int + 1):
+        if k <= 20:  # Pratik limit
+            p_under += (math.exp(-mu) * (mu ** k)) / math.factorial(k)
+        else:
+            break
+    
+    return max(0.0, min(1.0, 1.0 - p_under))
+
+def _apifoot_team_statistics(league_id, season, team_id):
+    """Takım istatistikleri - Geliştirilmiş"""
+    if not APIFOOT or not league_id or not season or not team_id:
+        return None
+    
+    cache_key = (league_id, season, team_id)
+    if cache_key in _apifoot_stat_cache:
+        return _apifoot_stat_cache[cache_key]
+    
+    try:
+        params = {"league": league_id, "season": season, "team": team_id}
+        response = _apifoot_get("teams/statistics", params)
+        if response:
+            _apifoot_stat_cache[cache_key] = response
+            return response
+    except Exception as e:
+        log(f"Team statistics error: {e}")
+        # Fallback: basit istatistikler
+        fallback_stats = {
+            "fixtures": {"played": {"total": 10}},
+            "cards": {"yellow": {"total": 15}, "red": {"total": 1}},
+            "corners": {"total": 45}
+        }
+        return fallback_stats
+    
+    return None
+
 # ==================== GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ ====================
 
 def ultra_tahmin_sistemi(date_str):
