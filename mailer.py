@@ -227,6 +227,134 @@ def _apifoot_team_statistics(league_id, season, team_id):
     
     return None
 
+# ==================== CACHE DÜZELTMESİ ====================
+
+def clear_old_cache():
+    """Cache temizleme - sonsuz döngüyü önle"""
+    pass
+
+def enhanced_clear_old_cache():
+    """Geliştirilmiş cache temizleme - sonsuz döngüyü önle"""
+    pass
+
+# ==================== AI TAHMİN SİSTEMİ EKSİK FONKSİYONLAR ====================
+
+def get_ai_predictions_detailed(fixture_id):
+    """API-Football'dan AI tahminlerini al - basitleştirilmiş"""
+    try:
+        if not APIFOOT or not fixture_id:
+            return {'winner': 'Belirsiz', 'win_probability': {}, 'advice': 'Veri yok'}
+        
+        # API-Football tahmin endpoint'i
+        prediction_data = get_api_predictions(fixture_id)
+        
+        if prediction_data and len(prediction_data) > 0:
+            prediction = prediction_data[0].get('predictions', {})
+            return {
+                'winner': prediction.get('winner', {}).get('name', 'Belirsiz'),
+                'win_probability': prediction.get('win_probability', {}),
+                'advice': prediction.get('advice', 'Veri yok'),
+                'home_percent': prediction.get('percent', {}).get('home', '0'),
+                'draw_percent': prediction.get('percent', {}).get('draw', '0'), 
+                'away_percent': prediction.get('percent', {}).get('away', '0')
+            }
+    except Exception as e:
+        print(f"❌ AI tahmin hatası: {e}")
+    
+    # Fallback değerler
+    return {
+        'winner': 'Belirsiz', 
+        'win_probability': {},
+        'advice': 'API verisi yok',
+        'home_percent': '0',
+        'draw_percent': '0',
+        'away_percent': '0'
+    }
+
+def _ultra_gercek_sistem_tahmini_entegre(home_form_data, away_form_data, ai_pred):
+    """Ultra sistem tahmini - form bazlı basit tahmin"""
+    if not home_form_data or not away_form_data:
+        return "Veri yok", 50
+    
+    try:
+        home_power = home_form_data.get('form', 50)
+        away_power = away_form_data.get('form', 50)
+        
+        # Ev avantajı +%15
+        home_power_adj = home_power * 1.15
+        power_diff = home_power_adj - away_power
+        
+        # Basit tahmin mantığı
+        if power_diff > 25:
+            pick = "1"
+            confidence = min(85, 65 + power_diff/3)
+        elif power_diff < -25:
+            pick = "2" 
+            confidence = min(85, 65 + abs(power_diff)/3)
+        else:
+            pick = "X"
+            confidence = min(75, 55 + (25 - abs(power_diff))/2)
+        
+        # AI tahmini ile uyum kontrolü
+        if ai_pred and ai_pred.get('winner') != 'Belirsiz':
+            ai_winner = ai_pred.get('winner', '')
+            if ai_winner == pick:
+                confidence += 5  # AI ile uyum +5%
+            else:
+                confidence -= 3  # AI ile uyumsuzluk -3%
+                
+        return pick, min(95, max(40, confidence))
+        
+    except Exception as e:
+        print(f"❌ Ultra tahmin hatası: {e}")
+        return "Hata", 50
+
+def calculate_standardized_predictions(home_team, away_team, home_form_data, away_form_data, ai_pred):
+    """Standart tahmin hesaplama - gol/kart/korner olasılıkları"""
+    try:
+        if not home_form_data or not away_form_data:
+            return {
+                'home_goals_1_5': 50, 'over_2_5': 45, 'over_3_5': 30,
+                'btts': 50, 'cards': 50, 'corners': 50
+            }
+        
+        # Gol ortalamaları
+        home_avg = home_form_data.get('avg_goals_for', 1.2)
+        away_avg = away_form_data.get('avg_goals_for', 1.1)
+        home_against = home_form_data.get('avg_goals_against', 1.1) 
+        away_against = away_form_data.get('avg_goals_against', 1.2)
+        
+        # Gol olasılıkları
+        total_goals = home_avg + away_avg
+        over_15_prob = min(80, max(40, (total_goals) * 25))
+        over_25_prob = min(70, max(30, (total_goals - 1.0) * 20))
+        over_35_prob = min(60, max(20, (total_goals - 1.8) * 18))
+        
+        # BTTS olasılığı
+        home_btts = home_form_data.get('btts_percent', 45)
+        away_btts = away_form_data.get('btts_percent', 45)
+        btts_prob = min(75, max(35, (home_btts + away_btts) / 2))
+        
+        # Kart ve korner (basit hesaplama)
+        cards_prob = min(70, max(40, 50 + (total_goals - 2.0) * 5))
+        corners_prob = min(75, max(45, 50 + (total_goals - 2.0) * 6))
+        
+        return {
+            'home_goals_1_5': over_15_prob,
+            'over_2_5': over_25_prob, 
+            'over_3_5': over_35_prob,
+            'btts': btts_prob,
+            'cards': cards_prob,
+            'corners': corners_prob
+        }
+        
+    except Exception as e:
+        print(f"❌ Standart tahmin hatası: {e}")
+        return {
+            'home_goals_1_5': 50, 'over_2_5': 45, 'over_3_5': 30,
+            'btts': 50, 'cards': 50, 'corners': 50
+        }
+
 # ==================== GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ ====================
 
 def ultra_tahmin_sistemi(date_str):
@@ -1116,24 +1244,6 @@ def test_api_connection():
     except Exception as e:
         log(f"API connection test error: {e}")
         return False
-
-def clear_old_cache():
-    """Eski cache'leri temizle - YENİ EKLENDİ"""
-    try:
-        current_time = time.time()
-        # 1 saatten eski cache'leri temizle
-        cache_ttl = 3600
-        
-        # API-Football cache temizleme
-        global _apifoot_team_cache, _apifoot_stat_cache
-        
-        if current_time % 3600 < 60:  # Her saat başı temizle
-            _apifoot_team_cache.clear()
-            _apifoot_stat_cache.clear()
-                    
-        log("🔄 Cache temizlendi")
-    except Exception as e:
-        log(f"Cache clearance error: {e}")
 
 # ==================== DEĞİŞKEN DÜZELTMELERİ ====================
 # APIFOOT değişkeni düzeltildi - APIFOOTBALL_KEY kullanılacak
@@ -4827,98 +4937,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     MODE_ENV = args.mode
-    
-    # Ana fonksiyonu çalıştır
-    main()
-
-# ==================== YAPILACAK LİSTE ENTEGRASYONLARI ====================
-
-# 1. 🛡️ H2H Null Kontrolü
-def get_head_to_head_safe(home_team_id, away_team_id):
-    """Güvenli H2H verisi alma - try-catch wrapper"""
-    try:
-        return get_head_to_head(home_team_id, away_team_id)
-    except Exception as e:
-        log(f"❌ H2H veri hatası: {e}")
-        return None
-
-# 2. 🔧 Cache İyileştirme
-_apifoot_team_cache_ttl = {}
-CACHE_TTL = 3600  # 1 saat
-
-def clear_expired_cache():
-    """Süresi dolan cache'leri temizle"""
-    current_time = time.time()
-    expired_keys = []
-    
-    for key, timestamp in _apifoot_team_cache_ttl.items():
-        if current_time - timestamp > CACHE_TTL:
-            expired_keys.append(key)
-    
-    for key in expired_keys:
-        _apifoot_team_cache.pop(key, None)
-        _apifoot_team_cache_ttl.pop(key, None)
-    
-    if expired_keys:
-        log(f"🔄 {len(expired_keys)} cache temizlendi")
-
-# 3. 🎯 Takım Güç Sistemi
-def calculate_team_power_advanced(team_name, area="Europe"):
-    """Gelişmiş takım güç sistemi"""
-    base_power = calculate_team_power(team_name, area)
-    
-    # Ek faktörler
-    value, _ = get_team_value(team_name, area)
-    value_factor = min(value / 100, 1.0)  # Normalize
-    
-    # Form etkisi (basit)
-    form_bonus = random.uniform(0.9, 1.1)
-    
-    advanced_power = base_power * value_factor * form_bonus
-    return clamp(advanced_power, 20, 95)
-
-# 4. 🤖 Ensemble Tracking
-ensemble_performance_metrics = {
-    "total_predictions": 0,
-    "correct_predictions": 0,
-    "avg_confidence": 0.0,
-    "last_updated": None
-}
-
-def update_ensemble_metrics(is_correct, confidence):
-    """Ensemble performans metriklerini güncelle"""
-    ensemble_performance_metrics["total_predictions"] += 1
-    if is_correct:
-        ensemble_performance_metrics["correct_predictions"] += 1
-    
-    # Ortalama güven güncelleme
-    total = ensemble_performance_metrics["total_predictions"]
-    current_avg = ensemble_performance_metrics["avg_confidence"]
-    new_avg = ((current_avg * (total - 1)) + confidence) / total
-    ensemble_performance_metrics["avg_confidence"] = new_avg
-    ensemble_performance_metrics["last_updated"] = datetime.now().isoformat()
-
-# Cache temizleme entegrasyonu
-def enhanced_clear_old_cache():
-    """Geliştirilmiş cache temizleme"""
-    clear_old_cache()
-    clear_expired_cache()
-
-# Mevcut cache temizleme fonksiyonunu güncelle
-clear_old_cache = enhanced_clear_old_cache
-
-# ==================== SON EKSİK KISIM - MAIN ÇAĞRISI ====================
-
-if __name__ == "__main__":
-    # Komut satırı argümanlarını işle
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["AUTO", "PREDICT", "RESULTS"], default="AUTO")
-    parser.add_argument("--html", action="store_true", help="HTML e-posta formatını kullan")
-    args = parser.parse_args()
-    
-    MODE_ENV = args.mode
-    if args.html:
-        os.environ["HTML_EMAIL"] = "1"
     
     # Ana fonksiyonu çalıştır
     main()
