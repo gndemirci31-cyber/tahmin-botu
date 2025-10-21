@@ -532,91 +532,91 @@
   "World:kairat almaty": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068802.909027
+    "timestamp": 1761078378.6770263
   },
   "World:pafos": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068802.9100826
+    "timestamp": 1761078378.6779487
   },
   "World:barcelona": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068805.3468046
+    "timestamp": 1761078381.1805127
   },
   "World:olympiakos piraeus": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068805.3478549
+    "timestamp": 1761078381.18155
   },
   "World:union st gilloise": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068808.5497115
-  },
-  "World:inter": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068808.550733
-  },
-  "World:psv eindhoven": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068812.283015
+    "timestamp": 1761078384.605224
+  },
+  "World:inter": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761078384.6065469
+  },
+  "World:psv eindhoven": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761078388.5566964
   },
   "World:napoli": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068812.2840989
+    "timestamp": 1761078388.557635
   },
   "World:leverkusen": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068814.6174126
-  },
-  "World:paris saint germain": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068814.6185286
+    "timestamp": 1761078391.1477225
+  },
+  "World:paris saint germain": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761078391.14868
   },
   "World:arsenal": {
     "value": 150,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761068816.9745336
+    "timestamp": 1761078393.534716
   },
   "World:atletico madrid": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068816.9755774
+    "timestamp": 1761078393.5358708
   },
   "World:fc copenhagen": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068819.3236995
+    "timestamp": 1761078396.002549
   },
   "World:borussia dortmund": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068819.3247757
+    "timestamp": 1761078396.0037675
   },
   "World:villarreal": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068821.734174
+    "timestamp": 1761078398.6623268
   },
   "World:manchester": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068821.7353404
+    "timestamp": 1761078398.6633523
   },
   "World:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761068824.1576903
+    "timestamp": 1761078401.2790468
   },
   "World:benfica": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761068824.1587203
+    "timestamp": 1761078401.2799606
   }
 }
