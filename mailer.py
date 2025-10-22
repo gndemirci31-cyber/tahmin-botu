@@ -4976,9 +4976,9 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
                     total += t
             return total / played if total > 0 else None
         
-        def corners_per_game(stat):
-    if not stat:
-        return None
+    def corners_per_game(stat):
+        if not stat:
+            return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
     total_corners = (((stat.get("corners") or {}).get("total")) or 0)
     if played == 0:
@@ -4986,8 +4986,8 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
     return round(total_corners / played, 2)
 
 def corners_per_game(stat):
-    if not stat:
-        return None
+        if not stat:
+            return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
     total_corners = (((stat.get("corners") or {}).get("total")) or 0)
     if played == 0:
@@ -4996,8 +4996,8 @@ def corners_per_game(stat):
 
 
 def cards_per_game(stat):
-    if not stat:
-        return None
+        if not stat:
+            return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
     yellow = (((stat.get("cards") or {}).get("yellow") or {}).get("total") or 0)
     red = (((stat.get("cards") or {}).get("red") or {}).get("total") or 0)
