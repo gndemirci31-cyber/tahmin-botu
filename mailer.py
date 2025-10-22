@@ -5090,20 +5090,64 @@ def _is_target_league(league_name):
             return True
     return False
 
+def _get_detailed_team_analysis(league_id, season, team_id, team_name):
+    """Takımın detaylı istatistik analizini yap"""
+    try:
+        stats = _apifoot_team_statistics(league_id, season, team_id)
+        if not stats:
+            return None
+        
+        # Form analizi
+        form = stats.get('form', 'N/A')
+        
+        # Gol istatistikleri
+        goals_for = stats.get('goals', {}).get('for', {}).get('total', {}).get('total', 0)
+        goals_against = stats.get('goals', {}).get('against', {}).get('total', {}).get('total', 0)
+        
+        # Maç başına gol ortalaması
+        played = stats.get('fixtures', {}).get('played', {}).get('total', 0)
+        avg_goals_for = round(goals_for / played, 2) if played > 0 else 0
+        avg_goals_against = round(goals_against / played, 2) if played > 0 else 0
+        
+        # Performans analizi
+        wins = stats.get('fixtures', {}).get('wins', {}).get('total', 0)
+        draws = stats.get('fixtures', {}).get('draws', {}).get('total', 0)
+        losses = stats.get('fixtures', {}).get('loses', {}).get('total', 0)
+        
+        win_rate = round((wins / played) * 100, 1) if played > 0 else 0
+        
+        return {
+            'form': form,
+            'played': played,
+            'wins': wins,
+            'draws': draws,
+            'losses': losses,
+            'win_rate': win_rate,
+            'goals_for': goals_for,
+            'goals_against': goals_against,
+            'avg_goals_for': avg_goals_for,
+            'avg_goals_against': avg_goals_against
+        }
+    except Exception as e:
+        log(f"❌ Takım analiz hatası ({team_name}): {e}")
+        return None
+
 def _analyze_fixture_with_api_data(fixture):
-    """API-Football Ultra verileriyle detaylı maç analizi"""
+    """API-Football Ultra verileriyle DETAYLI maç analizi"""
     try:
         home_team = fixture['teams']['home']['name']
         away_team = fixture['teams']['away']['name']
         league_name = fixture['league']['name']
         fixture_id = fixture['fixture']['id']
+        league_id = fixture['league']['id']
+        season = season_for_today()
         
         # Sadece hedef liglerdeki maçları analiz et
         if not _is_target_league(league_name):
             log(f"⏭️ {league_name} - hedef lig değil, atlanıyor")
             return None
         
-        log(f"🔍 {home_team} vs {away_team} analiz ediliyor...")
+        log(f"🔍 {home_team} vs {away_team} detaylı analiz ediliyor...")
         
         # 1. Tahmin verilerini getir
         pred_data = get_api_predictions(fixture_id)
@@ -5115,7 +5159,14 @@ def _analyze_fixture_with_api_data(fixture):
         pred = pred_data[0]
         predictions_data = pred.get('predictions', {})
         
-        # 2. Temel tahmin bilgilerini al
+        # 2. Takım detaylı analizleri
+        home_team_id = fixture['teams']['home']['id']
+        away_team_id = fixture['teams']['away']['id']
+        
+        home_analysis = _get_detailed_team_analysis(league_id, season, home_team_id, home_team)
+        away_analysis = _get_detailed_team_analysis(league_id, season, away_team_id, away_team)
+        
+        # 3. Temel tahmin bilgilerini al
         winner_pred = "Belirsiz"
         confidence = 50
         
@@ -5128,44 +5179,57 @@ def _analyze_fixture_with_api_data(fixture):
                                           winner_data.get('win_percentage',
                                                         winner_data.get('probability', 50)))
         
-        # 3. Detaylı analiz için karşılaştırma verilerini kullan
+        # 4. DETAYLI analiz için karşılaştırma verilerini kullan
+        advanced_analysis = {}
         if 'comparison' in predictions_data:
             comp = predictions_data['comparison']
             if isinstance(comp, dict):
-                # Form analizi
-                home_form = safe_float(comp.get('form', {}).get('home', 50))
-                away_form = safe_float(comp.get('form', {}).get('away', 50))
-                
-                # Attacking analizi
-                home_attack = safe_float(comp.get('attacking', {}).get('home', 50))
-                away_attack = safe_float(comp.get('attacking', {}).get('away', 50))
-                
-                # Defensive analizi
-                home_defense = safe_float(comp.get('defensive', {}).get('home', 50))
-                away_defense = safe_float(comp.get('defensive', {}).get('away', 50))
-                
-                # H2H (Head-to-Head) analizi
-                h2h_home = safe_float(comp.get('h2h', {}).get('home', 50))
-                h2h_away = safe_float(comp.get('h2h', {}).get('away', 50))
+                # Tüm karşılaştırma metriklerini al
+                advanced_analysis = {
+                    'form_home': safe_float(comp.get('form', {}).get('home', 50)),
+                    'form_away': safe_float(comp.get('form', {}).get('away', 50)),
+                    'attacking_home': safe_float(comp.get('attacking', {}).get('home', 50)),
+                    'attacking_away': safe_float(comp.get('attacking', {}).get('away', 50)),
+                    'defensive_home': safe_float(comp.get('defensive', {}).get('home', 50)),
+                    'defensive_away': safe_float(comp.get('defensive', {}).get('away', 50)),
+                    'h2h_home': safe_float(comp.get('h2h', {}).get('home', 50)),
+                    'h2h_away': safe_float(comp.get('h2h', {}).get('away', 50)),
+                    'goals_home': safe_float(comp.get('goals', {}).get('home', 50)),
+                    'goals_away': safe_float(comp.get('goals', {}).get('away', 50)),
+                    'total_home': safe_float(comp.get('total', {}).get('home', 50)),
+                    'total_away': safe_float(comp.get('total', {}).get('away', 50))
+                }
                 
                 # Gelişmiş confidence hesaplama
-                form_weight = (home_form + (100 - away_form)) / 2
-                attack_weight = (home_attack + (100 - away_attack)) / 2
-                defense_weight = (home_defense + (100 - away_defense)) / 2
-                h2h_weight = (h2h_home + (100 - h2h_away)) / 2
+                form_weight = (advanced_analysis['form_home'] + (100 - advanced_analysis['form_away'])) / 2
+                attack_weight = (advanced_analysis['attacking_home'] + (100 - advanced_analysis['attacking_away'])) / 2
+                defense_weight = (advanced_analysis['defensive_home'] + (100 - advanced_analysis['defensive_away'])) / 2
+                h2h_weight = (advanced_analysis['h2h_home'] + (100 - advanced_analysis['h2h_away'])) / 2
+                goals_weight = (advanced_analysis['goals_home'] + (100 - advanced_analysis['goals_away'])) / 2
+                
+                # Takım analizlerinden ek puanlar
+                team_bonus = 0
+                if home_analysis and away_analysis:
+                    # Gol farkı avantajı
+                    goal_diff_bonus = (home_analysis['avg_goals_for'] - away_analysis['avg_goals_against']) * 2
+                    # Form avantajı
+                    form_bonus = (home_analysis['win_rate'] - away_analysis['win_rate']) * 0.5
+                    team_bonus = max(0, min(10, goal_diff_bonus + form_bonus))
                 
                 # Ağırlıklı ortalama
                 calculated_confidence = (
-                    form_weight * 0.3 +
-                    attack_weight * 0.25 +
-                    defense_weight * 0.25 +
-                    h2h_weight * 0.2
+                    form_weight * 0.2 +
+                    attack_weight * 0.2 +
+                    defense_weight * 0.15 +
+                    h2h_weight * 0.15 +
+                    goals_weight * 0.2 +
+                    team_bonus
                 )
                 
                 # API confidence ile birleştir
-                confidence = max(confidence, calculated_confidence)
+                confidence = max(confidence, min(95, calculated_confidence))
         
-        # 4. Goals tahminlerini analiz et
+        # 5. Goals tahminlerini analiz et
         goals_analysis = ""
         if 'goals' in predictions_data:
             goals_data = predictions_data['goals']
@@ -5174,7 +5238,7 @@ def _analyze_fixture_with_api_data(fixture):
                 away_goals = goals_data.get('away', 'N/A')
                 goals_analysis = f"{home_goals}-{away_goals}"
         
-        # 5. Kart ve korner istatistikleri
+        # 6. Kart ve korner istatistikleri
         cards_corners = _apifoot_hint_cards_corners(
             fixture['league']['country'],
             league_name,
@@ -5182,24 +5246,17 @@ def _analyze_fixture_with_api_data(fixture):
             away_team
         )
         
-        # 6. Takım form durumları
-        home_team_id = fixture['teams']['home']['id']
-        away_team_id = fixture['teams']['away']['id']
-        league_id = fixture['league']['id']
-        season = season_for_today()
-        
-        home_stats = _apifoot_team_statistics(league_id, season, home_team_id)
-        away_stats = _apifoot_team_statistics(league_id, season, away_team_id)
-        
         # 7. Sonuç tahminini iyileştir
         final_prediction = winner_pred
-        if confidence >= 70 and winner_pred != 'Belirsiz':
+        if confidence >= 65 and winner_pred != 'Belirsiz':
             if winner_pred == home_team:
                 final_prediction = "1"
             elif winner_pred == away_team:
                 final_prediction = "2"
             else:
-                final_prediction = "1X" if confidence > 60 else "X"
+                final_prediction = "1X" if confidence > 55 else "X"
+        elif confidence < 55:
+            final_prediction = "X"  # Düşük güvende beraberlik
         
         prediction_data = {
             'home_team': home_team,
@@ -5211,8 +5268,9 @@ def _analyze_fixture_with_api_data(fixture):
             'cards_corners': cards_corners,
             'fixture_id': fixture_id,
             'goals_analysis': goals_analysis,
-            'home_form': home_stats.get('form', 'N/A') if home_stats else 'N/A',
-            'away_form': away_stats.get('form', 'N/A') if away_stats else 'N/A'
+            'home_analysis': home_analysis,
+            'away_analysis': away_analysis,
+            'advanced_analysis': advanced_analysis
         }
         
         log(f"✅ {home_team} vs {away_team} - {final_prediction} (%{int(confidence)})")
@@ -5270,9 +5328,9 @@ def log(msg):
     print(f"[{now}] {msg}")
 
 def get_todays_predictions_enhanced():
-    """API-Football Ultra'dan günlük tahminleri al - SADECE HEDEF LİGLERDEKİ GERÇEK VERİLER"""
+    """API-Football Ultra'dan günlük tahminleri al - DETAYLI HEDEF LİG ANALİZİ"""
     try:
-        log("🔮 API-Football Ultra'dan HEDEF LİGLER için tahminler alınıyor...")
+        log("🔮 API-Football Ultra'dan HEDEF LİGLER için DETAYLI tahminler alınıyor...")
         
         # Bugünün maçlarını getir
         today = datetime.now().strftime("%Y-%m-%d")
@@ -5294,6 +5352,8 @@ def get_todays_predictions_enhanced():
             log(f"📋 Bugün {len(fixtures)} maç bulundu")
             
             target_league_count = 0
+            analyzed_count = 0
+            
             for fixture in fixtures:
                 try:
                     league_name = fixture['league']['name']
@@ -5304,21 +5364,22 @@ def get_todays_predictions_enhanced():
                     
                     target_league_count += 1
                     
-                    # API verileriyle detaylı analiz
+                    # API verileriyle DETAYLI analiz
                     prediction_data = _analyze_fixture_with_api_data(fixture)
                     
                     if prediction_data:
                         predictions.append(prediction_data)
+                        analyzed_count += 1
                     
-                    # Limit: maksimum 20 maç
-                    if len(predictions) >= 20:
+                    # Limit: maksimum 15 maç
+                    if len(predictions) >= 15:
                         break
                         
                 except Exception as match_error:
                     log(f"❌ Maç işleme hatası: {match_error}")
                     continue
             
-            log(f"🎯 {target_league_count} hedef lig maçı bulundu")
+            log(f"🎯 {target_league_count} hedef lig maçı bulundu, {analyzed_count} maç analiz edildi")
         
         if not predictions:
             log("❌ HEDEF LİGLERDE hiçbir maç için API-Football Ultra'dan tahmin alınamadı")
@@ -5327,7 +5388,7 @@ def get_todays_predictions_enhanced():
         # Güven skoruna göre sırala
         predictions.sort(key=lambda x: x['confidence'], reverse=True)
         
-        log(f"✅ {len(predictions)} HEDEF LİG maçı için API-Football Ultra tahmini hazır")
+        log(f"✅ {len(predictions)} HEDEF LİG maçı için DETAYLI API-Football Ultra tahmini hazır")
         return predictions
         
     except Exception as e:
@@ -5335,7 +5396,7 @@ def get_todays_predictions_enhanced():
         return []  # Fallback YOK - sadece gerçek veriler
 
 def create_email_content_enhanced(predictions):
-    """Tahminler için HTML email içeriği oluştur - SADECE HEDEF LİGLER"""
+    """Tahminler için HTML email içeriği oluştur - DETAYLI ANALİZ"""
     try:
         log("📧 E-posta içeriği oluşturuluyor...")
         
@@ -5365,10 +5426,10 @@ def create_email_content_enhanced(predictions):
             <title>Günlük Futbol Tahminleri</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }}
-                .container {{ max-width: 800px; margin: 0 auto; background: white; }}
+                .container {{ max-width: 900px; margin: 0 auto; background: white; }}
                 .header {{ background: linear-gradient(135deg, #2c3e50, #3498db); color: white; padding: 30px 20px; text-align: center; }}
                 .content {{ padding: 20px; }}
-                .prediction {{ border: 1px solid #e0e0e0; margin: 15px 0; padding: 20px; border-radius: 10px; background: #fafafa; }}
+                .prediction {{ border: 1px solid #e0e0e0; margin: 20px 0; padding: 25px; border-radius: 10px; background: #fafafa; }}
                 .confidence {{ font-weight: bold; }}
                 .high-confidence {{ color: #27ae60; }}
                 .medium-confidence {{ color: #f39c12; }}
@@ -5376,10 +5437,13 @@ def create_email_content_enhanced(predictions):
                 .footer {{ background: #34495e; color: white; padding: 20px; text-align: center; margin-top: 20px; }}
                 .match-time {{ color: #7f8c8d; font-size: 14px; }}
                 .league {{ color: #3498db; font-weight: bold; }}
-                .stats {{ background: #ecf0f1; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 12px; }}
+                .stats {{ background: #ecf0f1; padding: 15px; border-radius: 5px; margin-top: 10px; font-size: 12px; }}
                 .api-info {{ background: #27ae60; color: white; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; }}
                 .goals-pred {{ background: #ffeaa7; padding: 5px; border-radius: 3px; margin: 2px; }}
                 .target-league {{ background: #e74c3c; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px; }}
+                .team-stats {{ display: flex; justify-content: space-between; margin: 10px 0; }}
+                .team-stat {{ flex: 1; padding: 10px; background: white; margin: 0 5px; border-radius: 5px; border: 1px solid #ddd; }}
+                .stat-value {{ font-weight: bold; color: #2c3e50; }}
             </style>
         </head>
         <body>
@@ -5387,15 +5451,15 @@ def create_email_content_enhanced(predictions):
                 <div class="header">
                     <h1>⚽ Günlük Futbol Tahminleri</h1>
                     <p>API-Football Ultra • {datetime.now().strftime('%d.%m.%Y')}</p>
-                    <p>HEDEF LİGLER • Toplam {len(predictions)} maç tahmini</p>
+                    <p>DETAYLI HEDEF LİG ANALİZİ • Toplam {len(predictions)} maç tahmini</p>
                 </div>
                 
                 <div class="content">
                     <div class="api-info">
-                        <strong>🎯 HEDEF LİGLER: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</strong><br>
-                        <em>Sadece gerçek API-Football Ultra verileri kullanılmaktadır</em>
+                        <strong>🎯 DETAYLI HEDEF LİG ANALİZİ: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</strong><br>
+                        <em>API-Football Ultra tüm istatistik özellikleri kullanılarak detaylı analiz yapılmıştır</em>
                     </div>
-                    <h2>📊 Bugünün Tahminleri</h2>
+                    <h2>📊 Bugünün Detaylı Tahminleri</h2>
         """
         
         for i, pred in enumerate(predictions, 1):
@@ -5409,6 +5473,31 @@ def create_email_content_enhanced(predictions):
             else:
                 conf_class = "low-confidence"
                 conf_text = "DÜŞÜK GÜVEN"
+            
+            # Takım istatistikleri
+            team_stats_html = ""
+            if pred.get('home_analysis') and pred.get('away_analysis'):
+                home = pred['home_analysis']
+                away = pred['away_analysis']
+                
+                team_stats_html = f"""
+                <div class="team-stats">
+                    <div class="team-stat">
+                        <strong>{pred['home_team']}</strong><br>
+                        Form: {home.get('form', 'N/A')}<br>
+                        Galibiyet: {home.get('win_rate', 0)}%<br>
+                        Gol/Maç: {home.get('avg_goals_for', 0)}<br>
+                        Maç: {home.get('played', 0)}
+                    </div>
+                    <div class="team-stat">
+                        <strong>{pred['away_team']}</strong><br>
+                        Form: {away.get('form', 'N/A')}<br>
+                        Galibiyet: {away.get('win_rate', 0)}%<br>
+                        Gol/Maç: {away.get('avg_goals_for', 0)}<br>
+                        Maç: {away.get('played', 0)}
+                    </div>
+                </div>
+                """
             
             # İstatistikleri göster
             stats_html = ""
@@ -5432,6 +5521,7 @@ def create_email_content_enhanced(predictions):
                         <h3>🏆 Maç {i}: {pred['home_team']} vs {pred['away_team']}</h3>
                         <p class="league">📋 {pred.get('league', 'Bilinmeyen Lig')} <span class="target-league">HEDEF LİG</span></p>
                         <p class="match-time">⏰ Saat: {pred.get('time', 'Belirsiz')}</p>
+                        {team_stats_html}
                         <p><strong>🎯 Tahmin:</strong> {pred['prediction']} {goals_html}</p>
                         <p><strong>📈 Güven Skoru:</strong> 
                             <span class="confidence {conf_class}">{conf}% ({conf_text})</span>
@@ -5443,8 +5533,8 @@ def create_email_content_enhanced(predictions):
         html += """
                 </div>
                 <div class="footer">
-                    <p>🎯 Sadece HEDEF LİGLER: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</p>
-                    <p>⚡ %100 API-Football Ultra Gerçek Verileri</p>
+                    <p>🎯 DETAYLI HEDEF LİG ANALİZİ: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</p>
+                    <p>⚡ %100 API-Football Ultra Gerçek Verileri - Tüm İstatistik Özellikleri Kullanıldı</p>
                     <p>⚠️ Fallback mekanizması YOKTUR - Sadece gerçek API verileri kullanılır</p>
                     <p>© 2024 Futbol Tahmin Sistemi</p>
                 </div>
@@ -5520,7 +5610,7 @@ def run_daily_predictions_and_email():
         
         html_content = create_email_content_enhanced(predictions)
         subject = f"⚽ Günlük Futbol Tahminleri - {datetime.now().strftime('%d.%m.%Y')}"
-        recipients = ["gndemirci31@hotmail.com"]  # Mail adresiniz eklendi
+        recipients = ["gndemirci31@gmail.com"]  # Güncellenmiş mail adresiniz
         
         send_email_enhanced(subject, html_content, recipients)
         log("✅ Günlük tahmin ve mail gönderimi tamamlandı.")
@@ -5535,6 +5625,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n🛑 Kullanıcı tarafından durduruldu.")
     except Exception as e:
-        print(f"❌ Ana sistem hatası: {e}")
-    except Exception as e:
-        print(f"❌ Ana sistem hatası: {e}")
+        print(f"❌ Ana sistem hatası: {e}"){e}")
