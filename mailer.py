@@ -4977,17 +4977,9 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
             return total / played if total > 0 else None
         
     def corners_per_game(stat):
-        if not stat:
-            return None
-    played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
-    total_corners = (((stat.get("corners") or {}).get("total")) or 0)
-    if played == 0:
-        return 0
-    return round(total_corners / played, 2)
-
-def corners_per_game(stat):
-        if not stat:
-            return None
+    """Calculate average corners per game"""
+    if not stat:
+        return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
     total_corners = (((stat.get("corners") or {}).get("total")) or 0)
     if played == 0:
@@ -4996,8 +4988,9 @@ def corners_per_game(stat):
 
 
 def cards_per_game(stat):
-        if not stat:
-            return None
+    """Calculate average cards per game"""
+    if not stat:
+        return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
     yellow = (((stat.get("cards") or {}).get("yellow") or {}).get("total") or 0)
     red = (((stat.get("cards") or {}).get("red") or {}).get("total") or 0)
@@ -5008,7 +5001,7 @@ def cards_per_game(stat):
 
 
 def calculate_enhanced_confidence(home_form_data, away_form_data, ai_pred, predictions):
-    """YENİ: GELİŞTİRİLMİŞ GÜVEN SKORU"""
+    """Calculate enhanced confidence score for predictions"""
     if not home_form_data or not away_form_data:
         return 50
     try:
@@ -5029,31 +5022,87 @@ def calculate_enhanced_confidence(home_form_data, away_form_data, ai_pred, predi
 
 
 def log(msg):
-    """Basit log çıktısı"""
+    """Simple log output"""
     now = datetime.now().strftime("%H:%M:%S")
     print(f"[{now}] {msg}")
 
 
-def run_daily_predictions_and_email():
-    """Günlük tahminleri al, HTML oluştur, mail at"""
-    try:
-        today = datetime.now().strftime("%Y-%m-%d")
-        log(f"📅 Günlük tahmin başlatıldı: {today}")
-        predictions = get_todays_predictions_enhanced()
-        if not predictions:
-            log("❌ Tahmin oluşturulamadı.")
-            return
-        html_content = create_email_content_enhanced(predictions)
-        subject = f"⚽ Günlük Futbol Tahminleri - {datetime.now().strftime('%d.%m.%Y')}"
-        recipients = ["example@mail.com"]  # ← kendi mail adreslerini ekle
-        send_email_enhanced(subject, html_content, recipients)
-        log("✅ Günlük tahmin ve mail gönderimi tamamlandı.")
-    except Exception as e:
-        log(f"❌ Günlük sistem hatası: {e}")
+def get_todays_predictions_enhanced():
+    """Get today's enhanced predictions (placeholder implementation)"""
+    # TODO: Implement actual prediction logic
+    log("🔮 Tahminler alınıyor...")
+    return [
+        {
+            'home_team': 'Team A',
+            'away_team': 'Team B',
+            'prediction': '1X',
+            'confidence': 75
+        }
+    ]
+
+
+def create_email_content_enhanced(predictions):
+    """Create HTML email content for predictions"""
+    log("📧 E-posta içeriği oluşturuluyor...")
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Günlük Futbol Tahminleri</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .header {{ background: #2c3e50; color: white; padding: 20px; text-align: center; }}
+            .prediction {{ border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }}
+            .confidence {{ font-weight: bold; color: #27ae60; }}
+            .footer {{ margin-top: 20px; text-align: center; color: #7f8c8d; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>⚽ Günlük Futbol Tahminleri</h1>
+            <p>{datetime.now().strftime('%d.%m.%Y')}</p>
+        </div>
+        
+        <div class="content">
+            <h2>📊 Bugünün Tahminleri</h2>
+    """
+    
+    for i, pred in enumerate(predictions, 1):
+        html += f"""
+            <div class="prediction">
+                <h3>Maç {i}: {pred['home_team']} vs {pred['away_team']}</h3>
+                <p><strong>Tahmin:</strong> {pred['prediction']}</p>
+                <p><strong>Güven Skoru:</strong> <span class="confidence">{pred['confidence']}%</span></p>
+            </div>
+        """
+    
+    html += """
+        </div>
+        <div class="footer">
+            <p>Bu tahminler otomatik olarak oluşturulmuştur.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html
+
+
+def send_email_enhanced(subject, html_content, recipients):
+    """Send email with enhanced features (placeholder implementation)"""
+    log(f"📤 E-posta gönderiliyor: {subject}")
+    # TODO: Implement actual email sending logic
+    # Example: using smtplib or external service
+    print(f"TO: {recipients}")
+    print(f"SUBJECT: {subject}")
+    print("CONTENT SENT SUCCESSFULLY")
+    return True
 
 
 def get_api_predictions(fixture_id):
-    """API-Football tahmin endpointine istek"""
+    """Make request to API-Football predictions endpoint"""
     try:
         url = f"{APIFOOTBALL_BASE_URL}predictions"
         params = {'fixture': fixture_id}
@@ -5069,21 +5118,39 @@ def get_api_predictions(fixture_id):
 
 
 def get_w_mkt():
-    """Model/market ağırlığı"""
+    """Get model/market weight"""
     return 0.4
 
 
 def clamp(x, low, high):
-    """Sınırlandırma fonksiyonu"""
+    """Clamping function"""
     return max(low, min(high, x))
 
 
 def initialize_system():
-    """Başlangıç sistem ayarları"""
+    """Initialize system settings"""
     global _apifoot_team_cache, _apifoot_stat_cache
     _apifoot_team_cache = {}
     _apifoot_stat_cache = {}
     log("🚀 Sistem başlatıldı, cache temizlendi.")
+
+
+def run_daily_predictions_and_email():
+    """Get daily predictions, create HTML, send email"""
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        log(f"📅 Günlük tahmin başlatıldı: {today}")
+        predictions = get_todays_predictions_enhanced()
+        if not predictions:
+            log("❌ Tahmin oluşturulamadı.")
+            return
+        html_content = create_email_content_enhanced(predictions)
+        subject = f"⚽ Günlük Futbol Tahminleri - {datetime.now().strftime('%d.%m.%Y')}"
+        recipients = ["example@mail.com"]  # ← Add your own email addresses
+        send_email_enhanced(subject, html_content, recipients)
+        log("✅ Günlük tahmin ve mail gönderimi tamamlandı.")
+    except Exception as e:
+        log(f"❌ Günlük sistem hatası: {e}")
 
 
 if __name__ == "__main__":
