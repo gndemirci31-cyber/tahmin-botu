@@ -4945,6 +4945,17 @@ _apifoot_team_cache = {}  # search_name.lower() -> team_id
 _apifoot_stat_cache = {}  # (league_id, season, team_id) -> stats_json
 _API_LEAGUE_MAP = {}  # Lig eşleme tablosu
 
+# HEDEF LİGLER - Sadece bu liglerdeki maçlar analiz edilecek
+TARGET_LEAGUES = [
+    'Süper Lig', 'Super Lig', 'Turkey Super Lig',
+    'Premier League', 'English Premier League', 
+    'La Liga', 'Spanish La Liga',
+    'Bundesliga', 'German Bundesliga',
+    'Serie A', 'Italian Serie A',
+    'Ligue 1', 'French Ligue 1',
+    'Champions League', 'Europa League'
+]
+
 def _apifoot_hint_cards_corners(area, comp, home, away):
     """Kart ve korner istatistiklerini API-Football'dan al"""
     if not APIFOOT:
@@ -5068,6 +5079,17 @@ def _apifoot_team_statistics(league_id, season, team_id):
     
     return None
 
+def _is_target_league(league_name):
+    """Lig hedef ligler listesinde mi kontrol et"""
+    if not league_name:
+        return False
+    
+    league_lower = league_name.lower()
+    for target_league in TARGET_LEAGUES:
+        if target_league.lower() in league_lower:
+            return True
+    return False
+
 def _analyze_fixture_with_api_data(fixture):
     """API-Football Ultra verileriyle detaylı maç analizi"""
     try:
@@ -5075,6 +5097,11 @@ def _analyze_fixture_with_api_data(fixture):
         away_team = fixture['teams']['away']['name']
         league_name = fixture['league']['name']
         fixture_id = fixture['fixture']['id']
+        
+        # Sadece hedef liglerdeki maçları analiz et
+        if not _is_target_league(league_name):
+            log(f"⏭️ {league_name} - hedef lig değil, atlanıyor")
+            return None
         
         log(f"🔍 {home_team} vs {away_team} analiz ediliyor...")
         
@@ -5243,9 +5270,9 @@ def log(msg):
     print(f"[{now}] {msg}")
 
 def get_todays_predictions_enhanced():
-    """API-Football Ultra'dan günlük tahminleri al - SADECE GERÇEK VERİLER"""
+    """API-Football Ultra'dan günlük tahminleri al - SADECE HEDEF LİGLERDEKİ GERÇEK VERİLER"""
     try:
-        log("🔮 API-Football Ultra'dan gerçek verilerle tahminler alınıyor...")
+        log("🔮 API-Football Ultra'dan HEDEF LİGLER için tahminler alınıyor...")
         
         # Bugünün maçlarını getir
         today = datetime.now().strftime("%Y-%m-%d")
@@ -5266,16 +5293,16 @@ def get_todays_predictions_enhanced():
             
             log(f"📋 Bugün {len(fixtures)} maç bulundu")
             
-            # Hedef ligleri filtrele (isteğe bağlı)
-            target_leagues = ['Super Lig', 'Premier League', 'La Liga', 'Bundesliga', 'Serie A']
-            
+            target_league_count = 0
             for fixture in fixtures:
                 try:
                     league_name = fixture['league']['name']
                     
-                    # Sadece hedef liglerdeki maçları analiz et (opsiyonel)
-                    if not any(league in league_name for league in target_leagues):
+                    # Sadece hedef liglerdeki maçları analiz et
+                    if not _is_target_league(league_name):
                         continue
+                    
+                    target_league_count += 1
                     
                     # API verileriyle detaylı analiz
                     prediction_data = _analyze_fixture_with_api_data(fixture)
@@ -5283,22 +5310,24 @@ def get_todays_predictions_enhanced():
                     if prediction_data:
                         predictions.append(prediction_data)
                     
-                    # Limit: maksimum 15 maç
-                    if len(predictions) >= 15:
+                    # Limit: maksimum 20 maç
+                    if len(predictions) >= 20:
                         break
                         
                 except Exception as match_error:
                     log(f"❌ Maç işleme hatası: {match_error}")
                     continue
+            
+            log(f"🎯 {target_league_count} hedef lig maçı bulundu")
         
         if not predictions:
-            log("❌ Hiçbir maç için API-Football Ultra'dan tahmin alınamadı")
+            log("❌ HEDEF LİGLERDE hiçbir maç için API-Football Ultra'dan tahmin alınamadı")
             return []
         
         # Güven skoruna göre sırala
         predictions.sort(key=lambda x: x['confidence'], reverse=True)
         
-        log(f"✅ {len(predictions)} maç için API-Football Ultra tahmini hazır")
+        log(f"✅ {len(predictions)} HEDEF LİG maçı için API-Football Ultra tahmini hazır")
         return predictions
         
     except Exception as e:
@@ -5306,7 +5335,7 @@ def get_todays_predictions_enhanced():
         return []  # Fallback YOK - sadece gerçek veriler
 
 def create_email_content_enhanced(predictions):
-    """Tahminler için HTML email içeriği oluştur - SADECE GERÇEK VERİLER"""
+    """Tahminler için HTML email içeriği oluştur - SADECE HEDEF LİGLER"""
     try:
         log("📧 E-posta içeriği oluşturuluyor...")
         
@@ -5320,8 +5349,8 @@ def create_email_content_enhanced(predictions):
             </head>
             <body>
                 <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>⚠️ Bugün için API-Football Ultra verisi bulunamadı</h2>
-                    <p>Bugün analiz edilebilecek maç bulunmuyor veya API erişiminde sorun var.</p>
+                    <h2>⚠️ Bugün HEDEF LİGLER için API-Football Ultra verisi bulunamadı</h2>
+                    <p>Bugün Süper Lig, Premier League, La Liga, Bundesliga, Serie A gibi hedef liglerde analiz edilebilecek maç bulunmuyor.</p>
                     <p><strong>Sadece gerçek API-Football Ultra verileri kullanılmaktadır.</strong></p>
                 </div>
             </body>
@@ -5350,6 +5379,7 @@ def create_email_content_enhanced(predictions):
                 .stats {{ background: #ecf0f1; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 12px; }}
                 .api-info {{ background: #27ae60; color: white; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; }}
                 .goals-pred {{ background: #ffeaa7; padding: 5px; border-radius: 3px; margin: 2px; }}
+                .target-league {{ background: #e74c3c; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px; }}
             </style>
         </head>
         <body>
@@ -5357,13 +5387,13 @@ def create_email_content_enhanced(predictions):
                 <div class="header">
                     <h1>⚽ Günlük Futbol Tahminleri</h1>
                     <p>API-Football Ultra • {datetime.now().strftime('%d.%m.%Y')}</p>
-                    <p>Toplam {len(predictions)} maç tahmini</p>
+                    <p>HEDEF LİGLER • Toplam {len(predictions)} maç tahmini</p>
                 </div>
                 
                 <div class="content">
                     <div class="api-info">
-                        <strong>🔵 GERÇEK API-FOOTBALL ULTRA VERİLERİ</strong><br>
-                        <em>Tüm tahminler sadece gerçek API verileriyle oluşturulmuştur</em>
+                        <strong>🎯 HEDEF LİGLER: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</strong><br>
+                        <em>Sadece gerçek API-Football Ultra verileri kullanılmaktadır</em>
                     </div>
                     <h2>📊 Bugünün Tahminleri</h2>
         """
@@ -5400,7 +5430,7 @@ def create_email_content_enhanced(predictions):
             html += f"""
                     <div class="prediction">
                         <h3>🏆 Maç {i}: {pred['home_team']} vs {pred['away_team']}</h3>
-                        <p class="league">📋 {pred.get('league', 'Bilinmeyen Lig')}</p>
+                        <p class="league">📋 {pred.get('league', 'Bilinmeyen Lig')} <span class="target-league">HEDEF LİG</span></p>
                         <p class="match-time">⏰ Saat: {pred.get('time', 'Belirsiz')}</p>
                         <p><strong>🎯 Tahmin:</strong> {pred['prediction']} {goals_html}</p>
                         <p><strong>📈 Güven Skoru:</strong> 
@@ -5413,6 +5443,7 @@ def create_email_content_enhanced(predictions):
         html += """
                 </div>
                 <div class="footer">
+                    <p>🎯 Sadece HEDEF LİGLER: Süper Lig, Premier League, La Liga, Bundesliga, Serie A</p>
                     <p>⚡ %100 API-Football Ultra Gerçek Verileri</p>
                     <p>⚠️ Fallback mekanizması YOKTUR - Sadece gerçek API verileri kullanılır</p>
                     <p>© 2024 Futbol Tahmin Sistemi</p>
@@ -5427,7 +5458,6 @@ def create_email_content_enhanced(predictions):
         log(f"❌ HTML içerik oluşturma hatası: {e}")
         return f"<html><body><h1>Hata: {e}</h1></body></html>"
 
-# Diğer fonksiyonlar aynı kalacak...
 def send_email_enhanced(subject, html_content, recipients):
     """Geliştirilmiş e-posta gönderimi"""
     try:
@@ -5485,12 +5515,12 @@ def run_daily_predictions_and_email():
         
         predictions = get_todays_predictions_enhanced()
         if not predictions:
-            log("❌ API-Football Ultra'dan tahmin alınamadı - mail gönderilmiyor")
+            log("❌ HEDEF LİGLER için API-Football Ultra'dan tahmin alınamadı - mail gönderilmiyor")
             return
         
         html_content = create_email_content_enhanced(predictions)
         subject = f"⚽ Günlük Futbol Tahminleri - {datetime.now().strftime('%d.%m.%Y')}"
-        recipients = ["example@mail.com"]  # Kendi mail adreslerini ekle
+        recipients = ["gndemirci31@hotmail.com"]  # Mail adresiniz eklendi
         
         send_email_enhanced(subject, html_content, recipients)
         log("✅ Günlük tahmin ve mail gönderimi tamamlandı.")
@@ -5504,5 +5534,7 @@ if __name__ == "__main__":
         run_daily_predictions_and_email()
     except KeyboardInterrupt:
         print("\n🛑 Kullanıcı tarafından durduruldu.")
+    except Exception as e:
+        print(f"❌ Ana sistem hatası: {e}")
     except Exception as e:
         print(f"❌ Ana sistem hatası: {e}")
