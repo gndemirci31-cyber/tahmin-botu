@@ -5625,4 +5625,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n🛑 Kullanıcı tarafından durduruldu.")
     except Exception as e:
-        print(f"❌ Ana sistem hatası: {e}"){e}")
+        print(f"❌ Ana sistem hatası: {e}")
