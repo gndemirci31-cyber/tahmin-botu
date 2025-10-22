@@ -4985,6 +4985,15 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
         return 0
     return round(total_corners / played, 2)
 
+def corners_per_game(stat):
+    if not stat:
+        return None
+    played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
+    total_corners = (((stat.get("corners") or {}).get("total")) or 0)
+    if played == 0:
+        return 0
+    return round(total_corners / played, 2)
+
 
 def cards_per_game(stat):
     if not stat:
