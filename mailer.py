@@ -338,7 +338,7 @@ def get_real_cards_corners_stats(team_id, team_name):
     """Takımın son 5 maçının GERÇEK kart/korner istatistikleri"""
     if not team_id:
         return None
-try:
+    try:
         params = {'team': team_id, 'last': 5, 'status': 'FT'}
         response = _apifoot_get("fixtures", params)
         
@@ -370,16 +370,16 @@ try:
                 'avg_corners': total_corners / match_count,
                 'matches_analyzed': match_count
             }
-except Exception as e:
+    except Exception as e:
         log(f"❌ GERÇEK kart/korner istatistik hatası: {e}")
-    return None
+        return None
 
-# ==================== GÜNCELLENMİŞ ULTRA TAHMİN SİSTEMİ ====================
+    # ==================== GÜNCELLENMİŞ ULTRA TAHMİN SİSTEMİ ====================
 
 def ultra_tahmin_sistemi(date_str):
     """GELİŞTİRİLMİŞ ULTRA TAHMİN - AKILLI TAKIM BULMA İLE"""
     print(f"🎯 GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ BAŞLATILIYOR: {date_str}")
-try:
+    try:
         # Hedef lig ID'leri
         HEDEF_LIG_IDS = ['39','140','135','78','61','88','144','179','203','141','136','79','95','145','2','3','848']
         
@@ -425,7 +425,7 @@ try:
             match_time = "??:??"
             fixture_date = fixture.get('date', '')
             if fixture_date:
-try:
+                try:
                     match_time = datetime.fromisoformat(fixture_date.replace('Z', '+00:00')).strftime('%H:%M')
                 except:
                     match_time = "??:??"
@@ -433,7 +433,7 @@ try:
             print(f"🔮 GELİŞTİRİLMİŞ ULTRA Tahmin: {home_team} vs {away_team}")
             
             # GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ
-try:
+    try:
                 # YENİ: AKILLI TAKIM ID BULMA
                 home_team_id = _find_team_id_smart(home_team, league_id, date_str)
                 away_team_id = _find_team_id_smart(away_team, league_id, date_str)
@@ -498,17 +498,17 @@ try:
                 }
                 
                 ultra_tahminler.append(ultra_tahmin)
-except Exception as e:
+    except Exception as e:
                 print(f"❌ GELİŞTİRİLMİŞ ULTRA tahmin hatası: {e}")
                 continue
         
         print(f"✅ GELİŞTİRİLMİŞ ULTRA tahminleri tamamlandı: {len(ultra_tahminler)} maç")
         return ultra_tahminler
-except Exception as e:
+    except Exception as e:
         print(f"❌ GELİŞTİRİLMİŞ ULTRA sistem hatası: {e}")
         return []
 
-# ==================== EKSİK FONKSİYONLARIN TAMAMLANMASI ====================
+    # ==================== EKSİK FONKSİYONLARIN TAMAMLANMASI ====================
 
 def base_total_goals(area):
     """Lig bazlı gol ortalaması"""
