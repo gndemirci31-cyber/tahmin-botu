@@ -29,7 +29,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 import joblib
-from difflib import SequenceMatcher
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -148,7 +147,6 @@ def _calculate_team_similarity(str1, str2):
         return 1.0
         
     # Basit benzerlik - mailer.py'de SequenceMatcher zaten var
-from difflib import SequenceMatcher
     return SequenceMatcher(None, str1_norm, str2_norm).ratio()
 
 def _get_league_teams_for_date(league_id, date_str, season):
@@ -4487,7 +4485,6 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
             return total / played if total > 0 else None
         
         def corners_per_game(stat):
-            pass
     if not stat:
         return None
     played = (((stat.get("fixtures") or {}).get("played") or {}).get("total") or 0)
