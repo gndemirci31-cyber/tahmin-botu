@@ -4475,7 +4475,9 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
                 return None
             cards = (stat.get("cards") or {})
             total = 0.0
-            for v in cards.values():
+
+try:
+    for v in cards.values():
                 t = v.get("total")
                 if t is None:
                     continue
@@ -4483,9 +4485,8 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
                 if t is not None:
                     total += t
     return total / played if total > 0 else None
-    except Exception as e:
-        return None
     
+
 
 def corners_per_game(stat):
     if not stat:
@@ -4494,7 +4495,10 @@ def corners_per_game(stat):
     total_corners = ((stat.get("corners") or {}).get("total") or 0)
     if played == 0:
         return 0
-    return round(total_corners / played, 2)def _fd_team_matches(team_id, days=120):
+    return round(total_corners / played, 2)
+
+
+def _fd_team_matches(team_id, days=120):
     """Takım maçlarını getir - GÜNCELLENDİ"""
     # Football-Data.org kaldırıldı, sadece API-Football kullan
     return []
