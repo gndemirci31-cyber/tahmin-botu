@@ -79,7 +79,7 @@ _API_LEAGUE_MAP = {
 
 def _find_team_id_smart(team_name, league_id, date_str, season="2025"):
     """GÜNCELLENDİ: AKILLI TAKIM ID BULMA - BENZERLİK TABANLI"""
-    try:
+try:
         # 1. Tarihteki lig maçlarını getir
         params = {"date": date_str, "league": league_id}
         response = _apifoot_get("fixtures", params)
@@ -133,8 +133,7 @@ def _find_team_id_smart(team_name, league_id, date_str, season="2025"):
         else:
             # Benzerlik yoksa global arama
             return _find_team_id_global(team_name)
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ Akıllı takım ID bulma hatası: {e}")
         return _find_team_id_global(team_name)
 
@@ -151,7 +150,7 @@ def _calculate_team_similarity(str1, str2):
 
 def _get_league_teams_for_date(league_id, date_str, season):
     """Tahmin tarihindeki ligdeki tüm takımları getir"""
-    try:
+try:
         # API-Football'dan lig takımlarını çek
         params = {
             "league": league_id,
@@ -164,8 +163,7 @@ def _get_league_teams_for_date(league_id, date_str, season):
         else:
             # Fallback: basit takım listesi
             return []
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ Lig takımları getirme hatası: {e}")
         return []
 
@@ -179,8 +177,7 @@ def get_detailed_team_form_enhanced(team_id, team_name, min_matches=5):
     """GELİŞTİRİLMİŞ FORM VERİSİ - TÜM MAÇLAR (LİG FARKETMEZ)"""
     if not team_id:
         return None
-        
-    try:
+try:
         # Son 15 maçı getir (lig farketmez)
         params = {
             'team': team_id,
@@ -265,8 +262,7 @@ def get_detailed_team_form_enhanced(team_id, team_name, min_matches=5):
             'btts_percent': round((btts / total_matches) * 100, 1) if total_matches > 0 else 0,
             'goal_difference': goals_for - goals_against
         }
-        
-    except Exception as e:
+except Exception as e:
         log(f"❌ Geliştirilmiş takım form hatası: {e}")
         return None
 
@@ -274,7 +270,7 @@ def get_detailed_team_form_enhanced(team_id, team_name, min_matches=5):
 
 def get_cards_corners_numeric(home_team, away_team, home_form, away_form):
     """GERÇEK API verilerine göre kart/korner tahmini - 3,5/7,5 formatında"""
-    try:
+try:
         # Önce takım ID'lerini bul
         home_team_id = _apifoot_find_team_id(home_team)
         away_team_id = _apifoot_find_team_id(away_team)
@@ -298,12 +294,11 @@ def get_cards_corners_numeric(home_team, away_team, home_form, away_form):
                 'p_cards_35': p_cards_35,
                 'p_corners_75': p_corners_75
             }
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ GERÇEK kart/korner tahmini hatası: {e}")
     
     # Fallback: mevcut sistem
-    try:
+try:
         league = "super lig"
         base_cards = LEAGUE_CARD_BASE.get(league, 4.6)
         base_corners = LEAGUE_CORNER_BASE.get(league, 9.2)
@@ -330,8 +325,7 @@ def get_cards_corners_numeric(home_team, away_team, home_form, away_form):
             'p_cards_35': poisson_over_prob(cards_mu, 3.5),
             'p_corners_75': poisson_over_prob(corners_mu, 7.5)
         }
-        
-    except Exception as e:
+except Exception as e:
         log(f"❌ Fallback kart/korner hatası: {e}")
         return {
             'cards_mu': 4.6,
@@ -344,8 +338,7 @@ def get_real_cards_corners_stats(team_id, team_name):
     """Takımın son 5 maçının GERÇEK kart/korner istatistikleri"""
     if not team_id:
         return None
-        
-    try:
+try:
         params = {'team': team_id, 'last': 5, 'status': 'FT'}
         response = _apifoot_get("fixtures", params)
         
@@ -377,8 +370,7 @@ def get_real_cards_corners_stats(team_id, team_name):
                 'avg_corners': total_corners / match_count,
                 'matches_analyzed': match_count
             }
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ GERÇEK kart/korner istatistik hatası: {e}")
     return None
 
@@ -387,8 +379,7 @@ def get_real_cards_corners_stats(team_id, team_name):
 def ultra_tahmin_sistemi(date_str):
     """GELİŞTİRİLMİŞ ULTRA TAHMİN - AKILLI TAKIM BULMA İLE"""
     print(f"🎯 GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ BAŞLATILIYOR: {date_str}")
-    
-    try:
+try:
         # Hedef lig ID'leri
         HEDEF_LIG_IDS = ['39','140','135','78','61','88','144','179','203','141','136','79','95','145','2','3','848']
         
@@ -434,7 +425,7 @@ def ultra_tahmin_sistemi(date_str):
             match_time = "??:??"
             fixture_date = fixture.get('date', '')
             if fixture_date:
-                try:
+try:
                     match_time = datetime.fromisoformat(fixture_date.replace('Z', '+00:00')).strftime('%H:%M')
                 except:
                     match_time = "??:??"
@@ -442,7 +433,7 @@ def ultra_tahmin_sistemi(date_str):
             print(f"🔮 GELİŞTİRİLMİŞ ULTRA Tahmin: {home_team} vs {away_team}")
             
             # GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ
-            try:
+try:
                 # YENİ: AKILLI TAKIM ID BULMA
                 home_team_id = _find_team_id_smart(home_team, league_id, date_str)
                 away_team_id = _find_team_id_smart(away_team, league_id, date_str)
@@ -507,15 +498,13 @@ def ultra_tahmin_sistemi(date_str):
                 }
                 
                 ultra_tahminler.append(ultra_tahmin)
-                
-            except Exception as e:
+except Exception as e:
                 print(f"❌ GELİŞTİRİLMİŞ ULTRA tahmin hatası: {e}")
                 continue
         
         print(f"✅ GELİŞTİRİLMİŞ ULTRA tahminleri tamamlandı: {len(ultra_tahminler)} maç")
         return ultra_tahminler
-        
-    except Exception as e:
+except Exception as e:
         print(f"❌ GELİŞTİRİLMİŞ ULTRA sistem hatası: {e}")
         return []
 
@@ -546,8 +535,7 @@ def _apifoot_find_team_id(team_name):
     cache_key = team_name.lower()
     if cache_key in _apifoot_team_cache:
         return _apifoot_team_cache[cache_key]
-    
-    try:
+try:
         # Takım arama
         params = {"search": team_name}
         response = requests.get(
@@ -563,7 +551,7 @@ def _apifoot_find_team_id(team_name):
                 team_id = data['response'][0]['team']['id']
                 _apifoot_team_cache[cache_key] = team_id
                 return team_id
-    except Exception as e:
+except Exception as e:
         log(f"Team ID bulma hatası: {e}")
     
     return None
@@ -655,14 +643,13 @@ def _apifoot_team_statistics(league_id, season, team_id):
     cache_key = (league_id, season, team_id)
     if cache_key in _apifoot_stat_cache:
         return _apifoot_stat_cache[cache_key]
-    
-    try:
+try:
         params = {"league": league_id, "season": season, "team": team_id}
         response = _apifoot_get("teams/statistics", params)
         if response:
             _apifoot_stat_cache[cache_key] = response
             return response
-    except Exception as e:
+except Exception as e:
         log(f"Team statistics error: {e}")
         # Fallback: basit istatistikler
         fallback_stats = {
@@ -688,7 +675,7 @@ def enhanced_clear_old_cache():
 
 def get_ai_predictions_detailed(fixture_id):
     """API-Football'dan AI tahminlerini al - basitleştirilmiş"""
-    try:
+try:
         if not APIFOOT or not fixture_id:
             return {'winner': 'Belirsiz', 'win_probability': {}, 'advice': 'Veri yok'}
         
@@ -705,7 +692,7 @@ def get_ai_predictions_detailed(fixture_id):
                 'draw_percent': prediction.get('percent', {}).get('draw', '0'), 
                 'away_percent': prediction.get('percent', {}).get('away', '0')
             }
-    except Exception as e:
+except Exception as e:
         print(f"❌ AI tahmin hatası: {e}")
     
     # Fallback değerler
@@ -722,8 +709,7 @@ def _ultra_gercek_sistem_tahmini_entegre(home_form_data, away_form_data, ai_pred
     """Ultra sistem tahmini - form bazlı basit tahmin"""
     if not home_form_data or not away_form_data:
         return "Veri yok", 50
-    
-    try:
+try:
         home_power = home_form_data.get('form', 50)
         away_power = away_form_data.get('form', 50)
         
@@ -751,14 +737,13 @@ def _ultra_gercek_sistem_tahmini_entegre(home_form_data, away_form_data, ai_pred
                 confidence -= 3  # AI ile uyumsuzluk -3%
                 
         return pick, min(95, max(40, confidence))
-        
-    except Exception as e:
+except Exception as e:
         print(f"❌ Ultra tahmin hatası: {e}")
         return "Hata", 50
 
 def calculate_standardized_predictions(home_team, away_team, home_form_data, away_form_data, ai_pred):
     """Standart tahmin hesaplama - gol/kart/korner olasılıkları"""
-    try:
+try:
         if not home_form_data or not away_form_data:
             return {
                 'home_goals_1_5': 50, 'over_2_5': 45, 'over_3_5': 30,
@@ -794,8 +779,7 @@ def calculate_standardized_predictions(home_team, away_team, home_form_data, awa
             'cards': cards_prob,
             'corners': corners_prob
         }
-        
-    except Exception as e:
+except Exception as e:
         print(f"❌ Standart tahmin hatası: {e}")
         return {
             'home_goals_1_5': 50, 'over_2_5': 45, 'over_3_5': 30,
@@ -817,8 +801,7 @@ def get_detailed_team_form(team_id, league_id):
         'last': 8,  # Son 8 maç
         'status': 'FT'
     }
-    
-    try:
+try:
         response = requests.get(url, headers=HEADERS, params=params, timeout=30)
         data = response.json()
         
@@ -886,8 +869,7 @@ def get_detailed_team_form(team_id, league_id):
             'over_35_percent': round((over_35 / total_matches) * 100, 1) if total_matches > 0 else 0,
             'btts_percent': round((btts / total_matches) * 100, 1) if total_matches > 0 else 0
         }
-        
-    except Exception as e:
+except Exception as e:
         print(f"❌ Detaylı takım form hesaplama hatası: {e}")
         return None
 
@@ -939,7 +921,7 @@ def calculate_enhanced_confidence(home_form_data, away_form_data, ai_pred, predi
     """YENİ: GELİŞTİRİLMİŞ GÜVEN SKORU"""
     if not home_form_data or not away_form_data:
         return 50
-    try:
+try:
         base_conf = 55
         diff = abs(home_form_data['form'] - away_form_data['form'])
         form_bonus = min(20, diff / 2)
@@ -951,7 +933,7 @@ def calculate_enhanced_confidence(home_form_data, away_form_data, ai_pred, predi
         pred_bonus = (predictions.get('over_2_5', 50) - 50) / 5
         total_conf = base_conf + form_bonus + goal_bonus + ai_bonus + pred_bonus
         return int(max(40, min(95, total_conf)))
-    except Exception as e:
+except Exception as e:
         print(f"❌ Geliştirilmiş güven hesaplama hatası: {e}")
         return 50
 
@@ -1331,7 +1313,7 @@ def log(msg):
 
 def get_api_football_fixtures(date_str):
     """SEZONSUZ - 14 LİG + KADIN/U21 FİLTRELEME"""
-    try:
+try:
         url = f"https://v3.football.api-sports.io/fixtures?date={date_str}"
         response = requests.get(url, headers=HEADERS)
         
@@ -1384,19 +1366,18 @@ def get_api_football_fixtures(date_str):
         else:
             log(f"❌ API Error: {response.status_code}")
             return []
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ API error: {e}")
         return []
 
 def get_fixtures_from_apis(date_str):
     """SADECE API-FOOTBALL KULLAN"""
-    try:
+try:
         log(f"🔍 API-Football maçları aranıyor: {date_str}")
         fixtures = get_api_football_fixtures(date_str)  #
         log(f"✅ API-Football sonuç: {len(fixtures)} maç")
         return fixtures
-    except Exception as e:
+except Exception as e:
         log(f"❌ API-Football hatası: {e}")
         return []
 
@@ -1471,7 +1452,7 @@ def _apifoot_get(path, params):
     """API-Football API çağrısı - EKSİK FONKSİYON EKLENDİ"""
     if not APIFOOT:
         return None
-    try:
+try:
         url = f"{APIFOOTBALL_BASE_URL}{path.lstrip('/')}"
         response = requests.get(
             url, 
@@ -1481,13 +1462,13 @@ def _apifoot_get(path, params):
         )
         if response.status_code == 200:
             return response.json().get("response", None)
-    except Exception as e:
+except Exception as e:
         log(f"apifoot GET err: {e}")
         return None
 
 def calculate_value_advantage(home_team, away_team, area):
     """Takım değeri avantajı hesaplar - EKSİK FONKSİYON EKLENDİ"""
-    try:
+try:
         home_value, home_source = get_team_value(home_team, area)
         away_value, away_source = get_team_value(away_team, area)
         
@@ -1498,13 +1479,13 @@ def calculate_value_advantage(home_team, away_team, area):
         advantage = math.log(value_ratio) * 0.1  # Log scale advantage
         
         return clamp(advantage, -0.15, 0.15), f"VALUE_{home_source}_{away_source}"
-    except Exception as e:
+except Exception as e:
         log(f"Value advantage calculation error: {e}")
         return 0.0, "ERROR"
 
 def make_prediction(date_str):
     """Tahmin yapma fonksiyonu - EKSİK FONKSİYON EKLENDİ"""
-    try:
+try:
         fixtures = universal_collector.fetch_fixtures_universal(date_str)
         predictions = []
         
@@ -1523,7 +1504,7 @@ def make_prediction(date_str):
             })
         
         return predictions
-    except Exception as e:
+except Exception as e:
         log(f"Make prediction error: {e}")
         return []
 
@@ -1550,7 +1531,7 @@ def debug_api_connection():
 
 def test_api_connection():
     """API bağlantı testi - YENİ EKLENDİ"""
-    try:
+try:
         url = f"{APIFOOTBALL_BASE_URL}status"
         response = requests.get(
             url, 
@@ -1558,7 +1539,7 @@ def test_api_connection():
             timeout=30
         )
         return response.status_code == 200
-    except Exception as e:
+except Exception as e:
         log(f"API connection test error: {e}")
         return False
 
@@ -2012,8 +1993,7 @@ def _apifootball_get(feature_type, params):
         return None
         
     url = f"{APIFOOTBALL_BASE_URL}{endpoint}"
-    
-    try:
+try:
         response = requests.get(
             url, 
             headers=HEADERS, 
@@ -2022,7 +2002,7 @@ def _apifootball_get(feature_type, params):
         )
         if response.status_code == 200:
             return response.json().get('response', [])
-    except Exception as e:
+except Exception as e:
         log(f"API-Football GET error: {e}")
     
     return None
@@ -2034,7 +2014,7 @@ def get_head_to_head(home_team_id, away_team_id):
 
 def get_api_predictions(fixture_id):
     """API-Football tahmin endpointine istek"""
-    try:
+try:
         url = f"{APIFOOTBALL_BASE_URL}predictions"
         params = {'fixture': fixture_id}
         r = requests.get(url, headers=HEADERS, params=params, timeout=20)
@@ -2043,7 +2023,7 @@ def get_api_predictions(fixture_id):
             return data.get('response', [])
         else:
             print(f"⚠️ Tahmin isteği başarısız: {r.status_code}")
-    except Exception as e:
+except Exception as e:
         print(f"❌ API tahmin hatası: {e}")
     return []
 
@@ -2077,7 +2057,7 @@ def get_fixture_statistics(fixture_id):
 
 def find_fixture_id(area, comp, home, away):
     """API-Football'dan fixture ID bulur"""
-    try:
+try:
         if not APIFOOT:
             return None
             
@@ -2124,8 +2104,7 @@ def find_fixture_id(area, comp, home, away):
                 
                 if home_sim >= 0.8 and away_sim >= 0.8:
                     return fixture.get('fixture', {}).get('id')
-                    
-    except Exception as e:
+except Exception as e:
         log(f"Fixture ID bulma hatası: {e}")
     
     return None
@@ -2223,7 +2202,7 @@ def get_league_id_for_country(country, competition):
 
 def parse_apifootball_odds(response):
     """API-Football odds verisini parse eder"""
-    try:
+try:
         if not response or len(response) == 0:
             return None
             
@@ -2259,15 +2238,14 @@ def parse_apifootball_odds(response):
                 "odds": (avg_home, avg_draw, avg_away),
                 "probs": (prob_home, prob_draw, prob_away)
             }
-            
-    except Exception as e:
+except Exception as e:
         log(f"API-Football odds parse hatası: {e}")
     
     return None
 
 def parse_apifootball_standings(response):
     """API-Football standings verisini parse eder"""
-    try:
+try:
         standings_data = {}
         
         for league_data in response:
@@ -2288,8 +2266,7 @@ def parse_apifootball_standings(response):
                         }
         
         return standings_data
-        
-    except Exception as e:
+except Exception as e:
         log(f"API-Football standings parse hatası: {e}")
         return {}
 
@@ -2309,13 +2286,12 @@ class UniversalDataCollector:
         fixtures = []
         
         for source in self.fallback_chain:
-            try:
+try:
                 source_fixtures = self.data_sources[source](date_str, country, competition)
                 if source_fixtures:
                     fixtures.extend(source_fixtures)
                     log(f"✅ {source}: {len(source_fixtures)} fixture bulundu")
-                        
-            except Exception as e:
+except Exception as e:
                 log(f"❌ {source} hatası: {e}")
                 continue
         
@@ -2334,8 +2310,7 @@ class UniversalDataCollector:
         
         # Tüm maçları çek (lig parametresi YOK)
         params = {"date": date_str}
-        
-        try:
+try:
             response = requests.get(
                 f"{APIFOOTBALL_BASE_URL}fixtures",
                 headers=HEADERS,
@@ -2354,7 +2329,7 @@ class UniversalDataCollector:
                                 fixtures.append(fixture)
                             
                     log(f"🎯 API-Football: {len(data['response'])} maç → {len(fixtures)} hedef lig maçı")
-        except Exception as e:
+except Exception as e:
             log(f"API-Football fixture error: {e}")
         
         return fixtures
@@ -2384,7 +2359,7 @@ class UniversalDataCollector:
     
     def _parse_apifootball_fixture(self, item):
         """API-Football fixture parse"""
-        try:
+try:
             fixture_data = item.get('fixture', {})
             league_data = item.get('league', {})
             teams_data = item.get('teams', {})
@@ -2408,7 +2383,7 @@ class UniversalDataCollector:
                 "competition_id": league_data.get('id'),
                 "id": f"apif_universal:{fixture_data.get('id')}",
             }
-        except Exception as e:
+except Exception as e:
             log(f"APIF universal parse hatası: {e}")
             return None
     
@@ -2449,8 +2424,7 @@ class WeatherAPIProvider:
             cached_data, timestamp = self.cache[cache_key]
             if current_time - timestamp < self.cache_ttl:
                 return cached_data
-        
-        try:
+try:
             if not self.api_key:
                 return self._get_fallback_weather(city_name)
             
@@ -2483,7 +2457,7 @@ class WeatherAPIProvider:
         except requests.exceptions.Timeout:
             log(f"⏰ WeatherAPI timeout: {city_name}")
             return self._get_fallback_weather(city_name)
-        except Exception as e:
+except Exception as e:
             log(f"❌ WeatherAPI genel hata: {e}")
             return self._get_fallback_weather(city_name)
     
@@ -2594,7 +2568,7 @@ class FootballEnsemble:
         features['value_ratio'] = home_value / max(away_value, 0.1)
         
         # 2. API-Football Feature'ları
-        try:
+try:
             # Head-to-Head verisi
             h2h_features = self._get_head_to_head_features(fx)
             features.update(h2h_features)
@@ -2610,8 +2584,7 @@ class FootballEnsemble:
             # Detaylı istatistikler
             stat_features = self._get_statistical_features(fx)
             features.update(stat_features)
-            
-        except Exception as e:
+except Exception as e:
             log(f"API-Football feature hatası: {e}")
             # Fallback değerler
             features.update(self._get_fallback_features())
@@ -2631,7 +2604,7 @@ class FootballEnsemble:
     def _get_head_to_head_features(self, fx):
         """Head-to-Head feature'ları"""
         features = {}
-        try:
+try:
             home_id = _apifoot_find_team_id(fx["home"])
             away_id = _apifoot_find_team_id(fx["away"])
             
@@ -2646,8 +2619,7 @@ class FootballEnsemble:
                         features['h2h_away_win_rate'] = away_wins / total_matches 
                         features['h2h_draw_rate'] = draws / total_matches
                         features['h2h_total_matches'] = total_matches
-        
-        except Exception as e:
+except Exception as e:
             log(f"H2H feature hatası: {e}")
             
         return features
@@ -2655,7 +2627,7 @@ class FootballEnsemble:
     def _get_player_features(self, fx):
         """Oyuncu ve sakatlık feature'ları"""
         features = {}
-        try:
+try:
             fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
             
             if fixture_id:
@@ -2672,8 +2644,7 @@ class FootballEnsemble:
                     scorers = get_top_scorers(league_id, season)
                     features['home_top_scorer_presence'] = self._check_top_scorer_presence(scorers, fx["home"])
                     features['away_top_scorer_presence'] = self._check_top_scorer_presence(scorers, fx["away"])
-        
-        except Exception as e:
+except Exception as e:
             log(f"Player feature hatası: {e}")
             
         return features
@@ -2681,15 +2652,14 @@ class FootballEnsemble:
     def _get_transfer_features(self, fx):
         """Transfer feature'ları"""
         features = {}
-        try:
+try:
             home_id = _apifoot_find_team_id(fx["home"])
             away_id = _apifoot_find_team_id(fx["away"])
             
             # Transfer hareketliliği (basit implementasyon)
             features['home_transfer_activity'] = random.uniform(0, 1)  # Geçici
             features['away_transfer_activity'] = random.uniform(0, 1)  # Geçici
-            
-        except Exception as e:
+except Exception as e:
             log(f"Transfer feature hatası: {e}")
             
         return features
@@ -2697,7 +2667,7 @@ class FootballEnsemble:
     def _get_statistical_features(self, fx):
         """İstatistik feature'ları"""
         features = {}
-        try:
+try:
             fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
             
             if fixture_id:
@@ -2705,8 +2675,7 @@ class FootballEnsemble:
                 if stats:
                     # İstatistikleri parse et ve feature'lara dönüştür
                     features.update(self._parse_statistics(stats))
-        
-        except Exception as e:
+except Exception as e:
             log(f"Statistics feature hatası: {e}")
             
         return features
@@ -2788,8 +2757,7 @@ class FootballEnsemble:
         if not training_data:
             log("❌ Eğitim verisi yok")
             return False
-            
-        try:
+try:
             # Feature ve target'ları ayır
             X = [item['features'] for item in training_data]
             y = [item['result'] for item in training_data]
@@ -2812,8 +2780,7 @@ class FootballEnsemble:
             
             self.is_trained = True
             return True
-            
-        except Exception as e:
+except Exception as e:
             log(f"❌ Model eğitim hatası: {e}")
             return False
     
@@ -2821,8 +2788,7 @@ class FootballEnsemble:
         """Ensemble tahmini yapar"""
         if not self.is_trained:
             return None, 0.0
-            
-        try:
+try:
             # Feature'ları düzenle
             X = np.array([[features.get(name, 0) for name in self.feature_names]])
             X_scaled = self.scaler.transform(X)
@@ -2840,8 +2806,7 @@ class FootballEnsemble:
             confidence = np.max(ensemble_proba)
             
             return ensemble_proba, confidence
-            
-        except Exception as e:
+except Exception as e:
             log(f"❌ Ensemble tahmin hatası: {e}")
             return None, 0.0
 
@@ -2850,24 +2815,24 @@ ensemble_system = FootballEnsemble()
 
 def load_ensemble_model():
     """Ensemble modelini diskten yükler"""
-    try:
+try:
         model_path = "ensemble_model.pkl"
         if os.path.exists(model_path):
             global ensemble_system
             ensemble_system = joblib.load(model_path)
             log("✅ Ensemble modeli yüklendi")
             return True
-    except Exception as e:
+except Exception as e:
         log(f"❌ Ensemble model yükleme hatası: {e}")
     return False
 
 def save_ensemble_model():
     """Ensemble modelini diske kaydeder"""
-    try:
+try:
         joblib.dump(ensemble_system, "ensemble_model.pkl")
         log("✅ Ensemble modeli kaydedildi")
         return True
-    except Exception as e:
+except Exception as e:
         log(f"❌ Ensemble model kaydetme hatası: {e}")
     return False
 
@@ -2914,24 +2879,24 @@ def rate_fixture_with_ensemble(fx, odds_info):
 
 def get_api_football_prediction(fx):
     """API-Football'ın kendi tahminini al"""
-    try:
+try:
         fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
         if fixture_id:
             prediction_data = get_api_predictions(fixture_id)
             if prediction_data:
                 return parse_api_prediction(prediction_data)
-    except Exception as e:
+except Exception as e:
         log(f"API-Football prediction error: {e}")
     return None
 
 def parse_api_prediction(prediction_data):
     """API-Football tahmin verisini parse et"""
-    try:
+try:
         if prediction_data and len(prediction_data) > 0:
             prediction = prediction_data[0].get('predictions', {})
             if prediction:
                 return prediction.get('winner', {}).get('name')
-    except Exception as e:
+except Exception as e:
         log(f"API prediction parse error: {e}")
     return None
 
@@ -2970,7 +2935,7 @@ def blend_predictions(base_rating, ensemble_pick, ensemble_conf, api_prediction)
 
 def initialize_ensemble_training():
     """Ensemble sistemini geçmiş verilerle eğitir"""
-    try:
+try:
         # Geçmiş tahmin ve sonuç verilerini yükle
         training_data = []
         
@@ -3000,8 +2965,7 @@ def initialize_ensemble_training():
         else:
             log(f"⚠️ Yetersiz eğitim verisi: {len(training_data)} maç")
             return False
-            
-    except Exception as e:
+except Exception as e:
         log(f"❌ Ensemble eğitim hatası: {e}")
         return False
 
@@ -3059,10 +3023,10 @@ def rate_fixture_enhanced(fx, odds_info):
 # ==================== YARDIMCILAR / HELPERS ====================
 
 def http_get(url, headers=None, params=None, timeout=25):
-    try:
+try:
         r = requests.get(url, headers=headers or {}, params=params or {}, timeout=timeout)
         if r.status_code == 200:
-            try:
+try:
                 return r.json()
             except Exception:
                 return None
@@ -3072,12 +3036,12 @@ def http_get(url, headers=None, params=None, timeout=25):
             print("❌ API Key hatası")
         else:
             log(f"GET {url} -> {r.status_code}")
-    except Exception as e:
+except Exception as e:
         log(f"GET ERROR {url}: {e}")
         return None
 
 def to_dt_utc(s):
-    try:
+try:
         if not s:
             return None
         return datetime.fromisoformat(str(s).replace("Z", "+00:00")).astimezone(timezone.utc)
@@ -3085,7 +3049,7 @@ def to_dt_utc(s):
         return None
 
 def safe_float(x, default=None):
-    try:
+try:
         if x is None or x == "":
             return default
         return float(x)
@@ -3107,10 +3071,10 @@ def season_for_today():
 
 def _ensure_dir(p: Path) -> bool:
     """Klasör oluşturur - güvenli versiyon / Create directory - safe version"""
-    try:
+try:
         p.mkdir(parents=True, exist_ok=True)
         return True
-    except Exception as e:
+except Exception as e:
         log(f"[FS] Klasör oluşturulamadı / Directory creation failed: {p} | {e}")
         return False
 
@@ -3118,22 +3082,21 @@ def save_snapshot(predictions: Dict, date: Optional[str] = None) -> None:
     """Tahmin snapshot'ını kaydeder / Saves prediction snapshot - GÜNCELLENDİ"""
     date = date or datetime.now().strftime("%Y-%m-%d")
     snap_dir = Path(SNAPSHOT_DIR)
-    
-    try:
+try:
         # Dizin yoksa oluştur - YENİ EKLENDİ
         if not snap_dir.exists():
             snap_dir.mkdir(parents=True, exist_ok=True)
             log(f"[Snapshot] Dizin oluşturuldu / Directory created: {snap_dir}")
-    except Exception as e:
+except Exception as e:
         log(f"[Snapshot] Klasör oluşturulamadı / Directory creation failed: {snap_dir} | {e}")
         return
     
     path = snap_dir / f"pred_{date}.json"
-    try:
+try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(predictions, f, ensure_ascii=False, indent=2)
         log(f"[Snapshot] Kaydedildi / Saved: {path}")
-    except Exception as e:
+except Exception as e:
         log(f"[Snapshot] Kaydetme hatası / Save error: {e}")
 
 def load_snapshot(date: Optional[str] = None) -> Dict:
@@ -3142,12 +3105,12 @@ def load_snapshot(date: Optional[str] = None) -> Dict:
     path = Path(SNAPSHOT_DIR) / f"pred_{date}.json"
     if not path.exists():
         return {}
-    try:
+try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         log(f"[Snapshot] Yüklendi / Loaded: {path}")
         return data
-    except Exception as e:
+except Exception as e:
         log(f"[Snapshot] Yükleme hatası / Load error: {e}")
         return {}
 
@@ -3246,13 +3209,12 @@ def load_state() -> Dict:
     # Önce dizin kontrolü ve oluşturma
     state_path = Path(STATE_PATH)
     state_dir = state_path.parent
-    
-    try:
+try:
         # Dizin yoksa oluştur - YENİ EKLENDİ
         if not state_dir.exists():
             state_dir.mkdir(parents=True, exist_ok=True)
             log(f"[STATE] Dizin oluşturuldu / Directory created: {state_dir}")
-    except Exception as e:
+except Exception as e:
         log(f"[STATE] Dizin oluşturma hatası / Directory creation error: {e}")
 
     # STATE dosyası yoksa veya kapalıysa snapshot'tan yükle
@@ -3265,8 +3227,7 @@ def load_state() -> Dict:
         _filter_counters["snapshot_used"] += 1
         snapshot_data = load_snapshot()
         return _ensure_state_defaults(snapshot_data)
-    
-    try:
+try:
         with open(state_path, "r", encoding="utf-8") as f:
             state = json.load(f)
         
@@ -3274,8 +3235,7 @@ def load_state() -> Dict:
         state = _ensure_state_defaults(state)
         log(f"[STATE] Başarıyla yüklendi / Successfully loaded: {STATE_PATH}")
         return state
-        
-    except Exception as e:
+except Exception as e:
         log(f"[STATE] Yükleme hatası / Load error: {e}. Snapshot'a düşülüyor / Falling back to snapshot.")
         _filter_counters["snapshot_used"] += 1
         snapshot_data = load_snapshot()
@@ -3286,20 +3246,19 @@ def save_state(state: Dict) -> None:
     if not ALLOW_STATE_FILE:
         log("[STATE] Yazma kapalı (ALLOW_STATE_FILE=0) / Write disabled")
         return
-    
-    try:
+try:
         state["last_saved"] = datetime.utcnow().isoformat() + "Z"
         state_dir = Path(STATE_PATH).parent
         if _ensure_dir(state_dir):
             with open(STATE_PATH, "w", encoding="utf-8") as f:
                 json.dump(state, f, ensure_ascii=False, indent=2)
             log(f"[STATE] Kaydedildi → / Saved → {STATE_PATH}")
-    except Exception as e:
+except Exception as e:
         log(f"[STATE] Kaydetme hatası / Save error: {e}")
 
 def _ensure_state_defaults(state: dict) -> dict:
     """State yapısını kontrol eder ve varsayılan değerleri ekler - GÜNCELLENDİ"""
-    try:
+try:
         if not isinstance(state, dict):
             state = {}
         
@@ -3317,8 +3276,7 @@ def _ensure_state_defaults(state: dict) -> dict:
             state["elo"] = {}
         if "goal_scale" not in state or not isinstance(state["goal_scale"], dict):
             state["goal_scale"] = {}
-            
-    except Exception as e:
+except Exception as e:
         log(f"[STATE] Varsayılan değerler hatası / Default values error: {e}")
         state = {
             "elo": {}, 
@@ -3401,20 +3359,20 @@ TEAM_VALUES_PATH = "team_values.json"
 
 def load_team_values():
     """Takım değerlerini yükler"""
-    try:
+try:
         if os.path.exists(TEAM_VALUES_PATH):
             with open(TEAM_VALUES_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
-    except Exception as e:
+except Exception as e:
         log(f"Takım değerleri yükleme hatası: {e}")
     return {}
 
 def save_team_values(values):
     """Takım değerlerini kaydeder"""
-    try:
+try:
         with open(TEAM_VALUES_PATH, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
-    except Exception as e:
+except Exception as e:
         log(f"Takım değerleri kaydetme hatası: {e}")
 
 # TMAPI KALDIRILDI - SADECE FALLBACK SİSTEMLERİ KALDI
@@ -3461,20 +3419,20 @@ NATIONAL_TEAM_ELO_PATH = "national_elo.json"
 
 def load_national_elo():
     """Milli takım Elo değerlerini yükler"""
-    try:
+try:
         if os.path.exists(NATIONAL_TEAM_ELO_PATH):
             with open(NATIONAL_TEAM_ELO_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
-    except Exception as e:
+except Exception as e:
         log(f"Milli takım Elo yükleme hatası: {e}")
     return {}
 
 def save_national_elo(values):
     """Milli takım Elo değerlerini kaydeder"""
-    try:
+try:
         with open(NATIONAL_TEAM_ELO_PATH, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
-    except Exception as e:
+except Exception as e:
         log(f"Milli takım Elo kaydetme hatası: {e}")
 
 def get_national_elo_proxy(team_name, area="Europe"):
@@ -3569,8 +3527,7 @@ def get_team_value_feature(team_name, country):
 def get_league_features(home_team, away_team, country):
     """Aynı ligdeki takımlar için lig tablosu bilgileri"""
     features = {}
-    
-    try:
+try:
         # YENİ: API Football v3 kullanımı
         standings = get_apifootball_standings(country)
         
@@ -3584,8 +3541,7 @@ def get_league_features(home_team, away_team, country):
             features['away_league_position'] = away_position
             features['position_difference'] = abs(home_position - away_position)
             features['points_difference'] = home_points - away_points
-            
-    except Exception as e:
+except Exception as e:
         log(f"Lig verileri alınamadı: {e}")
     
     return features
@@ -3593,16 +3549,14 @@ def get_league_features(home_team, away_team, country):
 def get_european_features(home_team, away_team):
     """Avrupa kupaları için UEFA katsayıları"""
     features = {}
-    
-    try:
+try:
         home_coeff = get_uefa_coefficient(home_team)
         away_coeff = get_uefa_coefficient(away_team)
         
         features['home_uefa_coefficient'] = home_coeff
         features['away_uefa_coefficient'] = away_coeff
         features['uefa_coeff_ratio'] = home_coeff / max(away_coeff, 0.1)
-        
-    except Exception as e:
+except Exception as e:
         log(f"UEFA verileri alınamadı: {e}")
     
     return features
@@ -3610,8 +3564,7 @@ def get_european_features(home_team, away_team):
 def get_international_features(home_team, away_team):
     """Milli takımlar için FIFA sıralaması"""
     features = {}
-    
-    try:
+try:
         home_rank = get_fifa_ranking(home_team)
         away_rank = get_fifa_ranking(away_team)
         
@@ -3619,8 +3572,7 @@ def get_international_features(home_team, away_team):
         features['away_fifa_rank'] = away_rank
         features['rank_difference'] = home_rank - away_rank
         features['fifa_power_ratio'] = (1/max(home_rank, 1)) / (1/max(away_rank, 1))
-        
-    except Exception as e:
+except Exception as e:
         log(f"FIFA verileri alınamadı: {e}")
     
     return features
@@ -3629,7 +3581,7 @@ def get_international_features(home_team, away_team):
 
 def get_apifootball_standings(country):
     """API-Football'dan lig tablosu - DÜZELTİLDİ"""
-    try:
+try:
         league_id = get_league_id_for_country(country, "")
         if not league_id:
             return None
@@ -3646,15 +3598,14 @@ def get_apifootball_standings(country):
         if response.status_code == 200:
             data = response.json()
             return parse_apifootball_standings(data.get('response', []))
-            
-    except Exception as e:
+except Exception as e:
         log(f"API-Football standings error: {e}")
     
     return None
 
 def get_team_value_apifootball(team_name):
     """API-Football'dan takım değeri"""
-    try:
+try:
         team_id = _apifoot_find_team_id(team_name)
         if not team_id:
             return None
@@ -3670,8 +3621,7 @@ def get_team_value_apifootball(team_name):
             data = response.json()
             if data.get('response'):
                 return data['response'][0].get('team', {}).get('market_value')
-            
-    except Exception as e:
+except Exception as e:
         log(f"API-Football team value error: {e}")
     
     return None
@@ -3690,7 +3640,7 @@ def fetch_odds_dual(area, comp, home, away):
 
 def fetch_odds_apifootball(area, comp, home, away):
     """API-Football'dan oranları al (BİRİNCİL KAYNAK) - DÜZELTİLDİ"""
-    try:
+try:
         # API-Football odds endpoint
         fixture_id = find_fixture_id(area, comp, home, away)
         if not fixture_id:
@@ -3706,8 +3656,7 @@ def fetch_odds_apifootball(area, comp, home, away):
         if response.status_code == 200:
             data = response.json()
             return parse_apifootball_odds(data.get('response', []))
-            
-    except Exception as e:
+except Exception as e:
         log(f"API-Football odds error: {e}")
     
     return None
@@ -3716,20 +3665,20 @@ def fetch_odds_apifootball(area, comp, home, away):
 
 def get_fifa_ranking_backup(team_name):
     """FIFA sıralaması yedek - Kaggle CSV"""
-    try:
+try:
         # Kaggle dataset veya statik CSV
         rankings = load_fifa_rankings_from_csv()
         return rankings.get(team_name, 50)
-    except Exception as e:
+except Exception as e:
         log(f"FIFA ranking backup error: {e}")
         return 50
 
 def get_uefa_coefficient_backup(team_name):
     """UEFA katsayıları yedek - web scraping"""
-    try:
+try:
         coefficients = scrape_uefa_coefficients()
         return coefficients.get(team_name, 10.0)
-    except Exception as e:
+except Exception as e:
         log(f"UEFA coefficient backup error: {e}")
         return 10.0
 
@@ -3884,7 +3833,7 @@ def generate_feature_notes(features, match_type):
 # 3. Eşleştirme Toleransı / Matching Tolerance
 def match_with_tolerance(team1: str, team2: str, date1: str, date2: str, tolerance_days: int = 2) -> bool:
     """Takım ve tarih eşleştirme toleransı / Team and date matching with tolerance"""
-    try:
+try:
         date_obj1 = datetime.strptime(date1, "%Y-%m-%d")
         date_obj2 = datetime.strptime(date2, "%Y-%m-%d")
         days_diff = abs((date_obj2 - date_obj1).days)
@@ -4104,19 +4053,18 @@ def get_cards_corners_apifootball(area, comp, home_team, away_team):
     """API-Football'dan kart ve korner verileri"""
     if not APIFOOT:
         return None, "APIF"
-    
-    try:
+try:
         hint = _apifoot_hint_cards_corners(area, comp, home_team, away_team)
         if hint:
             return hint, "APIF"
-    except Exception as e:
+except Exception as e:
         log(f"API-Football kart/korner hatası: {e}")
     
     return None, "APIF"
 
 def get_cards_corners_totalcorner(area, comp, home_team, away_team):
     """TotalCorner fallback - sadece korner verisi"""
-    try:
+try:
         # TotalCorner API simulasyonu (gerçek API entegrasyonu için güncellenmeli)
         # Bu örnekte lig ortalamaları döndürüyoruz
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
@@ -4125,13 +4073,13 @@ def get_cards_corners_totalcorner(area, comp, home_team, away_team):
         corners = corner_base * random.uniform(0.9, 1.1)
         
         return {"mu_corners_hint": corners}, "TC"
-    except Exception as e:
+except Exception as e:
         log(f"TotalCorner hatası: {e}")
         return None, "TC"
 
 def get_cards_corners_footystats(area, comp, home_team, away_team):
     """FootyStats fallback - lig ortalamaları"""
-    try:
+try:
         # FootyStats lig ortalamaları
         cards_base = base_from_area(area, LEAGUE_CARD_BASE, 4.6)
         corner_base = base_from_area(area, LEAGUE_CORNER_BASE, 9.2)
@@ -4140,7 +4088,7 @@ def get_cards_corners_footystats(area, comp, home_team, away_team):
             "mu_cards_hint": cards_base,
             "mu_corners_hint": corner_base
         }, "FS"
-    except Exception as e:
+except Exception as e:
         log(f"FootyStats hatası: {e}")
         return None, "FS"
 
@@ -4439,7 +4387,7 @@ def parse_weather(wx_text):
     if not wx_text:
         return (None, None)
     wind = None; precip = None
-    try:
+try:
         if "rüzgâr" in wx_text:
             wind = safe_float(wx_text.split("rüzgâr")[1].split("km/s")[0].strip().split()[-1], None)
         if "yağış" in wx_text:
@@ -4460,7 +4408,7 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
     if not lig_id:
         return None
     ssn = season_for_today()
-    try:
+try:
         h_id = _apifoot_find_team_id(home)
         a_id = _apifoot_find_team_id(away)
         h_stat = _apifoot_team_statistics(lig_id, ssn, h_id) if h_id else None
@@ -4483,9 +4431,8 @@ def _apifoot_hint_cards_corners(area, comp, home, away):
                 if t is not None:
                     total += t
     return total / played if total > 0 else None
-    
-
-
+except Exception as e:
+        return None
 def corners_per_game(stat):
     if not stat:
         return None
@@ -4514,7 +4461,7 @@ def _apifoot_standings(league_id, season):
         return _APIF_STANDINGS_CACHE[key]
     resp = _apifoot_get("standings", {"league": league_id, "season": season})
     by_id = {}; total = None
-    try:
+try:
         lg = ((resp or [{}])[0] or {}).get("league", {}) if resp else {}
         groups = lg.get("standings") or []
         table = groups[0] if groups else []
@@ -4528,7 +4475,7 @@ def _apifoot_standings(league_id, season):
             _APIF_STANDINGS_CACHE[key] = {"total_teams": total, "by_id": by_id}
         else:
             _APIF_STANDINGS_CACHE[key] = None
-    except Exception as e:
+except Exception as e:
         log(f"apif standings parse err: {e}")
         _APIF_STANDINGS_CACHE[key] = None
     return _APIF_STANDINGS_CACHE[key]
@@ -4619,7 +4566,7 @@ def original_rate_fixture(fx, odds_info):
     wx_adj = 1.0
     if wx:
         wind, precip = parse_weather(wx)
-        try:
+try:
             if wind is not None:
                 wx_adj -= min(0.08, 0.003 * wind)
             if precip is not None:
@@ -4849,7 +4796,7 @@ def record_prediction(fx, rated, model_probs, market_probs, blended_probs, wx_ad
 def send_mail(subject, body):
 
     # Sürüm etiketi ve zaman damgası
-    try:
+try:
         stamp = datetime.now(TR_TZ).strftime("%Y-%m-%d %H:%M")
         subject = f"{subject} · {MODEL_VERSION} · {stamp}"
     except Exception:
@@ -5026,7 +4973,7 @@ def report_predictions(date_str):
     """
     Tahmin raporlama fonksiyonu - make_prediction'ı çağırır ve email gönderir
     """
-    try:
+try:
         prediction_result = make_prediction(date_str)
         if prediction_result:
             # Başarılı tahmin işlemleri
@@ -5045,7 +4992,7 @@ def report_predictions(date_str):
             # Tahmin başarısız
             log_prediction_failure()
             return None
-    except Exception as e:
+except Exception as e:
         print(f"Report prediction error: {e}")
         return None
 
@@ -5136,7 +5083,7 @@ def initialize_external_data_state():
 
 def update_team_values():
     """Takım değerlerini otomatik günceller"""
-    try:
+try:
         # Örnek takımların değerlerini güncelle
         sample_teams = ["Galatasaray", "Fenerbahçe", "Beşiktaş", "Trabzonspor"]
         for team in sample_teams:
@@ -5145,12 +5092,12 @@ def update_team_values():
             
         STATE["external_data"]["last_updated"]["team_values"] = datetime.now().isoformat()
         log("✅ Takım değerleri güncellendi")
-    except Exception as e:
+except Exception as e:
         log(f"❌ Takım değerleri güncelleme hatası: {e}")
 
 def update_fifa_rankings():
     """FIFA sıralamalarını günceller (basit versiyon)"""
-    try:
+try:
         # Örnek milli takım sıralamaları
         national_teams = {
             "Turkey": 40, "Germany": 16, "France": 2, "Brazil": 5,
@@ -5160,12 +5107,12 @@ def update_fifa_rankings():
         STATE["external_data"]["fifa_rankings"] = national_teams
         STATE["external_data"]["last_updated"]["fifa_rankings"] = datetime.now().isoformat()
         log("✅ FIFA sıralamaları güncellendi")
-    except Exception as e:
+except Exception as e:
         log(f"❌ FIFA sıralamaları güncelleme hatası: {e}")
 
 def update_uefa_coefficients():
     """UEFA katsayılarını günceller (basit versiyon)"""
-    try:
+try:
         # Örnek UEFA katsayıları
         uefa_coeffs = {
             "Galatasaray": 25.0, "Fenerbahçe": 20.0, "Beşiktaş": 18.0,
@@ -5175,14 +5122,14 @@ def update_uefa_coefficients():
         STATE["external_data"]["uefa_coefficients"] = uefa_coeffs
         STATE["external_data"]["last_updated"]["uefa_coefficients"] = datetime.now().isoformat()
         log("✅ UEFA katsayıları güncellendi")
-    except Exception as e:
+except Exception as e:
         log(f"❌ UEFA katsayıları güncelleme hatası: {e}")
 
 # ==================== ANA ÇALIŞTIRMA ====================
 
 def main():
     """Ana çalıştırma fonksiyonu - Ensemble entegreli"""
-    try:
+try:
         global STATE
         STATE = load_state()
         
@@ -5207,21 +5154,19 @@ def main():
         
         # Service Loop'u çalıştır
         run_service_loop()
-            
-    except Exception as e:
+except Exception as e:
         log(f"Main execution error: {e}")
         raise
 
 def fix_results_schedule():
     """Sonuç raporu schedule düzeltmesi"""
-    try:
+try:
         now_tr = datetime.now(TR_TZ)
         yesterday = _yesterday_str_tr(now_tr)
         
         # Dünün maçlarını bul ve sonuçları raporla
         fetch_results(yesterday)
-        
-    except Exception as e:
+except Exception as e:
         log(f"Results schedule fix error: {e}")
 
 # ==================== MEVCUT KODA ENTEGRASYON ====================
@@ -5276,8 +5221,7 @@ def get_gercek_form_ultra(team_id, team_name):
     """✅ YENİ: GERÇEK FORM VERİSİ - API-FOOTBALL ULTRA"""
     if not team_id:
         return None
-        
-    try:
+try:
         params = {'team': team_id, 'last': 8}
         response = _apifoot_get("fixtures", params)
         
@@ -5343,15 +5287,14 @@ def get_gercek_form_ultra(team_id, team_name):
             'btts_percent': round((btts / analyzed_matches) * 100, 1),
             'team_id': team_id
         }
-        
-    except Exception as e:
+except Exception as e:
         print(f"❌ Form verisi hatası ({team_name}): {e}")
         return None
 
 
 def get_takim_kart_korner_istatistikleri(team_id, team_name):
     """✅ YENİ: TAKIMIN GERÇEK KART/KORNER İSTATİSTİKLERİ"""
-    try:
+try:
         params = {'team': team_id, 'last': 6, 'status': 'FT'}
         fixtures = _apifoot_get("fixtures", params)
         
@@ -5390,8 +5333,7 @@ def get_takim_kart_korner_istatistikleri(team_id, team_name):
                 'avg_cards': total_cards / match_count,
                 'avg_corners': total_corners / match_count
             }
-            
-    except Exception as e:
+except Exception as e:
         print(f"   ⚠️ İstatistik hatası ({team_name}): {e}")
     
     return None
@@ -5439,7 +5381,7 @@ def get_lig_bazli_kart_korner(lig_adi):
 
 def get_gercek_kart_korner_analiz_duzeltilmis(home_id, away_id, home_team, away_team, lig_adi):
     """✅ YENİ: GERÇEK KART/KORNER ANALİZİ - API FOOTBALL ULTRA"""
-    try:
+try:
         # 1. TAKIMLARIN GERÇEK İSTATİSTİKLERİNİ AL
         home_stats = get_takim_kart_korner_istatistikleri(home_id, home_team)
         away_stats = get_takim_kart_korner_istatistikleri(away_id, away_team)
@@ -5459,8 +5401,7 @@ def get_gercek_kart_korner_analiz_duzeltilmis(home_id, away_id, home_team, away_
         
         # 2. İSTATİSTİK YOKSA LİG ORTALAMASI + RANDOM VARIATION
         return get_lig_bazli_kart_korner(lig_adi)
-        
-    except Exception as e:
+except Exception as e:
         print(f"   ⚠️ Kart/korner analiz hatası: {e}")
         return 55, 65
 
@@ -5587,8 +5528,7 @@ def get_todays_predictions_enhanced():
         
         print(f"\n#{i} - 🔮 {home_team} vs {away_team}")
         print(f"   🏆 {lig_adi} | ⏰ {mac_saati}")
-        
-        try:
+try:
             # ✅ TAKIM ID BULMA - EN ÇOK BENZEYEN TAKIM
             if not home_id:
                 home_id = takim_id_bul_gelismis(home_team, hedef_maclar)
@@ -5628,8 +5568,7 @@ def get_todays_predictions_enhanced():
                 tahmin_sonuclari.append(tahmin)
             else:
                 print("   ❌ Yetersiz form verisi")
-                
-        except Exception as e:
+except Exception as e:
             print(f"   ❌ Analiz hatası: {e}")
     
     # GENEL RAPOR
@@ -5717,7 +5656,7 @@ def create_email_content_enhanced(predictions):
 
 def send_email_enhanced(subject, html_content, recipient_emails):
     """✅ YENİ: Email gönder"""
-    try:
+try:
         # Email konfigürasyonu
         EMAIL_CONFIG = {
             'sender_email': os.getenv('GMAIL_USER', 'your_email@gmail.com'),
@@ -5742,7 +5681,7 @@ def send_email_enhanced(subject, html_content, recipient_emails):
         
         print(f"✅ Email başarıyla gönderildi: {len(recipient_emails)} alıcı")
         return True
-    except Exception as e:
+except Exception as e:
         print(f"❌ Email gönderim hatası: {e}")
         return False
 
@@ -5767,7 +5706,7 @@ def cards_per_game(stat):
 
 def run_daily_predictions_and_email():
     """Günlük tahminleri al, HTML oluştur, mail at"""
-    try:
+try:
         today = datetime.now().strftime("%Y-%m-%d")
         log(f"📅 Günlük tahmin başlatıldı: {today}")
         predictions = get_todays_predictions_enhanced()
@@ -5779,7 +5718,7 @@ def run_daily_predictions_and_email():
         recipients = ["example@mail.com"]  # ← kendi mail adreslerini ekle
         send_email_enhanced(subject, html_content, recipients)
         log("✅ Günlük tahmin ve mail gönderimi tamamlandı.")
-    except Exception as e:
+except Exception as e:
         log(f"❌ Günlük sistem hatası: {e}")
 
 
@@ -5793,9 +5732,9 @@ def initialize_system():
 
 if __name__ == "__main__":
     initialize_system()
-    try:
+try:
         run_daily_predictions_and_email()
     except KeyboardInterrupt:
         print("\n🛑 Kullanıcı tarafından durduruldu.")
-    except Exception as e:
+except Exception as e:
         print(f"❌ Ana sistem hatası: {e}")
