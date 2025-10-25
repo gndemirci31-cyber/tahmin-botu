@@ -10,9 +10,9 @@
     "timestamp": 1760903438.1877973
   },
   "Netherlands:telstar": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376133.5564477
+    "timestamp": 1761377359.6203973
   },
   "Netherlands:heerenveen": {
     "value": 40,
@@ -20,9 +20,9 @@
     "timestamp": 1761291044.7072985
   },
   "Italy:como": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376023.2185462
+    "timestamp": 1761377264.6128688
   },
   "Italy:juventus": {
     "value": 80,
@@ -32,7 +32,7 @@
   "Scotland:dundee": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376078.8790555
+    "timestamp": 1761377312.4922314
   },
   "Scotland:celtic": {
     "value": 80,
@@ -60,9 +60,9 @@
     "timestamp": 1760903452.3855548
   },
   "Germany:sv elversberg": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376008.464637
+    "timestamp": 1761377251.8872998
   },
   "Germany:spvgg greuther fürth": {
     "value": 80,
@@ -77,7 +77,7 @@
   "Germany:holstein kiel": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376011.353846
+    "timestamp": 1761377254.4187176
   },
   "Turkey:kayserispor": {
     "value": 80,
@@ -90,19 +90,19 @@
     "timestamp": 1760903462.896686
   },
   "Spain:elche": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376090.0041978
+    "timestamp": 1761377322.1520813
   },
   "Spain:athletic club": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376125.3479693
+    "timestamp": 1761377352.6425076
   },
   "Spain:leganes": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376092.4540129
+    "timestamp": 1761377324.2552364
   },
   "Spain:malaga": {
     "value": 180,
@@ -110,14 +110,14 @@
     "timestamp": 1760903468.1318402
   },
   "Netherlands:groningen": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376098.3153908
+    "timestamp": 1761377329.2867587
   },
   "Netherlands:sparta rotterdam": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376133.5542083
+    "timestamp": 1761377359.6182132
   },
   "Netherlands:excelsior": {
     "value": 180,
@@ -125,9 +125,9 @@
     "timestamp": 1760903473.9640102
   },
   "Netherlands:fortuna sittard": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376098.3134906
+    "timestamp": 1761377329.284646
   },
   "Italy:cagliari": {
     "value": 180,
@@ -145,9 +145,9 @@
     "timestamp": 1760903479.522255
   },
   "Italy:parma": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376023.2168171
+    "timestamp": 1761377264.6107497
   },
   "England:tottenham": {
     "value": 100,
@@ -162,7 +162,7 @@
   "France:lens": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376182.3852818
+    "timestamp": 1761377402.001422
   },
   "France:paris": {
     "value": 180,
@@ -170,9 +170,9 @@
     "timestamp": 1761291066.595465
   },
   "Italy:palermo": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376142.639043
+    "timestamp": 1761377367.0853448
   },
   "Italy:modena": {
     "value": 80,
@@ -187,22 +187,22 @@
   "Germany:eintracht frankfurt": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376057.9720747
+    "timestamp": 1761377294.4053388
   },
   "Belgium:dender": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376073.6991782
+    "timestamp": 1761377308.0558302
   },
   "Belgium:kv mechelen": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376115.1537652
+    "timestamp": 1761377344.0204682
   },
   "Belgium:patro eisden": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376149.9641843
+    "timestamp": 1761377373.3675656
   },
   "Belgium:seraing": {
     "value": 40,
@@ -215,14 +215,14 @@
     "timestamp": 1761291050.2519305
   },
   "Belgium:liège": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376157.7124152
+    "timestamp": 1761377380.1089284
   },
   "Turkey:alanyaspor": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376086.9649239
+    "timestamp": 1761377319.4304323
   },
   "Turkey:goztepe": {
     "value": 180,
@@ -265,9 +265,9 @@
     "timestamp": 1760903516.7626657
   },
   "Spain:albacete": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376094.9117966
+    "timestamp": 1761377326.3789234
   },
   "Portugal:penafiel": {
     "value": 40,
@@ -277,12 +277,12 @@
   "Portugal:feirense": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376103.2758665
+    "timestamp": 1761377333.6593392
   },
   "Netherlands:heracles": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376145.8349612
+    "timestamp": 1761377369.7839825
   },
   "Netherlands:feyenoord": {
     "value": 180,
@@ -295,9 +295,9 @@
     "timestamp": 1760903526.8603303
   },
   "France:stade brestois 29": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376106.5733087
+    "timestamp": 1761377336.5250454
   },
   "France:rennes": {
     "value": 180,
@@ -312,7 +312,7 @@
   "France:toulouse": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376136.9378228
+    "timestamp": 1761377362.2936208
   },
   "France:metz": {
     "value": 80,
@@ -325,34 +325,34 @@
     "timestamp": 1761291058.5161958
   },
   "Italy:venezia": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376109.681897
+    "timestamp": 1761377339.20137
   },
   "England:liverpool": {
     "value": 140,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376170.6296873
+    "timestamp": 1761377391.3005428
   },
   "England:manchester": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376118.4664674
+    "timestamp": 1761377346.910613
   },
   "Germany:fc st pauli": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376057.9739702
+    "timestamp": 1761377294.4074192
   },
   "Germany:1899 hoffenheim": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376064.5759916
+    "timestamp": 1761377300.1359909
   },
   "Italy:atalanta": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376164.963313
+    "timestamp": 1761377386.3563192
   },
   "Italy:lazio": {
     "value": 80,
@@ -382,7 +382,7 @@
   "Spain:racing santander": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376179.2638607
+    "timestamp": 1761377398.8116612
   },
   "Spain:deportivo la coruna": {
     "value": 40,
@@ -390,9 +390,9 @@
     "timestamp": 1760903553.8934944
   },
   "Spain:cordoba": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376094.914024
+    "timestamp": 1761377326.3810198
   },
   "Spain:almeria": {
     "value": 180,
@@ -415,14 +415,14 @@
     "timestamp": 1760903563.2851944
   },
   "Belgium:gent": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376167.5267425
+    "timestamp": 1761377388.6085813
   },
   "Italy:catanzaro": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376142.6371973
+    "timestamp": 1761377367.0832646
   },
   "Italy:padova": {
     "value": 40,
@@ -452,7 +452,7 @@
   "Spain:getafe": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376125.3500183
+    "timestamp": 1761377352.644565
   },
   "Spain:real madrid": {
     "value": 40,
@@ -465,14 +465,14 @@
     "timestamp": 1761291055.640777
   },
   "Spain:eibar": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376092.4519248
+    "timestamp": 1761377324.2530854
   },
   "Belgium:standard liege": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376167.5288184
+    "timestamp": 1761377388.6106384
   },
   "Belgium:antwerp": {
     "value": 80,
@@ -482,7 +482,7 @@
   "Turkey:eyüpspor": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376139.4114804
+    "timestamp": 1761377364.4029853
   },
   "Turkey:kasimpasa": {
     "value": 80,
@@ -490,24 +490,24 @@
     "timestamp": 1760981758.6621478
   },
   "Spain:cadiz": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376127.8095796
-  },
-  "Spain:burgos": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376130.3341372
+    "timestamp": 1761377354.8062854
+  },
+  "Spain:burgos": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377356.9229004
   },
   "Italy:cremonese": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376164.961226
+    "timestamp": 1761377386.3541696
   },
   "Italy:udinese": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376026.3439631
+    "timestamp": 1761377267.6049054
   },
   "England:west ham united": {
     "value": 65,
@@ -517,7 +517,7 @@
   "England:brentford": {
     "value": 30,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376170.6276836
+    "timestamp": 1761377391.2984154
   },
   "Spain:alaves": {
     "value": 40,
@@ -525,9 +525,9 @@
     "timestamp": 1760981767.1522264
   },
   "Spain:valencia": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376176.8154032
+    "timestamp": 1761377396.6997855
   },
   "World:kairat almaty": {
     "value": 80,
@@ -1172,366 +1172,366 @@
   "Portugal:união de leiria": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761375999.7740703
+    "timestamp": 1761377244.956837
   },
   "Portugal:leixoes": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761375999.7756107
+    "timestamp": 1761377244.9589179
   },
   "Portugal:sporting cp b": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376005.0145714
+    "timestamp": 1761377249.0011337
   },
   "Portugal:lusitânia lourosa": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376005.0162666
+    "timestamp": 1761377249.0032992
   },
   "Germany:arminia bielefeld": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376008.4628336
+    "timestamp": 1761377251.8852122
   },
   "Germany:vfl bochum": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376011.3558605
+    "timestamp": 1761377254.420809
   },
   "Germany:dynamo dresden": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376014.2727036
-  },
-  "Germany:sc paderborn 07": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376014.274403
+    "timestamp": 1761377256.9074535
+  },
+  "Germany:sc paderborn 07": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377256.9095821
   },
   "Spain:girona": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376017.3507621
+    "timestamp": 1761377259.5749135
   },
   "Spain:oviedo": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376017.3523347
+    "timestamp": 1761377259.5770538
   },
   "Spain:cultural leonesa": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376019.8030689
-  },
-  "Spain:ad ceuta": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376019.8048515
-  },
-  "Italy:lecce": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376026.3633206
-  },
-  "Portugal:pacos ferreira": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376029.0811458
+    "timestamp": 1761377261.7397919
+  },
+  "Spain:ad ceuta": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377261.7419126
+  },
+  "Italy:lecce": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377267.607077
+  },
+  "Portugal:pacos ferreira": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377269.7265332
   },
   "Portugal:portimonense": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376029.0827742
+    "timestamp": 1761377269.7286904
   },
   "Italy:sudtirol": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376032.5743437
+    "timestamp": 1761377272.6044989
   },
   "Italy:cesena": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376032.576121
+    "timestamp": 1761377272.6065981
   },
   "Italy:sampdoria": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376035.8537247
+    "timestamp": 1761377275.3326252
   },
   "Italy:frosinone": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376035.8555236
+    "timestamp": 1761377275.334753
   },
   "Italy:monza": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376038.9609873
+    "timestamp": 1761377277.9921935
   },
   "Italy:reggiana": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376038.9626462
+    "timestamp": 1761377277.9943898
   },
   "Italy:avellino": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376042.0430958
+    "timestamp": 1761377280.717452
   },
   "Italy:spezia": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376042.0447824
+    "timestamp": 1761377280.719595
   },
   "Italy:virtus entella": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376045.6912856
+    "timestamp": 1761377283.609681
   },
   "Italy:pescara": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376045.6930501
-  },
-  "Germany:fc augsburg": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376048.9809308
+    "timestamp": 1761377283.6117685
+  },
+  "Germany:fc augsburg": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377286.4851546
   },
   "Germany:rb leipzig": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376048.9828146
+    "timestamp": 1761377286.4873211
   },
   "Germany:borussia mönchengladbach": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376053.2968569
+    "timestamp": 1761377290.254193
   },
   "Germany:bayern münchen": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376053.2987208
-  },
-  "Germany:hamburger sv": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376061.3136017
+    "timestamp": 1761377290.2563128
+  },
+  "Germany:hamburger sv": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377297.2737331
   },
   "Germany:wolfsburg": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376061.3156438
+    "timestamp": 1761377297.2757878
   },
   "Germany:1 heidenheim": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376064.5779119
+    "timestamp": 1761377300.1380677
   },
   "England:chelsea": {
     "value": 120,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376068.2151237
+    "timestamp": 1761377303.196129
   },
   "England:sunderland": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376068.2170684
+    "timestamp": 1761377303.1982975
   },
   "England:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376071.264553
+    "timestamp": 1761377305.9376981
   },
   "England:fulham": {
     "value": 40,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376071.266492
+    "timestamp": 1761377305.9398522
   },
   "Belgium:kvc westerlo": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376073.6974688
-  },
-  "Scotland:dundee utd": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376076.4245884
+    "timestamp": 1761377308.0536492
   },
-  "Scotland:st mirren": {
+  "Scotland:dundee utd": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376076.4265728
+    "timestamp": 1761377310.3620374
+  },
+  "Scotland:st mirren": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377310.3642373
   },
   "Scotland:falkirk": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376078.8771122
+    "timestamp": 1761377312.4900508
   },
   "Scotland:livingston": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376081.4101577
+    "timestamp": 1761377314.6215394
   },
   "Scotland:motherwell": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376081.4119377
+    "timestamp": 1761377314.623675
   },
   "Belgium:club brugge ii": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376084.7696793
+    "timestamp": 1761377317.4893584
   },
   "Belgium:olympic charleroi": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376084.7714436
+    "timestamp": 1761377317.491526
   },
   "Turkey:kocaelispor": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376086.962985
+    "timestamp": 1761377319.4283085
   },
   "Spain:espanyol": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376090.0022342
+    "timestamp": 1761377322.1500037
   },
   "Portugal:academico viseu": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376100.7946308
+    "timestamp": 1761377331.530949
   },
   "Portugal:chaves": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376100.7964995
+    "timestamp": 1761377331.53304
   },
   "Portugal:benfica b": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376103.2779386
-  },
-  "France:paris saint germain": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376106.5753715
-  },
-  "Italy:carrarese": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376109.6801126
-  },
-  "Italy:napoli": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376112.7053118
-  },
-  "Italy:inter": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376112.7075033
+    "timestamp": 1761377333.6613996
   },
-  "Belgium:oh leuven": {
+  "France:paris saint germain": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376115.156377
+    "timestamp": 1761377336.5270972
+  },
+  "Italy:carrarese": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377339.1993036
+  },
+  "Italy:napoli": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377341.9016464
+  },
+  "Italy:inter": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377341.9037101
+  },
+  "Belgium:oh leuven": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377344.0225933
   },
   "England:brighton and hove albion": {
     "value": 70,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761376118.4685044
+    "timestamp": 1761377346.912739
   },
   "Germany:borussia dortmund": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376122.0212169
+    "timestamp": 1761377349.7827218
   },
   "Germany:1 fc köln": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376122.0231075
+    "timestamp": 1761377349.7848444
   },
   "Spain:granada": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376127.807733
+    "timestamp": 1761377354.8042254
   },
   "Spain:real sociedad ii": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376130.3363018
+    "timestamp": 1761377356.9250255
   },
   "France:monaco": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376136.9354982
+    "timestamp": 1761377362.2915504
   },
   "Turkey:trabzonspor": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376139.4096003
+    "timestamp": 1761377364.400818
   },
   "Netherlands:fc volendam": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376145.8329256
-  },
-  "Belgium:waasland beveren": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376149.9620981
+    "timestamp": 1761377369.7818673
   },
-  "Belgium:as eupen": {
+  "Belgium:waasland beveren": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376153.875813
+    "timestamp": 1761377373.36549
+  },
+  "Belgium:as eupen": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761377376.736009
   },
   "Belgium:krc genk ii": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376153.877704
+    "timestamp": 1761377376.738184
   },
   "Belgium:rwdm": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376157.7143693
+    "timestamp": 1761377380.1109939
   },
   "Germany:hertha bsc": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376161.8869164
+    "timestamp": 1761377383.6866875
   },
   "Germany:fortuna düsseldorf": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376161.888837
+    "timestamp": 1761377383.6888487
   },
   "Netherlands:pec zwolle": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376173.753283
+    "timestamp": 1761377393.9942605
   },
   "Netherlands:nec nijmegen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376173.7555838
+    "timestamp": 1761377393.9964402
   },
   "Spain:villarreal": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376176.8173218
+    "timestamp": 1761377396.7019634
   },
   "Spain:mirandes": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376179.2618127
+    "timestamp": 1761377398.8095493
   },
   "France:marseille": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761376182.3872929
+    "timestamp": 1761377402.0035665
   }
 }
