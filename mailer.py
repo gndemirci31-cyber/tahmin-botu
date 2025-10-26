@@ -377,7 +377,7 @@ def calculate_realistic_confidence(prediction, advice, pick):
     return max(50, min(85, base_confidence))
 
 # YENİ FIXTURE ID BULMA FONKSİYONU
-find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
+def find_fixture_id(area, competition, home, away):
     """FIXTURE ID BUL"""
     try:
         today = datetime.now().strftime("%Y-%m-%d")
