@@ -399,7 +399,7 @@ def find_fixture_id(area, competition, home, away):
 
 # YENİ GELİŞMİŞ API-FOOTBALL AI TAHMİN SİSTEMİ
 def get_api_football_prediction(fx):
-     """API-FOOTBALL AI TAHMİNİ - GERÇEKÇİ GÜVEN ALGORİTMASI"""
+    """API-FOOTBALL AI TAHMİNİ - GERÇEKÇİ GÜVEN ALGORİTMASI"""
     fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
     home_team = fx["home"]
     away_team = fx["away"]
