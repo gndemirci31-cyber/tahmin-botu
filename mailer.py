@@ -377,7 +377,7 @@ def calculate_realistic_confidence(prediction, advice, pick):
     return max(50, min(85, base_confidence))
 
 # YENİ FIXTURE ID BULMA FONKSİYONU
-def find_fixture_id(home_team, away_team):
+def find_fixture_id(area, competition, home, away):
     """FIXTURE ID BUL"""
     try:
         today = datetime.now().strftime("%Y-%m-%d")
@@ -456,7 +456,7 @@ def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, 
         confidence = min(75, 55 + (20 - abs(power_diff)))
     
     # API AI TAHMİNİ
-    fixture_id = find_fixture_id(home_team, away_team)
+    fixture_id = find_fixture_id(area, competition, home, away)
     api_prediction_data = get_api_football_prediction(fixture_id, home_team, away_team)
     
     # GERÇEKÇİ SKOR TAHMİNİ
@@ -2458,7 +2458,7 @@ def get_fixture_statistics(fixture_id):
 
 # ==================== EKSİK API-FOOTBALL FONKSİYONLARI ====================
 
-def find_fixture_id(area, comp, home, away):
+def find_fixture_id(area, competition, home, away):
     """API-Football'dan fixture ID bulur"""
     try:
         if not APIFOOT:
@@ -4074,7 +4074,7 @@ def fetch_odds_apifootball(area, comp, home, away):
     """API-Football'dan oranları al (BİRİNCİL KAYNAK) - DÜZELTİLDİ"""
     try:
         # API-Football odds endpoint
-        fixture_id = find_fixture_id(area, comp, home, away)
+        fixture_id = find_fixture_id(area, competition, home, away)
         if not fixture_id:
             return None
             
