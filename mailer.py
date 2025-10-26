@@ -4078,7 +4078,7 @@ def fetch_odds_apifootball(area, comp, home, away):
     """API-Football'dan oranları al (BİRİNCİL KAYNAK) - DÜZELTİLDİ"""
     try:
         # API-Football odds endpoint
-        fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
+        fixture_id = find_fixture_id(area, competition, home, away)
         if not fixture_id:
             return None
             
