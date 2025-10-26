@@ -461,7 +461,7 @@ def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, 
     
     # API AI TAHMİNİ
     fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
-    api_prediction_data = get_api_football_prediction(fx)
+    api_prediction_data = get_api_predictions(fixture_id)
     
     # GERÇEKÇİ SKOR TAHMİNİ
     home_goals = max(0.5, min(3.5, home_form['avg_goals_for']))
