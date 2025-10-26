@@ -2458,7 +2458,7 @@ def get_fixture_statistics(fixture_id):
 
 # ==================== EKSİK API-FOOTBALL FONKSİYONLARI ====================
 
-fixture_id = find_fixture_id(fx.get("area"), fx.get("competition"), fx["home"], fx["away"])
+def find_fixture_id(area, competition, home, away):
     """API-Football'dan fixture ID bulur"""
     try:
         if not APIFOOT:
