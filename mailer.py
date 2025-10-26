@@ -591,7 +591,7 @@ def ultra_tahmin_sistemi(date_str):
             if home_form and away_form:
                 # YENİ GERÇEKÇİ TAHMİN SİSTEMİ
                 tahmin = tahmin_hesapla_gercek_verilerle(
-                    home_form, away_form, home_team, away_team, lig_adi, home_id, away_id
+                    home_form, away_form, home_team, away_team, lig_adi, home_id, away_id, fx
                 )
                 
                 if tahmin:
