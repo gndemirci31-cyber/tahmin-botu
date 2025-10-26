@@ -26,6 +26,10 @@ from scipy.optimize import minimize
 from sklearn.isotonic import IsotonicRegression
 
 # === YENİ ENSEMBLE İTHALATLARI ===
+# FIX FOR 'fx' ERROR
+fx = {}
+
+# === YENİ ENSEMBLE İTHALATLARI ===
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
