@@ -442,7 +442,7 @@ def get_api_football_prediction(fx):
     return {"pick": "N/A", "confidence": 65, "advice": "N/A"}
 
 # GÜNCELLENMİŞ TAHMİN HESAPLAMA FONKSİYONU
-def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id):
+def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id, fx):
     """GERÇEK VERİLERLE TAHMİN HESAPLA"""
     
     home_power = home_form['form'] * 1.15
