@@ -72,313 +72,6 @@ _API_LEAGUE_MAP = {
     "Europe|European Championship": 4, "World|World Cup": 1
 }
 
-# ==================== YENİ EKLENEN FONKSİYONLAR ====================
-
-def benzerlik_hesapla(str1, str2):
-    """İki string arasındaki benzerlik oranını hesapla"""
-    return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
-
-def takim_id_bul_akilli(takim_adi, hedef_lig_maçlari):
-    """Hedef ligdeki maçlardan takım adına en çok benzeyen takımın ID'sini bul"""
-    en_benzer_takim = None
-    en_yuksek_benzerlik = 0
-   
-    for mac in hedef_lig_maçlari:
-        home_team = mac.get('teams', {}).get('home', {}).get('name', '')
-        away_team = mac.get('teams', {}).get('away', {}).get('name', '')
-       
-        home_benzerlik = benzerlik_hesapla(takim_adi, home_team)
-        away_benzerlik = benzerlik_hesapla(takim_adi, away_team)
-       
-        if home_benzerlik > en_yuksek_benzerlik:
-            en_yuksek_benzerlik = home_benzerlik
-            en_benzer_takim = mac.get('teams', {}).get('home', {}).get('id')
-       
-        if away_benzerlik > en_yuksek_benzerlik:
-            en_yuksek_benzerlik = away_benzerlik
-            en_benzer_takim = mac.get('teams', {}).get('away', {}).get('id')
-   
-    return en_benzer_takim if en_yuksek_benzerlik > 0.6 else None
-
-def get_gercek_kart_korner_analiz(home_id, away_id, home_team, away_team, lig_adi):
-    """GERÇEK KART/KORNER ANALİZİ - API FOOTBALL ULTRA"""
-    try:
-        home_stats = get_takim_kart_korner_istatistikleri(home_id, home_team)
-        away_stats = get_takim_kart_korner_istatistikleri(away_id, away_team)
-       
-        if home_stats and away_stats:
-            avg_cards = (home_stats['avg_cards'] + away_stats['avg_cards']) / 2
-            avg_corners = (home_stats['avg_corners'] + away_stats['avg_corners']) / 2
-           
-            kart_prob = calculate_kart_olasilik(avg_cards)
-            korner_prob = calculate_korner_olasilik(avg_corners)
-           
-            return kart_prob, korner_prob
-       
-        return get_lig_bazli_kart_korner(lig_adi)
-       
-    except Exception as e:
-        return 55, 65
-
-def get_takim_kart_korner_istatistikleri(team_id, team_name):
-    """TAKIMIN GERÇEK KART/KORNER İSTATİSTİKLERİ"""
-    try:
-        params = {'team': team_id, 'last': 6, 'status': 'FT'}
-        fixtures = _apifoot_get("fixtures", params)
-       
-        if not fixtures:
-            return None
-           
-        total_cards, total_corners, match_count = 0, 0, 0
-       
-        for match in fixtures:
-            if match['fixture']['status']['short'] != 'FT':
-                continue
-               
-            fixture_id = match['fixture']['id']
-            stats_data = _apifoot_get("fixtures/statistics", {'fixture': fixture_id})
-           
-            if stats_data:
-                for team_stats in stats_data:
-                    if team_stats['team']['id'] == team_id:
-                        cards = 0
-                        corners = 0
-                       
-                        for stat in team_stats.get('statistics', []):
-                            value = stat.get('value', 0)
-                            if stat['type'] in ['Yellow Cards', 'Red Cards']:
-                                cards += int(value) if value else 0
-                            elif stat['type'] == 'Corner Kicks':
-                                corners += int(value) if value else 0
-                       
-                        total_cards += cards
-                        total_corners += corners
-                        match_count += 1
-                        break
-       
-        if match_count >= 3:
-            return {
-                'avg_cards': total_cards / match_count,
-                'avg_corners': total_corners / match_count
-            }
-           
-    except Exception as e:
-        print(f"İstatistik hatası ({team_name}): {e}")
-   
-    return None
-
-def calculate_kart_olasilik(avg_cards):
-    """GERÇEKÇİ KART OLASILIĞI"""
-    if avg_cards >= 5.0: return min(85, 70 + (avg_cards - 5.0) * 8)
-    elif avg_cards >= 4.0: return min(70, 55 + (avg_cards - 4.0) * 15)
-    elif avg_cards >= 3.0: return min(55, 40 + (avg_cards - 3.0) * 15)
-    else: return max(25, 30 + (avg_cards - 2.0) * 10)
-
-def calculate_korner_olasilik(avg_corners):
-    """GERÇEKÇİ KORNER OLASILIĞI"""
-    if avg_corners >= 10.0: return min(85, 70 + (avg_corners - 10.0) * 5)
-    elif avg_corners >= 8.0: return min(70, 55 + (avg_corners - 8.0) * 7.5)
-    elif avg_corners >= 6.0: return min(55, 40 + (avg_corners - 6.0) * 7.5)
-    else: return max(25, 30 + (avg_corners - 4.0) * 5)
-
-def get_lig_bazli_kart_korner(lig_adi):
-    """Lig bazlı kart/korner değerleri"""
-    lig_adi_lower = lig_adi.lower()
-    for lig, kart in LEAGUE_CARD_BASE.items():
-        if lig in lig_adi_lower:
-            kart_prob = calculate_kart_olasilik(kart)
-            korner_prob = calculate_korner_olasilik(LEAGUE_CORNER_BASE.get(lig, 9.0))
-            return kart_prob, korner_prob
-    return 55, 65
-
-def get_gercek_form_ultra(team_id, team_name):
-    """GERÇEK FORM VERİSİ - API-FOOTBALL ULTRA"""
-    if not team_id:
-        return None
-       
-    try:
-        params = {'team': team_id, 'last': 8}
-        response = _apifoot_get("fixtures", params)
-       
-        if not response:
-            return None
-           
-        wins, draws, losses = 0, 0, 0
-        goals_for, goals_against = 0, 0
-        over_15, over_25, btts = 0, 0, 0
-        analyzed_matches = 0
-       
-        for match in response:
-            if match['fixture']['status']['short'] != 'FT':
-                continue
-               
-            home_team = match['teams']['home']['id'] == team_id
-            home_goals = match['goals']['home'] or 0
-            away_goals = match['goals']['away'] or 0
-           
-            if home_team:
-                goals_for += home_goals
-                goals_against += away_goals
-                if match['teams']['home']['winner']:
-                    wins += 1
-                elif match['teams']['away']['winner']:
-                    losses += 1
-                else:
-                    draws += 1
-            else:
-                goals_for += away_goals
-                goals_against += home_goals  
-                if match['teams']['away']['winner']:
-                    wins += 1
-                elif match['teams']['home']['winner']:
-                    losses += 1
-                else:
-                    draws += 1
-           
-            total_goals = home_goals + away_goals
-            if total_goals > 1.5: over_15 += 1
-            if total_goals > 2.5: over_25 += 1
-            if home_goals > 0 and away_goals > 0: btts += 1
-           
-            analyzed_matches += 1
-       
-        if analyzed_matches < 3:
-            return None
-           
-        points = (wins * 3) + draws
-        max_points = analyzed_matches * 3
-        form_percentage = (points / max_points) * 100 if max_points > 0 else 0
-       
-        return {
-            'form': round(form_percentage, 1),
-            'avg_goals_for': round(goals_for / analyzed_matches, 1),
-            'avg_goals_against': round(goals_against / analyzed_matches, 1),
-            'matches_analyzed': analyzed_matches,
-            'wins': wins,
-            'draws': draws,
-            'losses': losses,
-            'over_15_percent': round((over_15 / analyzed_matches) * 100, 1),
-            'over_25_percent': round((over_25 / analyzed_matches) * 100, 1),
-            'btts_percent': round((btts / analyzed_matches) * 100, 1),
-            'team_id': team_id
-        }
-       
-    except Exception as e:
-        print(f"Form verisi hatası ({team_name}): {e}")
-        return None
-
-def tahmin_hesapla_mailer_format(home_form, away_form, home_team, away_team, lig_adi, match_time, home_id, away_id):
-    """Tahmini mailer formatında hazırla"""
-    try:
-        # Basit tahmin mantığı
-        home_power = home_form['form'] * 1.15  # Ev avantajı
-        away_power = away_form['form']
-        power_diff = home_power - away_power
-        
-        if power_diff > 25:
-            pick = "1"
-            confidence = min(85, 65 + power_diff/3)
-        elif power_diff < -25:
-            pick = "2" 
-            confidence = min(85, 65 + abs(power_diff)/3)
-        else:
-            pick = "X"
-            confidence = min(75, 55 + (25 - abs(power_diff))/2)
-            
-        return {
-            'match': f"{home_team} vs {away_team}",
-            'league': lig_adi,
-            'time': match_time,
-            'pick': pick,
-            'confidence': confidence,
-            'home_form': f"%{home_form['form']:.1f}",
-            'away_form': f"%{away_form['form']:.1f}",
-            'home_stats': home_form,
-            'away_stats': away_form,
-            'gol_15': "ÜST" if home_form['over_15_percent'] > 50 else "ALT",
-            'gol_15_prob': home_form['over_15_percent'],
-            'gol_25': "ÜST" if home_form['over_25_percent'] > 50 else "ALT",
-            'gol_25_prob': home_form['over_25_percent'],
-            'btts': "EVET" if home_form['btts_percent'] > 50 else "HAYIR",
-            'btts_prob': home_form['btts_percent'],
-            'data_quality': confidence
-        }
-        
-    except Exception as e:
-        print(f"Tahmin hesaplama hatası: {e}")
-        return None
-
-# ==================== GÜNCELLENMİŞ ULTRA TAHMİN SİSTEMİ ====================
-
-def ultra_tahmin_sistemi(date_str):
-    """GÜNCELLENMİŞ ULTRA TAHMİN - AKILLI TAKIM BULMA İLE"""
-    print(f"🎯 GÜNCELLENMİŞ ULTRA TAHMİN SİSTEMİ: {date_str}")
-    
-    try:
-        HEDEF_LIG_IDS = ['39','140','135','78','61','88','144','179','203','141','136','79','95','145','2','3','848']
-        
-        params = {"date": date_str}
-        response = requests.get(f"{APIFOOTBALL_BASE_URL}fixtures", headers=HEADERS, params=params, timeout=30)
-        
-        if response.status_code != 200:
-            return []
-            
-        data = response.json()
-        tum_maclar = data.get('response', [])
-        
-        hedef_maclar = []
-        for mac in tum_maclar:
-            lig_id = str(mac.get('league', {}).get('id', ''))
-            if lig_id in HEDEF_LIG_IDS:
-                hedef_maclar.append(mac)
-        
-        print(f"✅ {len(hedef_maclar)} hedef lig maçı bulundu")
-        
-        ultra_tahminler = []
-        
-        for i, mac in enumerate(hedef_maclar):
-            fixture = mac.get('fixture', {})
-            teams = mac.get('teams', {})
-            league = mac.get('league', {})
-            
-            home_team = teams.get('home', {}).get('name', 'Unknown')
-            away_team = teams.get('away', {}).get('name', 'Unknown')
-            lig_adi = league.get('name', 'Unknown')
-            
-            # YENİ: AKILLI TAKIM ID BULMA
-            home_id = takim_id_bul_akilli(home_team, hedef_maclar)
-            away_id = takim_id_bul_akilli(away_team, hedef_maclar)
-            
-            # YENİ: GERÇEK FORM VERİLERİ
-            home_form = get_gercek_form_ultra(home_id, home_team) if home_id else None
-            away_form = get_gercek_form_ultra(away_id, away_team) if away_id else None
-            
-            if home_form and away_form:
-                # YENİ: GERÇEK KART/KORNER ANALİZİ
-                kart_prob, korner_prob = get_gercek_kart_korner_analiz(home_id, away_id, home_team, away_team, lig_adi)
-                
-                tahmin = tahmin_hesapla_mailer_format(
-                    home_form, away_form, home_team, away_team, lig_adi, 
-                    fixture.get('date', '')[:16], home_id, away_id
-                )
-                
-                if tahmin:
-                    # YENİ: KART/KORNER VERİLERİNİ EKLE
-                    tahmin.update({
-                        'kart_35': "ÜST" if kart_prob > 50 else "ALT",
-                        'kart_prob': kart_prob,
-                        'korner_75': "ÜST" if korner_prob > 50 else "ALT", 
-                        'korner_prob': korner_prob
-                    })
-                    
-                    ultra_tahminler.append(tahmin)
-        
-        return ultra_tahminler
-        
-    except Exception as e:
-        print(f"❌ Güncellenmiş ultra sistem hatası: {e}")
-        return []
-
 # ==================== AKILLI TAKIM ID BULMA SİSTEMİ ====================
 
 def _find_team_id_smart(team_name, league_id, date_str, season="2025"):
@@ -686,6 +379,143 @@ def get_real_cards_corners_stats(team_id, team_name):
     except Exception as e:
         log(f"❌ GERÇEK kart/korner istatistik hatası: {e}")
     return None
+
+# ==================== GÜNCELLENMİŞ ULTRA TAHMİN SİSTEMİ ====================
+
+def ultra_tahmin_sistemi(date_str):
+    """GELİŞTİRİLMİŞ ULTRA TAHMİN - AKILLI TAKIM BULMA İLE"""
+    print(f"🎯 GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ BAŞLATILIYOR: {date_str}")
+    
+    try:
+        # Hedef lig ID'leri
+        HEDEF_LIG_IDS = ['39','140','135','78','61','88','144','179','203','141','136','79','95','145','2','3','848']
+        
+        # Bugünkü maçları çek
+        params = {"date": date_str}
+        response = requests.get(f"{APIFOOTBALL_BASE_URL}fixtures", headers=HEADERS, params=params, timeout=30)
+        
+        if response.status_code != 200:
+            print(f"❌ Maç verisi hatası: {response.status_code}")
+            return []
+            
+        data = response.json()
+        tum_maclar = data.get('response', [])
+        
+        # Hedef ligleri filtrele
+        hedef_maclar = []
+        for mac in tum_maclar:
+            lig_id = str(mac.get('league', {}).get('id', ''))
+            if lig_id in HEDEF_LIG_IDS:
+                hedef_maclar.append(mac)
+        
+        print(f"✅ {len(hedef_maclar)} hedef lig maçı bulundu")
+        
+        if not hedef_maclar:
+            print("❌ Hedef liglerde maç yok")
+            return []
+        
+        # TÜM MAÇLAR İÇİN GELİŞTİRİLMİŞ ULTRA TAHMİN
+        ultra_tahminler = []
+        
+        for i, mac in enumerate(hedef_maclar):
+            fixture = mac.get('fixture', {})
+            teams = mac.get('teams', {})
+            league = mac.get('league', {})
+            
+            fixture_id = fixture.get('id')
+            home_team = teams.get('home', {}).get('name', 'Unknown')
+            away_team = teams.get('away', {}).get('name', 'Unknown')
+            league_name = league.get('name', 'Unknown')
+            league_id = str(league.get('id', ''))
+            
+            # Maç saati
+            match_time = "??:??"
+            fixture_date = fixture.get('date', '')
+            if fixture_date:
+                try:
+                    match_time = datetime.fromisoformat(fixture_date.replace('Z', '+00:00')).strftime('%H:%M')
+                except:
+                    match_time = "??:??"
+            
+            print(f"🔮 GELİŞTİRİLMİŞ ULTRA Tahmin: {home_team} vs {away_team}")
+            
+            # GELİŞTİRİLMİŞ ULTRA TAHMİN SİSTEMİ
+            try:
+                # YENİ: AKILLI TAKIM ID BULMA
+                home_team_id = _find_team_id_smart(home_team, league_id, date_str)
+                away_team_id = _find_team_id_smart(away_team, league_id, date_str)
+                
+                # YENİ: DETAYLI FORM İSTATİSTİKLERİ
+                home_form_data = get_detailed_team_form_enhanced(home_team_id, home_team)
+                away_form_data = get_detailed_team_form_enhanced(away_team_id, away_team)
+                
+                # DETAYLI AI TAHMİN PARSING
+                ai_pred = get_ai_predictions_detailed(fixture_id)
+                
+                # YENİ: BASİT TAHMİN MANTIĞI
+                simple_prediction = simple_form_prediction(home_form_data, away_form_data)
+                
+                # YENİ: RAKAMSAL KART/KORNER TAHMİNİ
+                cards_corners_data = get_cards_corners_numeric(home_team, away_team, home_form_data, away_form_data)
+                
+                # STANDART TAHMIN FORMATI
+                predictions = calculate_standardized_predictions(
+                    home_team, away_team, home_form_data, away_form_data, ai_pred
+                )
+                
+                # YENİ: GELİŞTİRİLMİŞ VERİ KALİTESİ HESAPLAMA
+                confidence = calculate_enhanced_confidence(home_form_data, away_form_data, ai_pred, predictions)
+                
+                # GERÇEK sistem tahmini (form bazlı)
+                pick, _ = _ultra_gercek_sistem_tahmini_entegre(home_form_data, away_form_data, ai_pred)
+                
+                # YENİ: PRATİK SKOR TAHMİNİ
+                practical_scores = generate_practical_scores(home_form_data, away_form_data)
+                
+                # ULTRA tahmini kaydet
+                ultra_tahmin = {
+                    'match': f"{home_team} vs {away_team}",
+                    'league': league_name,
+                    'time': match_time,
+                    'pick': pick,
+                    'simple_prediction': simple_prediction,
+                    'confidence': confidence,
+                    'api_prediction': ai_pred.get('winner', 'Belirsiz'),
+                    'api_confidence': 70,
+                    'home_form': f"%{home_form_data['form']:.1f}" if home_form_data else "VERİ YOK",
+                    'away_form': f"%{away_form_data['form']:.1f}" if away_form_data else "VERİ YOK",
+                    'home_stats': home_form_data,
+                    'away_stats': away_form_data,
+                    'gol_15': "ÜST" if predictions['home_goals_1_5'] > 50 else "ALT",
+                    'gol_15_prob': predictions['home_goals_1_5'],
+                    'gol_25': "ÜST" if predictions['over_2_5'] > 50 else "ALT",
+                    'gol_25_prob': predictions['over_2_5'],
+                    'gol_35': "ÜST" if predictions['over_2_5'] > 60 else "ALT",
+                    'gol_35_prob': min(predictions['over_2_5'] + 10, 80),
+                    'btts': "EVET" if predictions['btts'] > 50 else "HAYIR",
+                    'btts_prob': predictions['btts'],
+                    'skor_tahmini': ' | '.join(practical_scores),
+                    'kart_35': f"ÜST (%{int(cards_corners_data['p_cards_35'] * 100)}) - 3,5",
+                    'kart_prob': int(cards_corners_data['p_cards_35'] * 100),
+                    'kart_mu': cards_corners_data['cards_mu'],
+                    'korner_75': f"ÜST (%{int(cards_corners_data['p_corners_75'] * 100)}) - 7,5",
+                    'korner_prob': int(cards_corners_data['p_corners_75'] * 100),
+                    'korner_mu': cards_corners_data['corners_mu'],
+                    'data_quality': confidence
+                }
+                
+                ultra_tahminler.append(ultra_tahmin)
+                
+            except Exception as e:
+                print(f"❌ GELİŞTİRİLMİŞ ULTRA tahmin hatası: {e}")
+                continue
+        
+        print(f"✅ GELİŞTİRİLMİŞ ULTRA tahminleri tamamlandı: {len(ultra_tahminler)} maç")
+        return ultra_tahminler
+        
+    except Exception as e:
+        print(f"❌ GELİŞTİRİLMİŞ ULTRA sistem hatası: {e}")
+        return []
 
 # ==================== EKSİK FONKSİYONLARIN TAMAMLANMASI ====================
 
@@ -4931,7 +4761,7 @@ def original_rate_fixture(fx, odds_info):
 def match_key_from_fixture(fx):
     if fx.get("id"):
         return f"{fx.get('source','?')}:{fx['id']}"
-    dt = (fx.get("utc_kickoff") or datetime.now(timezone.utc)).astimezone(TR_TZ).strftime("%Y%m%d")
+    dt = (fx.get("utc_kickoff") or datetime.now(timezone.utc)).strftime("%Y%m%d")
     return f"{norm_team(fx.get('home'))}|{norm_team(fx.get('away'))}|{dt}"
 
 def alt_key_from_names(home, away, date_str):
