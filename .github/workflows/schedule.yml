@@ -90,7 +90,7 @@ jobs:
             echo "🤖 AUTO: RESULTS modu (gece)"
           fi
 
-      - name: Botu çalıştır
+      - name: İlk Botu Çalıştır (mailer.py)
         env:
           # Mail bilgileri
           GMAIL_USER:            ${{ secrets.GMAIL_USER }}
@@ -136,8 +136,21 @@ jobs:
         run: |
           set -e
           mkdir -p snapshots
-          echo "🚀 Bot başlatılıyor: $MODE modu"
+          echo "🚀 İlk Bot başlatılıyor: $MODE modu"
           python mailer.py --mode "$MODE"
+
+      - name: İkinci Botu Çalıştır (futbol_tahmin.py)
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO: ${{ secrets.GMAIL_TO }}
+          APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
+          TAHMIN_SAATI: ${{ steps.pick.outputs.mode == 'PREDICT' && 'true' || 'false' }}
+          SONUC_SAATI: ${{ steps.pick.outputs.mode == 'RESULTS' && 'true' || 'false' }}
+        run: |
+          set -e
+          echo "🚀 İkinci Bot başlatılıyor"
+          python futbol_tahmin.py
 
       - name: State'i kalıcılaştır (TÜM MODLAR)
         if: always()
