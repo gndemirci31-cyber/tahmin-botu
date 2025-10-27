@@ -85,9 +85,9 @@
     "timestamp": 1761291038.3571212
   },
   "Turkey:samsunspor": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550340.8230052
+    "timestamp": 1761561354.9373937
   },
   "Spain:elche": {
     "value": 40,
@@ -230,9 +230,9 @@
     "timestamp": 1761512050.7097893
   },
   "Turkey:gazişehir gaziantep": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550340.8134837
+    "timestamp": 1761561351.8050199
   },
   "Turkey:antalyaspor": {
     "value": 40,
@@ -400,9 +400,9 @@
     "timestamp": 1761512064.549356
   },
   "Turkey:fenerbahce": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550340.815785
+    "timestamp": 1761561351.8074179
   },
   "Turkey:fatih karagümrük": {
     "value": 180,
@@ -652,7 +652,7 @@
   "Turkey:rizespor": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550340.8252814
+    "timestamp": 1761561354.939825
   },
   "Turkey:istanbul basaksehir": {
     "value": 180,
@@ -1795,13 +1795,13 @@
     "timestamp": 1761512067.1669908
   },
   "Spain:betis": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550341.7251494
-  },
-  "Spain:atletico madrid": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761550341.7275472
+    "timestamp": 1761561357.837834
+  },
+  "Spain:atletico madrid": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1761561357.8402278
   }
 }
