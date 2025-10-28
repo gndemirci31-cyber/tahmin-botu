@@ -191,7 +191,7 @@ def format_sonuc_email(sonuclar, date_str):
         return f"{date_str} tarihi için sonuç bulunamadı."
     
     lines = []
-    lines.append(f"📊 DÜNÜN MAÇ SONUÇLARI — {date_str}")
+    lines.append(f"📊 HEDEF LİGLER - DÜNÜN MAÇ SONUÇLARI — {date_str}")
     lines.append("=" * 60)
     lines.append(f"⏰ Üretilme Zamanı: {datetime.now().strftime('%H:%M')}")
     lines.append("")
@@ -683,34 +683,37 @@ def run_sonuc_analizi():
         log("❌ Dünkü maç bulunamadı!")
         return "Dünkü maç bulunamadı."
     
-    sonuclar = []
+    # HEDEF LİGLERİ FİLTRELE
+    hedef_sonuclar = []
     for mac in tum_maclar:
-        fixture = mac.get('fixture', {})
-        status = fixture.get('status', {}).get('short', '')
-        
-        # Sadece bitmiş maçları al
-        if status in ['FT', 'AET', 'PEN']:
-            teams = mac.get('teams', {})
-            goals = mac.get('goals', {})
-            league = mac.get('league', {})
+        lig_id = str(mac.get('league', {}).get('id', ''))
+        if lig_id in HEDEF_LIG_IDS:
+            fixture = mac.get('fixture', {})
+            status = fixture.get('status', {}).get('short', '')
             
-            sonuc = {
-                'home_team': teams.get('home', {}).get('name', 'Bilinmiyor'),
-                'away_team': teams.get('away', {}).get('name', 'Bilinmiyor'),
-                'home_score': goals.get('home', '?'),
-                'away_score': goals.get('away', '?'),
-                'league': league.get('name', 'Bilinmeyen Lig'),
-                'status': status
-            }
-            sonuclar.append(sonuc)
+            # Sadece bitmiş maçları al
+            if status in ['FT', 'AET', 'PEN']:
+                teams = mac.get('teams', {})
+                goals = mac.get('goals', {})
+                league = mac.get('league', {})
+                
+                sonuc = {
+                    'home_team': teams.get('home', {}).get('name', 'Bilinmiyor'),
+                    'away_team': teams.get('away', {}).get('name', 'Bilinmiyor'),
+                    'home_score': goals.get('home', '?'),
+                    'away_score': goals.get('away', '?'),
+                    'league': league.get('name', 'Bilinmeyen Lig'),
+                    'status': status
+                }
+                hedef_sonuclar.append(sonuc)
     
-    log(f"✅ {len(sonuclar)} maç sonucu bulundu")
+    log(f"✅ Hedef liglerde {len(hedef_sonuclar)} maç sonucu bulundu")
     
-    if sonuclar:
-        email_icerik = format_sonuc_email(sonuclar, yesterday)
+    if hedef_sonuclar:
+        email_icerik = format_sonuc_email(hedef_sonuclar, yesterday)
         return email_icerik
     else:
-        return "Dün bitmiş maç bulunamadı."
+        return "Dün hedef liglerde bitmiş maç bulunamadı."
 
 # ANA PROGRAM - OTOMATİK SİSTEM
 if __name__ == "__main__":
@@ -728,7 +731,7 @@ if __name__ == "__main__":
         # 04:00 - SONUÇ MAİLİ
         log("📊 SONUÇ ZAMANI (04:00)")
         email_icerik = run_sonuc_analizi()
-        send_mail("📊 DÜNÜN MAÇ SONUÇLARI", email_icerik)
+        send_mail("📊 HEDEF LİGLER - DÜNÜN MAÇ SONUÇLARI", email_icerik)
         
     else:
         # Manuel çalıştırma
