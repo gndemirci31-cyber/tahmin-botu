@@ -172,12 +172,12 @@
   "Italy:palermo": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377367.0853448
+    "timestamp": 1761636784.2595987
   },
   "Italy:modena": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291058.5145106
+    "timestamp": 1761636786.9770262
   },
   "Germany:freiburg": {
     "value": 80,
@@ -320,9 +320,9 @@
     "timestamp": 1761512050.7010038
   },
   "Italy:empoli": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291058.5161958
+    "timestamp": 1761636781.581349
   },
   "Italy:venezia": {
     "value": 180,
@@ -350,9 +350,9 @@
     "timestamp": 1761377300.1359909
   },
   "Italy:atalanta": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377386.3563192
+    "timestamp": 1761636794.9623811
   },
   "Italy:lazio": {
     "value": 80,
@@ -432,7 +432,7 @@
   "Italy:milan": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291061.3935378
+    "timestamp": 1761636794.9646826
   },
   "Italy:fiorentina": {
     "value": 180,
@@ -1232,7 +1232,7 @@
   "Italy:lecce": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377267.607077
+    "timestamp": 1761636775.8100383
   },
   "Portugal:pacos ferreira": {
     "value": 180,
@@ -1250,34 +1250,34 @@
     "timestamp": 1761377272.6044989
   },
   "Italy:cesena": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377272.6065981
+    "timestamp": 1761636789.5974984
   },
   "Italy:sampdoria": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377275.3326252
+    "timestamp": 1761636781.583708
   },
   "Italy:frosinone": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377275.334753
+    "timestamp": 1761636792.2768073
   },
   "Italy:monza": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377277.9921935
+    "timestamp": 1761636784.2619922
   },
   "Italy:reggiana": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377277.9943898
+    "timestamp": 1761636786.9746723
   },
   "Italy:avellino": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377280.717452
+    "timestamp": 1761636778.6765025
   },
   "Italy:spezia": {
     "value": 80,
@@ -1285,14 +1285,14 @@
     "timestamp": 1761377280.719595
   },
   "Italy:virtus entella": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377283.609681
+    "timestamp": 1761636792.2791567
   },
   "Italy:pescara": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377283.6117685
+    "timestamp": 1761636778.6741269
   },
   "Germany:fc augsburg": {
     "value": 180,
@@ -1420,14 +1420,14 @@
     "timestamp": 1761377336.5270972
   },
   "Italy:carrarese": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377339.1993036
+    "timestamp": 1761636789.5998843
   },
   "Italy:napoli": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377341.9016464
+    "timestamp": 1761636775.812434
   },
   "Italy:inter": {
     "value": 180,
