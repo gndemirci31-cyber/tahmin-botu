@@ -5,9 +5,9 @@
     "timestamp": 1761723200.1041532
   },
   "Portugal:maritimo": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1760903438.1877973
+    "timestamp": 1761809467.2354627
   },
   "Netherlands:telstar": {
     "value": 40,
@@ -132,7 +132,7 @@
   "Italy:cagliari": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761512045.5571702
+    "timestamp": 1761809458.8010075
   },
   "Italy:bologna": {
     "value": 80,
@@ -355,9 +355,9 @@
     "timestamp": 1761636794.9623811
   },
   "Italy:lazio": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761512066.287841
+    "timestamp": 1761809464.0904846
   },
   "Belgium:st truiden": {
     "value": 80,
@@ -1100,9 +1100,9 @@
     "timestamp": 1761291035.5337753
   },
   "Portugal:torreense": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291041.7963474
+    "timestamp": 1761809462.0321813
   },
   "Portugal:oliveirense": {
     "value": 180,
@@ -1142,7 +1142,7 @@
   "Italy:pisa": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291061.3953345
+    "timestamp": 1761809464.0879073
   },
   "Belgium:charleroi": {
     "value": 80,
@@ -1170,14 +1170,14 @@
     "timestamp": 1761291074.5151677
   },
   "Portugal:união de leiria": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377244.956837
+    "timestamp": 1761809467.238063
   },
   "Portugal:leixoes": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377244.9589179
+    "timestamp": 1761809465.649223
   },
   "Portugal:sporting cp b": {
     "value": 80,
@@ -1237,12 +1237,12 @@
   "Portugal:pacos ferreira": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377269.7265332
+    "timestamp": 1761809460.4065099
   },
   "Portugal:portimonense": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377269.7286904
+    "timestamp": 1761809462.0296588
   },
   "Italy:sudtirol": {
     "value": 80,
@@ -1400,9 +1400,9 @@
     "timestamp": 1761377322.1500037
   },
   "Portugal:academico viseu": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377331.530949
+    "timestamp": 1761809465.6520445
   },
   "Portugal:chaves": {
     "value": 180,
@@ -1412,7 +1412,7 @@
   "Portugal:benfica b": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761377333.6613996
+    "timestamp": 1761809460.404056
   },
   "France:paris saint germain": {
     "value": 40,
@@ -1600,9 +1600,9 @@
     "timestamp": 1761512043.8011436
   },
   "Italy:sassuolo": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761512044.6709363
+    "timestamp": 1761809458.8034651
   },
   "Italy:roma": {
     "value": 180,
