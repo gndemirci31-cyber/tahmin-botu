@@ -547,12 +547,12 @@
   "World:olympiakos piraeus": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078381.18155
+    "timestamp": 1762241580.6299038
   },
   "World:union st gilloise": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078384.605224
+    "timestamp": 1762241582.0743716
   },
   "World:inter": {
     "value": 80,
@@ -560,14 +560,14 @@
     "timestamp": 1761078384.6065469
   },
   "World:psv eindhoven": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078388.5566964
-  },
-  "World:napoli": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078388.557635
+    "timestamp": 1762241580.6323168
+  },
+  "World:napoli": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1762241573.49529
   },
   "World:leverkusen": {
     "value": 40,
@@ -577,22 +577,22 @@
   "World:paris saint germain": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078391.14868
+    "timestamp": 1762241586.318275
   },
   "World:arsenal": {
     "value": 150,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761078393.534716
+    "timestamp": 1762241574.9187772
   },
   "World:atletico madrid": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078393.5358708
+    "timestamp": 1762241582.0719545
   },
   "World:fc copenhagen": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078396.002549
+    "timestamp": 1762241577.7892258
   },
   "World:borussia dortmund": {
     "value": 80,
@@ -625,9 +625,9 @@
     "timestamp": 1761118322.4380753
   },
   "World:bodo glimt": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118322.4392362
+    "timestamp": 1762241584.051832
   },
   "World:athletic club": {
     "value": 180,
@@ -660,34 +660,34 @@
     "timestamp": 1761895830.4728608
   },
   "World:monaco": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118328.7443466
+    "timestamp": 1762241584.054188
   },
   "World:tottenham": {
     "value": 100,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761118328.7454772
+    "timestamp": 1762241577.7867262
   },
   "World:real madrid": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118330.3158207
-  },
-  "World:juventus": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118330.3169525
-  },
-  "World:eintracht frankfurt": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118331.858644
+    "timestamp": 1762241579.216828
+  },
+  "World:juventus": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1762241587.7355762
+  },
+  "World:eintracht frankfurt": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1762241573.4977198
   },
   "World:liverpool": {
     "value": 140,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761118331.8597543
+    "timestamp": 1762241579.2143939
   },
   "World:chelsea": {
     "value": 120,
@@ -707,12 +707,12 @@
   "World:slavia praha": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118334.958314
+    "timestamp": 1762241574.91636
   },
   "World:sporting cp": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118336.5129588
+    "timestamp": 1762241587.7379534
   },
   "World:marseille": {
     "value": 40,
@@ -720,9 +720,9 @@
     "timestamp": 1761118336.5142102
   },
   "World:bayern münchen": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118338.6931906
+    "timestamp": 1762241586.320662
   },
   "World:club brugge kv": {
     "value": 40,
@@ -1102,7 +1102,7 @@
   "Portugal:torreense": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761809462.0321813
+    "timestamp": 1762241572.0555935
   },
   "Portugal:oliveirense": {
     "value": 40,
@@ -1167,7 +1167,7 @@
   "Portugal:felgueiras 1932": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761291074.5151677
+    "timestamp": 1762241572.058012
   },
   "Portugal:união de leiria": {
     "value": 80,
@@ -1185,9 +1185,9 @@
     "timestamp": 1761982034.9832177
   },
   "Portugal:lusitânia lourosa": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761723176.7334387
+    "timestamp": 1762241576.357151
   },
   "Germany:arminia bielefeld": {
     "value": 80,
@@ -1402,7 +1402,7 @@
   "Portugal:academico viseu": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761809465.6520445
+    "timestamp": 1762241576.3546624
   },
   "Portugal:chaves": {
     "value": 180,
