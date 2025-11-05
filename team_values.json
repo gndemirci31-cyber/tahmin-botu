@@ -532,17 +532,17 @@
   "World:kairat almaty": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078378.6770263
+    "timestamp": 1762326855.6662114
   },
   "World:pafos": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078378.6779487
+    "timestamp": 1762326838.48482
   },
   "World:barcelona": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078381.1805127
+    "timestamp": 1762326845.616704
   },
   "World:olympiakos piraeus": {
     "value": 80,
@@ -555,9 +555,9 @@
     "timestamp": 1762241582.0743716
   },
   "World:inter": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078384.6065469
+    "timestamp": 1762326855.6636004
   },
   "World:psv eindhoven": {
     "value": 180,
@@ -572,7 +572,7 @@
   "World:leverkusen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078391.1477225
+    "timestamp": 1762326852.6258576
   },
   "World:paris saint germain": {
     "value": 80,
@@ -597,32 +597,32 @@
   "World:borussia dortmund": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078396.0037675
+    "timestamp": 1762326843.2125795
   },
   "World:villarreal": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078398.6623268
+    "timestamp": 1762326838.4870906
   },
   "World:manchester": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078398.6633523
+    "timestamp": 1762326843.210334
   },
   "World:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761078401.2790468
+    "timestamp": 1762326850.3016782
   },
   "World:benfica": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761078401.2799606
-  },
-  "World:galatasaray": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118322.4380753
+    "timestamp": 1762326852.6233249
+  },
+  "World:galatasaray": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1762326847.959446
   },
   "World:bodo glimt": {
     "value": 80,
@@ -632,12 +632,12 @@
   "World:athletic club": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118324.0253103
+    "timestamp": 1762326850.3043149
   },
   "World:qarabag": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118324.0264888
+    "timestamp": 1762326836.1751518
   },
   "Turkey:konyaspor": {
     "value": 180,
@@ -692,17 +692,17 @@
   "World:chelsea": {
     "value": 120,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1761118333.4107678
+    "timestamp": 1762326836.177424
   },
   "World:ajax": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118333.4118803
-  },
-  "World:atalanta": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118334.9571047
+    "timestamp": 1762326847.95708
+  },
+  "World:atalanta": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1762326858.812646
   },
   "World:slavia praha": {
     "value": 80,
@@ -715,9 +715,9 @@
     "timestamp": 1762241587.7379534
   },
   "World:marseille": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118336.5142102
+    "timestamp": 1762326858.8102648
   },
   "World:bayern münchen": {
     "value": 180,
@@ -727,7 +727,7 @@
   "World:club brugge kv": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761118338.6944225
+    "timestamp": 1762326845.6144648
   },
   "World:fenerbahce": {
     "value": 40,
@@ -1135,9 +1135,9 @@
     "timestamp": 1761982083.3221178
   },
   "Spain:huesca": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761982147.506934
+    "timestamp": 1762326840.8562286
   },
   "Italy:pisa": {
     "value": 40,
@@ -1460,9 +1460,9 @@
     "timestamp": 1762155419.3453577
   },
   "Spain:real sociedad ii": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1761895845.7424507
+    "timestamp": 1762326840.853953
   },
   "France:monaco": {
     "value": 180,
