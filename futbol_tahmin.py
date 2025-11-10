@@ -71,20 +71,9 @@ HEDEF_LIG_IDS = [
     '204',  # TFF 1. Lig
     '206',  # Türkiye Kupası
     
-    # HOLLANDA
-    '88',   # Eredivisie
-    '89',   # Eerste Divisie
-    '92',   # KNVB Beker
-    
     # PORTEKİZ
     '94',   # Primeira Liga
-    '95',   # Liga Portugal 2
     '96',   # Taça de Portugal
-    
-    # BELÇİKA
-    '144',  # Belgian Pro League
-    '145',  # Challenger Pro League
-    '146'   # Belgian Cup
 ]
 
 def log(message):
