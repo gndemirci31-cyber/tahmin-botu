@@ -49,6 +49,23 @@ HEDEF_LIG_IDS = [
     '19',   # UEFA Europa Conference League Qualification
     '20',   # UEFA Nations League
     
+    # EKLENEN MİLLİ TAKIM ELEME LİGLERİ:
+    '1146', # European Championship Qualification
+    '1147', # Euro Qualification - Group Stage  
+    '1148', # World Cup Qualification - UEFA
+    '1149', # WC Qualification Europe
+    '1150', # World Cup Qualifiers UEFA
+    '5',    # UEFA Nations League
+    '12',   # Nations League A
+    '13',   # Nations League B
+    '14',   # Nations League C
+    '15',   # Nations League D
+    '1151', # World Cup Qualification - CONMEBOL
+    '1152', # World Cup Qualification - AFC
+    '1153', # World Cup Qualification - CAF
+    '1154', # World Cup Qualification - CONCACAF
+    '17',   # FIFA Confederations Cup
+    
     # İNGİLTERE
     '39',   # Premier League
     '40',   # Championship
