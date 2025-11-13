@@ -152,12 +152,12 @@ jobs:
           echo "🚀 İkinci Bot başlatılıyor"
           python futbol_tahmin.py
 
-      - name: State'i kalıcılaştır (TÜM MODLAR)
+      - name: State ve tahmin kayıtlarını kalıcılaştır (TÜM MODLAR)
         if: always()
         run: |
           set -e
-          # Yeni state dosyalarını da kontrol et
-          STATE_FILES="model_state.json team_values.json national_elo.json ensemble_model.pkl"
+          # State dosyalarını ve tahmin kayıtlarını kontrol et
+          STATE_FILES="model_state.json team_values.json national_elo.json ensemble_model.pkl tahmin_kayitlari.json"
           
           for file in $STATE_FILES; do
             if [ -f "$file" ] && [ -s "$file" ]; then
@@ -173,4 +173,4 @@ jobs:
           git commit -m "chore(state): auto-update $(date -u +'%Y-%m-%dT%H:%MZ') [skip ci]" || echo "ℹ state'te değişiklik yok - commit gerekmez"
           git push || echo "ℹ push gerekmez (branch güncel)"
           
-          echo "✅ Tüm state dosyaları kalıcılaştırıldı"
+          echo "✅ Tüm state ve tahmin kayıtları kalıcılaştırıldı"
