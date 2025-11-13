@@ -1,0 +1,115 @@
+{
+  "tarih": "2025-11-13",
+  "olusturulma_zamani": "2025-11-13T11:06:06.885423",
+  "toplam_tahmin": 12,
+  "tahminler": [
+    {
+      "match": "United Arab Emirates vs Iraq",
+      "pick": "X",
+      "confidence": 66,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "skor_tahmini": "1-1",
+      "timestamp": "2025-11-13T11:06:06.885431"
+    },
+    {
+      "match": "Nigeria vs Gabon",
+      "pick": "X",
+      "confidence": 65,
+      "api_prediction": "X",
+      "api_confidence": 60,
+      "skor_tahmini": "1-2",
+      "timestamp": "2025-11-13T11:06:06.885433"
+    },
+    {
+      "match": "Azerbaijan vs Iceland",
+      "pick": "X",
+      "confidence": 55,
+      "api_prediction": "2",
+      "api_confidence": 82,
+      "skor_tahmini": "0-2",
+      "timestamp": "2025-11-13T11:06:06.885435"
+    },
+    {
+      "match": "Armenia vs Hungary",
+      "pick": "X",
+      "confidence": 60,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "skor_tahmini": "1-1",
+      "timestamp": "2025-11-13T11:06:06.885436"
+    },
+    {
+      "match": "Norway vs Estonia",
+      "pick": "1",
+      "confidence": 85,
+      "api_prediction": "1",
+      "api_confidence": 78,
+      "skor_tahmini": "4-1",
+      "timestamp": "2025-11-13T11:06:06.885438"
+    },
+    {
+      "match": "Cameroon vs Congo DR",
+      "pick": "X",
+      "confidence": 65,
+      "api_prediction": "1",
+      "api_confidence": 82,
+      "skor_tahmini": "2-2",
+      "timestamp": "2025-11-13T11:06:06.885440"
+    },
+    {
+      "match": "Andorra vs Albania",
+      "pick": "X",
+      "confidence": 61,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "skor_tahmini": "1-1",
+      "timestamp": "2025-11-13T11:06:06.885441"
+    },
+    {
+      "match": "England vs Serbia",
+      "pick": "1",
+      "confidence": 85,
+      "api_prediction": "1",
+      "api_confidence": 82,
+      "skor_tahmini": "3-1",
+      "timestamp": "2025-11-13T11:06:06.885444"
+    },
+    {
+      "match": "France vs Ukraine",
+      "pick": "X",
+      "confidence": 58,
+      "api_prediction": "1",
+      "api_confidence": 77,
+      "skor_tahmini": "2-2",
+      "timestamp": "2025-11-13T11:06:06.885446"
+    },
+    {
+      "match": "Rep. Of Ireland vs Portugal",
+      "pick": "X",
+      "confidence": 60,
+      "api_prediction": "2",
+      "api_confidence": 65,
+      "skor_tahmini": "1-2",
+      "timestamp": "2025-11-13T11:06:06.885448"
+    },
+    {
+      "match": "Moldova vs Italy",
+      "pick": "2",
+      "confidence": 85,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "skor_tahmini": "0-3",
+      "timestamp": "2025-11-13T11:06:06.885449"
+    },
+    {
+      "match": "Suriname vs El Salvador",
+      "pick": "X",
+      "confidence": 57,
+      "api_prediction": "1",
+      "api_confidence": 85,
+      "skor_tahmini": "1-0",
+      "timestamp": "2025-11-13T11:06:06.885451"
+    }
+  ]
+}
