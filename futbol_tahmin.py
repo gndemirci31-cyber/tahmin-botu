@@ -284,11 +284,12 @@ def format_tahmin_email(tahmin_sonuclari, date_str):
     lines.append(f"   • Tahmin Dağılımı: 1({tahmin_dagilimi['1']}) | X({tahmin_dagilimi['X']}) | 2({tahmin_dagilimi['2']})")
     lines.append("")
     
-    # EN YÜKSEK GÜVENLİ TAHMİNLER (5 YILDIZ)
+    # EN YÜKSEK GÜVENLİ TAHMİNLER (5 YILDIZ) - MAÇ SAATİNE GÖRE SIRALI
     bes_yildiz_tahminler = [t for t in tahmin_sonuclari if t['confidence'] >= 85]
     if bes_yildiz_tahminler:
         lines.append("🏆 EN GÜVENİLİR TAHMİNLER (5 YILDIZ):")
-        siralı_tahminler = sorted(bes_yildiz_tahminler, key=lambda x: x['confidence'], reverse=True)
+        # Maç saatine göre sırala
+        siralı_tahminler = sorted(bes_yildiz_tahminler, key=lambda x: x['match_time'])
         for i, tahmin in enumerate(siralı_tahminler, 1):
             yildiz = get_yildiz_rating(tahmin['confidence'])
             lines.append(f"   {yildiz} {tahmin['match']}")
@@ -298,12 +299,12 @@ def format_tahmin_email(tahmin_sonuclari, date_str):
             lines.append(f"      ⚽ Skor: {tahmin['skor_tahmini']}")
             lines.append("")
     
-    # TÜM TAHMİNLER (YILDIZ RATING İLE)
-    lines.append("📋 TÜM TAHMİNLER (YILDIZ RATING SİSTEMİ):")
+    # TÜM TAHMİNLER (MAÇ SAATİNE GÖRE SIRALI)
+    lines.append("📋 TÜM TAHMİNLER (MAÇ SAATİNE GÖRE SIRALI):")
     lines.append("=" * 60)
     
-    # Güven seviyesine göre sırala (yüksek güven önce)
-    siralı_tahminler = sorted(tahmin_sonuclari, key=lambda x: x['confidence'], reverse=True)
+    # Maç saatine göre sırala (erken saatler önce)
+    siralı_tahminler = sorted(tahmin_sonuclari, key=lambda x: x['match_time'])
     
     for i, tahmin in enumerate(siralı_tahminler, 1):
         yildiz = get_yildiz_rating(tahmin['confidence'])
@@ -673,7 +674,15 @@ def format_match_time(timestamp):
     except:
         return "Bilinmiyor"
 
-def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id, match_time):
+def get_match_time_for_sorting(timestamp):
+    """Sıralama için maç saatini al"""
+    try:
+        match_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        return match_time
+    except:
+        return datetime.now()
+
+def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id, match_time, match_timestamp):
     """GERÇEK VERİLERLE TAHMİN HESAPLA"""
     
     # GÜÇ HESABI
@@ -751,7 +760,8 @@ def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, 
         'korner_75': "ÜST" if korner_prob > 50 else "ALT",
         'korner_prob': int(korner_prob),
         'data_quality': data_quality,
-        'match_time': match_time
+        'match_time': match_time,
+        'match_timestamp': match_timestamp  # Sıralama için
     }
 
 def run_tahmin_analizi():
@@ -805,6 +815,7 @@ def run_tahmin_analizi():
         home_id = teams.get('home', {}).get('id')
         away_id = teams.get('away', {}).get('id')
         match_time = format_match_time(fixture.get('date', ''))
+        match_timestamp = get_match_time_for_sorting(fixture.get('date', ''))
         
         log(f"🔮 #{i} - {home_team} vs {away_team} - {match_time}")
         
@@ -817,7 +828,7 @@ def run_tahmin_analizi():
                 # TAM TAHMİN
                 tahmin = tahmin_hesapla_gercek_verilerle(
                     home_form, away_form, home_team, away_team, 
-                    lig_adi, home_id, away_id, match_time
+                    lig_adi, home_id, away_id, match_time, match_timestamp
                 )
                 
                 tahmin_sonuclari.append(tahmin)
