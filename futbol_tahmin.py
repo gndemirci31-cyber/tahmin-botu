@@ -3,6 +3,7 @@
 import requests
 import math
 import random
+import json
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 import smtplib
@@ -152,6 +153,96 @@ def is_kadin_veya_genc_lig(lig_adi):
             return True
     return False
 
+def save_predictions_to_json(tahmin_sonuclari):
+    """Tahminleri JSON dosyasına kaydet"""
+    try:
+        # Tahmin verisi oluştur
+        prediction_data = {
+            'tarih': datetime.now().strftime('%Y-%m-%d'),
+            'olusturulma_zamani': datetime.now().isoformat(),
+            'toplam_tahmin': len(tahmin_sonuclari),
+            'tahminler': []
+        }
+        
+        for tahmin in tahmin_sonuclari:
+            prediction_data['tahminler'].append({
+                'match': tahmin['match'],
+                'pick': tahmin['pick'],
+                'confidence': tahmin['confidence'],
+                'api_prediction': tahmin['api_prediction'],
+                'api_confidence': tahmin['api_confidence'],
+                'skor_tahmini': tahmin['skor_tahmini'],
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        # JSON dosyasına kaydet
+        with open('tahmin_kayitlari.json', 'w', encoding='utf-8') as f:
+            json.dump(prediction_data, f, ensure_ascii=False, indent=2)
+        
+        log("✅ Tahminler JSON dosyasına kaydedildi")
+        return True
+        
+    except Exception as e:
+        log(f"❌ Tahmin kaydetme hatası: {e}")
+        return False
+
+def check_previous_predictions():
+    """Önceki tahminlerin sonuçlarını kontrol et ve başarı oranını hesapla"""
+    try:
+        # Önceki tahmin dosyasını oku
+        with open('tahmin_kayitlari.json', 'r', encoding='utf-8') as f:
+            old_data = json.load(f)
+        
+        tahmin_tarihi = old_data['tarih']
+        bugun = datetime.now().strftime('%Y-%m-%d')
+        
+        # Eğer tahmin bugün yapılmışsa, sonuçları henüz yok
+        if tahmin_tarihi == bugun:
+            return None
+        
+        # Dünkü maçların sonuçlarını getir
+        params = {"date": tahmin_tarihi}
+        gercek_sonuclar = _apifoot_get("fixtures", params)
+        
+        if not gercek_sonuclar:
+            return None
+        
+        # Başarı analizi
+        dogru_tahmin = 0
+        toplam_tahmin = len(old_data['tahminler'])
+        
+        for tahmin in old_data['tahminler']:
+            for mac in gercek_sonuclar:
+                if (tahmin['match'].split(' vs ')[0] in mac['teams']['home']['name'] and 
+                    tahmin['match'].split(' vs ')[1] in mac['teams']['away']['name']):
+                    
+                    # Maç sonucunu kontrol et
+                    if mac['fixture']['status']['short'] in ['FT', 'AET', 'PEN']:
+                        home_goals = mac['goals']['home'] or 0
+                        away_goals = mac['goals']['away'] or 0
+                        
+                        # Tahmin doğru mu?
+                        if (tahmin['pick'] == '1' and home_goals > away_goals) or \
+                           (tahmin['pick'] == '2' and away_goals > home_goals) or \
+                           (tahmin['pick'] == 'X' and home_goals == away_goals):
+                            dogru_tahmin += 1
+                        break
+        
+        if toplam_tahmin > 0:
+            basari_orani = (dogru_tahmin / toplam_tahmin) * 100
+            return {
+                'tarih': tahmin_tarihi,
+                'toplam_tahmin': toplam_tahmin,
+                'dogru_tahmin': dogru_tahmin,
+                'basari_orani': round(basari_orani, 1)
+            }
+        
+        return None
+        
+    except Exception as e:
+        log(f"❌ Sonuç kontrol hatası: {e}")
+        return None
+
 def format_tahmin_email(tahmin_sonuclari, date_str):
     """Tahmin sonuçlarını e-posta formatında hazırla"""
     if not tahmin_sonuclari:
@@ -213,8 +304,8 @@ def format_tahmin_email(tahmin_sonuclari, date_str):
     
     return "\n".join(lines)
 
-def format_sonuc_email(sonuclar, date_str):
-    """Sonuçları e-posta formatında hazırla"""
+def format_sonuc_email(sonuclar, date_str, basari_analizi=None):
+    """Sonuçları e-posta formatında hazırla - BAŞARI ORANI EKLİ"""
     if not sonuclar:
         return f"{date_str} tarihi için sonuç bulunamadı."
     
@@ -223,6 +314,14 @@ def format_sonuc_email(sonuclar, date_str):
     lines.append("=" * 60)
     lines.append(f"⏰ Üretilme Zamanı: {datetime.now().strftime('%H:%M')}")
     lines.append("")
+    
+    # BAŞARI ANALİZİ EKLE
+    if basari_analizi:
+        lines.append("🏆 ÖNCEKİ TAHMİN BAŞARI ANALİZİ:")
+        lines.append(f"   📅 Tahmin Tarihi: {basari_analizi['tarih']}")
+        lines.append(f"   ✅ Doğru Tahmin: {basari_analizi['dogru_tahmin']}/{basari_analizi['toplam_tahmin']}")
+        lines.append(f"   📈 Başarı Oranı: %{basari_analizi['basari_orani']}")
+        lines.append("")
     
     for sonuc in sonuclar:
         lines.append(f"🏆 {sonuc.get('league', 'Bilinmeyen Lig')}")
@@ -697,6 +796,8 @@ def run_tahmin_analizi():
             log(f"   ❌ Hata: {e}")
     
     if tahmin_sonuclari:
+        # TAHMİNLERİ KAYDET
+        save_predictions_to_json(tahmin_sonuclari)
         email_icerik = format_tahmin_email(tahmin_sonuclari, today)
         return email_icerik
     else:
@@ -747,8 +848,11 @@ def run_sonuc_analizi():
     
     log(f"✅ Hedef liglerde {len(hedef_sonuclar)} maç sonucu bulundu")
     
+    # ÖNCEKİ TAHMİNLERİN BAŞARISINI KONTROL ET
+    basari_analizi = check_previous_predictions()
+    
     if hedef_sonuclar:
-        email_icerik = format_sonuc_email(hedef_sonuclar, yesterday)
+        email_icerik = format_sonuc_email(hedef_sonuclar, yesterday, basari_analizi)
         return email_icerik
     else:
         return "Dün hedef liglerde bitmiş maç bulunamadı."
