@@ -26,80 +26,22 @@ GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", False)
 TAHMIN_SAATI = os.getenv("TAHMIN_SAATI", "false").lower() == "true"  # 10:00 için
 SONUC_SAATI = os.getenv("SONUC_SAATI", "false").lower() == "true"    # 04:00 için
 
-# HEDEF LİG/KUPA/TURNUVALAR
+# HEDEF LİG/KUPA/TURNUVALAR (GÜNCEL LİSTEYİ OTOMATİK BULACAK)
 HEDEF_LIG_IDS = [
-    # ULUSLARARASI TURNUVALAR
-    '2',    # UEFA Champions League
-    '3',    # UEFA Europa League 
-    '848',  # UEFA Europa Conference League
-    '667',  # UEFA Nations League
-    '1',    # FIFA World Cup
-    '4',    # UEFA European Championship
-    '5',    # Copa América
-    '6',    # AFC Asian Cup
-    '7',    # Africa Cup of Nations
-    '9',    # CONCACAF Gold Cup
-    
-    # EKLENEN YENİ TURNUVALAR
-    '4',    # UEFA European Championship
-    '15',   # FIFA World Cup Qualification
-    '16',   # UEFA European Championship Qualification
-    '17',   # UEFA Champions League Qualification
-    '18',   # UEFA Europa League Qualification
-    '19',   # UEFA Europa Conference League Qualification
-    '20',   # UEFA Nations League
-    
-    # EKLENEN MİLLİ TAKIM ELEME LİGLERİ:
-    '1146', # European Championship Qualification
-    '1147', # Euro Qualification - Group Stage  
-    '1148', # World Cup Qualification - UEFA
-    '1149', # WC Qualification Europe
-    '1150', # World Cup Qualifiers UEFA
-    '5',    # UEFA Nations League
-    '12',   # Nations League A
-    '13',   # Nations League B
-    '14',   # Nations League C
-    '15',   # Nations League D
-    '1151', # World Cup Qualification - CONMEBOL
-    '1152', # World Cup Qualification - AFC
-    '1153', # World Cup Qualification - CAF
-    '1154', # World Cup Qualification - CONCACAF
-    '17',   # FIFA Confederations Cup
-    
-    # İNGİLTERE
+    # Bu liste otomatik olarak güncellenecek
+]
+
+# YEDEK LİG LİSTESİ (OTOMATİK BULUNAMAZSA KULLANILACAK)
+YEDEK_LIG_IDS = [
     '39',   # Premier League
-    '40',   # Championship
-    '45',   # FA Cup
-    '48',   # EFL Cup
-    
-    # İSPANYA
     '140',  # La Liga
-    '141',  # La Liga 2
-    '143',  # Copa del Rey
-    
-    # İTALYA
     '135',  # Serie A
-    '136',  # Serie B
-    '137',  # Coppa Italia
-    
-    # ALMANYA
     '78',   # Bundesliga
-    '79',   # 2. Bundesliga
-    '81',   # DFB-Pokal
-    
-    # FRANSA
     '61',   # Ligue 1
-    '62',   # Ligue 2
-    '66',   # Coupe de France
-    
-    # TÜRKİYE
     '203',  # Süper Lig
-    '204',  # TFF 1. Lig
-    '206',  # Türkiye Kupası
-    
-    # PORTEKİZ
-    '94',   # Primeira Liga
-    '96',   # Taça de Portugal
+    '2',    # UEFA Champions League
+    '3',    # UEFA Europa League
+    '848',  # UEFA Europa Conference League
 ]
 
 # KADIN/GENÇ LİG FİLTRE KELİMELERİ
@@ -111,6 +53,32 @@ FILTRE_KELIMELER = [
     'U23',      # 23 yaş altı
     'U18',      # 18 yaş altı
 ]
+
+def get_guncel_lig_ids():
+    """BUGÜN MAÇ OLAN GÜNCEL LİG ID'LERİNİ BUL"""
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        today_leagues = set()
+        
+        # Bugünkü maçlardan lig ID'lerini al
+        params = {"date": today}
+        fixtures = _apifoot_get("fixtures", params)
+        
+        if fixtures:
+            for fixture in fixtures:
+                league_id = str(fixture.get('league', {}).get('id', ''))
+                if league_id:
+                    today_leagues.add(league_id)
+            
+            log(f"🎯 Bugün maç olan {len(today_leagues)} lig bulundu")
+            return list(today_leagues)
+        else:
+            log("❌ Bugünkü maçlar alınamadı, yedek liste kullanılıyor")
+            return YEDEK_LIG_IDS
+            
+    except Exception as e:
+        log(f"❌ Lig ID bulma hatası: {e}, yedek liste kullanılıyor")
+        return YEDEK_LIG_IDS
 
 def log(message):
     """Log mesajı - GitHub Actions için"""
@@ -636,6 +604,11 @@ def run_tahmin_analizi():
     
     today = datetime.now().strftime("%Y-%m-%d")
     log(f"📅 Tahmin Tarihi: {today}")
+    
+    # GÜNCEL LİG ID'LERİNİ AL
+    global HEDEF_LIG_IDS
+    HEDEF_LIG_IDS = get_guncel_lig_ids()
+    log(f"🎯 Kullanılacak lig sayısı: {len(HEDEF_LIG_IDS)}")
     
     # BUGÜNÜN TÜM MAÇLARINI ÇEK
     params = {"date": today}
