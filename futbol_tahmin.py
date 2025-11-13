@@ -40,6 +40,15 @@ HEDEF_LIG_IDS = [
     '7',    # Africa Cup of Nations
     '9',    # CONCACAF Gold Cup
     
+    # EKLENEN YENİ TURNUVALAR
+    '4',    # UEFA European Championship
+    '15',   # FIFA World Cup Qualification
+    '16',   # UEFA European Championship Qualification
+    '17',   # UEFA Champions League Qualification
+    '18',   # UEFA Europa League Qualification
+    '19',   # UEFA Europa Conference League Qualification
+    '20',   # UEFA Nations League
+    
     # İNGİLTERE
     '39',   # Premier League
     '40',   # Championship
@@ -74,6 +83,16 @@ HEDEF_LIG_IDS = [
     # PORTEKİZ
     '94',   # Primeira Liga
     '96',   # Taça de Portugal
+]
+
+# KADIN/GENÇ LİG FİLTRE KELİMELERİ
+FILTRE_KELIMELER = [
+    'WOMEN',    # Kadın ligleri
+    'U21',      # 21 yaş altı
+    'U20',      # 20 yaş altı  
+    'U19',      # 19 yaş altı
+    'U23',      # 23 yaş altı
+    'U18',      # 18 yaş altı
 ]
 
 def log(message):
@@ -112,6 +131,17 @@ def send_mail(subject, body):
     except Exception as e:
         log(f"❌ Mail gönderme hatası: {e}")
         return False
+
+def is_kadin_veya_genc_lig(lig_adi):
+    """Lig adında kadın veya genç lig kelimeleri var mı kontrol et"""
+    if not lig_adi:
+        return False
+        
+    lig_adi_upper = lig_adi.upper()
+    for kelime in FILTRE_KELIMELER:
+        if kelime in lig_adi_upper:
+            return True
+    return False
 
 def format_tahmin_email(tahmin_sonuclari, date_str):
     """Tahmin sonuçlarını e-posta formatında hazırla"""
@@ -605,6 +635,11 @@ def run_tahmin_analizi():
     for mac in tum_maclar:
         lig_id = str(mac.get('league', {}).get('id', ''))
         if lig_id in HEDEF_LIG_IDS:
+            # KADIN/GENÇ LİG FİLTRELEME
+            lig_adi = mac.get('league', {}).get('name', '')
+            if is_kadin_veya_genc_lig(lig_adi):
+                log(f"⏭️ Atlanan lig (kadın/genç): {lig_adi}")
+                continue
             hedef_maclar.append(mac)
     
     log(f"🎯 Hedef lig/kupa/turnuvalardaki maç: {len(hedef_maclar)}")
@@ -677,6 +712,11 @@ def run_sonuc_analizi():
     for mac in tum_maclar:
         lig_id = str(mac.get('league', {}).get('id', ''))
         if lig_id in HEDEF_LIG_IDS:
+            # KADIN/GENÇ LİG FİLTRELEME
+            lig_adi = mac.get('league', {}).get('name', '')
+            if is_kadin_veya_genc_lig(lig_adi):
+                continue
+                
             fixture = mac.get('fixture', {})
             status = fixture.get('status', {}).get('short', '')
             
