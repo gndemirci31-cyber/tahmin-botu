@@ -243,8 +243,21 @@ def check_previous_predictions():
         log(f"❌ Sonuç kontrol hatası: {e}")
         return None
 
+def get_yildiz_rating(confidence):
+    """Güven yüzdesine göre yıldız rating belirle"""
+    if confidence >= 85:
+        return "★★★★★"  # 5 yıldız - EN GÜVENİLİR
+    elif confidence >= 75:
+        return "★★★★☆"  # 4 yıldız
+    elif confidence >= 65:
+        return "★★★☆☆"  # 3 yıldız
+    elif confidence >= 55:
+        return "★★☆☆☆"  # 2 yıldız
+    else:
+        return "★☆☆☆☆"  # 1 yıldız
+
 def format_tahmin_email(tahmin_sonuclari, date_str):
-    """Tahmin sonuçlarını e-posta formatında hazırla"""
+    """Tahmin sonuçlarını e-posta formatında hazırla - YILDIZ RATING EKLİ"""
     if not tahmin_sonuclari:
         return "Bugün için analiz edilecek maç bulunamadı."
     
@@ -271,25 +284,34 @@ def format_tahmin_email(tahmin_sonuclari, date_str):
     lines.append(f"   • Tahmin Dağılımı: 1({tahmin_dagilimi['1']}) | X({tahmin_dagilimi['X']}) | 2({tahmin_dagilimi['2']})")
     lines.append("")
     
-    # EN YÜKSEK GÜVENLİ TAHMİNLER
-    if len(tahmin_sonuclari) >= 3:
-        lines.append("🏆 EN YÜKSEK GÜVENLİ 3 TAHMİN:")
-        siralı_tahminler = sorted(tahmin_sonuclari, key=lambda x: x['confidence'], reverse=True)[:3]
+    # EN YÜKSEK GÜVENLİ TAHMİNLER (5 YILDIZ)
+    bes_yildiz_tahminler = [t for t in tahmin_sonuclari if t['confidence'] >= 85]
+    if bes_yildiz_tahminler:
+        lines.append("🏆 EN GÜVENİLİR TAHMİNLER (5 YILDIZ):")
+        siralı_tahminler = sorted(bes_yildiz_tahminler, key=lambda x: x['confidence'], reverse=True)
         for i, tahmin in enumerate(siralı_tahminler, 1):
-            lines.append(f"   {i}. {tahmin['match']}")
+            yildiz = get_yildiz_rating(tahmin['confidence'])
+            lines.append(f"   {yildiz} {tahmin['match']}")
+            lines.append(f"      🕐 Maç Saati: {tahmin['match_time']}")
             lines.append(f"      🎯 Tahmin: {tahmin['pick']} (%{tahmin['confidence']})")
             lines.append(f"      🤖 API-Football AI: {tahmin['api_prediction']} (%{tahmin['api_confidence']})")
             lines.append(f"      ⚽ Skor: {tahmin['skor_tahmini']}")
             lines.append("")
     
-    # TÜM TAHMİNLER
-    lines.append("📋 TÜM TAHMİNLER:")
-    lines.append("=" * 50)
+    # TÜM TAHMİNLER (YILDIZ RATING İLE)
+    lines.append("📋 TÜM TAHMİNLER (YILDIZ RATING SİSTEMİ):")
+    lines.append("=" * 60)
     
-    for i, tahmin in enumerate(tahmin_sonuclari, 1):
-        confidence_emoji = "🔥" if tahmin['confidence'] >= 70 else "✅"
-        lines.append(f"{confidence_emoji} #{i} - %{tahmin['confidence']} GÜVEN")
+    # Güven seviyesine göre sırala (yüksek güven önce)
+    siralı_tahminler = sorted(tahmin_sonuclari, key=lambda x: x['confidence'], reverse=True)
+    
+    for i, tahmin in enumerate(siralı_tahminler, 1):
+        yildiz = get_yildiz_rating(tahmin['confidence'])
+        confidence_emoji = "🔥" if tahmin['confidence'] >= 85 else "✅" if tahmin['confidence'] >= 70 else "⚡"
+        
+        lines.append(f"{confidence_emoji} #{i} - {yildiz} %{tahmin['confidence']} GÜVEN")
         lines.append(f"   ⚽ {tahmin['match']}")
+        lines.append(f"   🕐 Maç Saati: {tahmin['match_time']}")
         lines.append(f"   🎯 Tahmin: {tahmin['pick']}")
         lines.append(f"   🤖 API-Football AI: {tahmin['api_prediction']} (%{tahmin['api_confidence']})")
         if tahmin['api_advice'] != "N/A":
@@ -641,7 +663,17 @@ def find_fixture_id(home_team, away_team):
     
     return None
 
-def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id):
+def format_match_time(timestamp):
+    """Maç saatini formatla"""
+    try:
+        match_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        # Türkiye saatine çevir (UTC+3)
+        turkey_time = match_time + timedelta(hours=3)
+        return turkey_time.strftime("%H:%M")
+    except:
+        return "Bilinmiyor"
+
+def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, lig_adi, home_id, away_id, match_time):
     """GERÇEK VERİLERLE TAHMİN HESAPLA"""
     
     # GÜÇ HESABI
@@ -718,7 +750,8 @@ def tahmin_hesapla_gercek_verilerle(home_form, away_form, home_team, away_team, 
         'kart_prob': int(kart_prob),
         'korner_75': "ÜST" if korner_prob > 50 else "ALT",
         'korner_prob': int(korner_prob),
-        'data_quality': data_quality
+        'data_quality': data_quality,
+        'match_time': match_time
     }
 
 def run_tahmin_analizi():
@@ -771,8 +804,9 @@ def run_tahmin_analizi():
         lig_adi = league.get('name', 'Bilinmeyen Lig')
         home_id = teams.get('home', {}).get('id')
         away_id = teams.get('away', {}).get('id')
+        match_time = format_match_time(fixture.get('date', ''))
         
-        log(f"🔮 #{i} - {home_team} vs {away_team}")
+        log(f"🔮 #{i} - {home_team} vs {away_team} - {match_time}")
         
         try:
             # GERÇEK FORM VERİLERİ
@@ -783,11 +817,11 @@ def run_tahmin_analizi():
                 # TAM TAHMİN
                 tahmin = tahmin_hesapla_gercek_verilerle(
                     home_form, away_form, home_team, away_team, 
-                    lig_adi, home_id, away_id
+                    lig_adi, home_id, away_id, match_time
                 )
                 
                 tahmin_sonuclari.append(tahmin)
-                log(f"   ✅ Tahmin: {tahmin['pick']} (%{tahmin['confidence']})")
+                log(f"   ✅ Tahmin: {tahmin['pick']} (%{tahmin['confidence']}) - {match_time}")
                 
             else:
                 log("   ❌ Form verisi alınamadı")
