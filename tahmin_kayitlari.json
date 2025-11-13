@@ -1,6 +1,6 @@
 {
   "tarih": "2025-11-13",
-  "olusturulma_zamani": "2025-11-13T11:21:44.600752",
+  "olusturulma_zamani": "2025-11-13T11:33:16.659661",
   "toplam_tahmin": 12,
   "tahminler": [
     {
@@ -10,7 +10,7 @@
       "api_prediction": "2",
       "api_confidence": 85,
       "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:21:44.600759"
+      "timestamp": "2025-11-13T11:33:16.659668"
     },
     {
       "match": "Nigeria vs Gabon",
@@ -19,7 +19,7 @@
       "api_prediction": "X",
       "api_confidence": 60,
       "skor_tahmini": "1-2",
-      "timestamp": "2025-11-13T11:21:44.600762"
+      "timestamp": "2025-11-13T11:33:16.659670"
     },
     {
       "match": "Azerbaijan vs Iceland",
@@ -28,7 +28,7 @@
       "api_prediction": "2",
       "api_confidence": 82,
       "skor_tahmini": "0-2",
-      "timestamp": "2025-11-13T11:21:44.600763"
+      "timestamp": "2025-11-13T11:33:16.659672"
     },
     {
       "match": "Armenia vs Hungary",
@@ -37,7 +37,7 @@
       "api_prediction": "2",
       "api_confidence": 85,
       "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:21:44.600765"
+      "timestamp": "2025-11-13T11:33:16.659673"
     },
     {
       "match": "Norway vs Estonia",
@@ -46,7 +46,7 @@
       "api_prediction": "1",
       "api_confidence": 78,
       "skor_tahmini": "4-1",
-      "timestamp": "2025-11-13T11:21:44.600766"
+      "timestamp": "2025-11-13T11:33:16.659674"
     },
     {
       "match": "Cameroon vs Congo DR",
@@ -55,7 +55,7 @@
       "api_prediction": "1",
       "api_confidence": 82,
       "skor_tahmini": "2-2",
-      "timestamp": "2025-11-13T11:21:44.600767"
+      "timestamp": "2025-11-13T11:33:16.659676"
     },
     {
       "match": "Andorra vs Albania",
@@ -64,7 +64,7 @@
       "api_prediction": "2",
       "api_confidence": 85,
       "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:21:44.600769"
+      "timestamp": "2025-11-13T11:33:16.659678"
     },
     {
       "match": "England vs Serbia",
@@ -73,7 +73,7 @@
       "api_prediction": "1",
       "api_confidence": 82,
       "skor_tahmini": "3-1",
-      "timestamp": "2025-11-13T11:21:44.600772"
+      "timestamp": "2025-11-13T11:33:16.659681"
     },
     {
       "match": "France vs Ukraine",
@@ -82,7 +82,7 @@
       "api_prediction": "1",
       "api_confidence": 77,
       "skor_tahmini": "2-2",
-      "timestamp": "2025-11-13T11:21:44.600774"
+      "timestamp": "2025-11-13T11:33:16.659683"
     },
     {
       "match": "Rep. Of Ireland vs Portugal",
@@ -91,7 +91,7 @@
       "api_prediction": "2",
       "api_confidence": 65,
       "skor_tahmini": "1-2",
-      "timestamp": "2025-11-13T11:21:44.600776"
+      "timestamp": "2025-11-13T11:33:16.659685"
     },
     {
       "match": "Moldova vs Italy",
@@ -100,7 +100,7 @@
       "api_prediction": "2",
       "api_confidence": 85,
       "skor_tahmini": "0-3",
-      "timestamp": "2025-11-13T11:21:44.600777"
+      "timestamp": "2025-11-13T11:33:16.659686"
     },
     {
       "match": "Suriname vs El Salvador",
@@ -109,7 +109,7 @@
       "api_prediction": "1",
       "api_confidence": 85,
       "skor_tahmini": "1-0",
-      "timestamp": "2025-11-13T11:21:44.600778"
+      "timestamp": "2025-11-13T11:33:16.659687"
     }
   ]
 }
