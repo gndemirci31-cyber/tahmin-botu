@@ -250,9 +250,9 @@
     "timestamp": 1762499685.7115517
   },
   "Spain:valladolid": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763102386.037552
+    "timestamp": 1763104433.6788876
   },
   "Spain:sporting gijon": {
     "value": 40,
@@ -462,7 +462,7 @@
   "Spain:las palmas": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763102386.039937
+    "timestamp": 1763104433.6812584
   },
   "Spain:eibar": {
     "value": 80,

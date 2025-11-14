@@ -1,6 +1,6 @@
 {
   "tarih": "2025-11-14",
-  "olusturulma_zamani": "2025-11-14T06:40:25.809455",
+  "olusturulma_zamani": "2025-11-14T07:14:48.315686",
   "toplam_tahmin": 13,
   "tahminler": [
     {
@@ -13,7 +13,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%33.3",
       "away_form": "%54.2",
-      "timestamp": "2025-11-14T06:40:25.809463"
+      "timestamp": "2025-11-14T07:14:48.315693"
     },
     {
       "match": "Bermuda vs Curaçao",
@@ -25,7 +25,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%25.0",
       "away_form": "%54.2",
-      "timestamp": "2025-11-14T06:40:25.809466"
+      "timestamp": "2025-11-14T07:14:48.315696"
     },
     {
       "match": "Guatemala vs Panama",
@@ -37,7 +37,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%38.1",
       "away_form": "%71.4",
-      "timestamp": "2025-11-14T06:40:25.809468"
+      "timestamp": "2025-11-14T07:14:48.315698"
     },
     {
       "match": "Nicaragua vs Honduras",
@@ -49,7 +49,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%33.3",
       "away_form": "%52.4",
-      "timestamp": "2025-11-14T06:40:25.809483"
+      "timestamp": "2025-11-14T07:14:48.315700"
     },
     {
       "match": "Haiti vs Costa Rica",
@@ -61,7 +61,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%37.5",
       "away_form": "%47.6",
-      "timestamp": "2025-11-14T06:40:25.809485"
+      "timestamp": "2025-11-14T07:14:48.315701"
     },
     {
       "match": "Finland vs Malta",
@@ -73,7 +73,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%41.7",
       "away_form": "%20.8",
-      "timestamp": "2025-11-14T06:40:25.809488"
+      "timestamp": "2025-11-14T07:14:48.315703"
     },
     {
       "match": "Cannes vs Annecy",
@@ -85,7 +85,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%58.3",
       "away_form": "%33.3",
-      "timestamp": "2025-11-14T06:40:25.809489"
+      "timestamp": "2025-11-14T07:14:48.315705"
     },
     {
       "match": "Valladolid vs Las Palmas",
@@ -97,7 +97,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%37.5",
       "away_form": "%50.0",
-      "timestamp": "2025-11-14T06:40:25.809494"
+      "timestamp": "2025-11-14T07:14:48.315709"
     },
     {
       "match": "Slovakia vs Northern Ireland",
@@ -109,7 +109,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%47.6",
       "away_form": "%41.7",
-      "timestamp": "2025-11-14T06:40:25.809496"
+      "timestamp": "2025-11-14T07:14:48.315711"
     },
     {
       "match": "Gibraltar vs Montenegro",
@@ -121,7 +121,7 @@
       "skor_tahmini": "0-2",
       "home_form": "%0.0",
       "away_form": "%41.7",
-      "timestamp": "2025-11-14T06:40:25.809498"
+      "timestamp": "2025-11-14T07:14:48.315713"
     },
     {
       "match": "Luxembourg vs Germany",
@@ -133,7 +133,7 @@
       "skor_tahmini": "0-2",
       "home_form": "%16.7",
       "away_form": "%54.2",
-      "timestamp": "2025-11-14T06:40:25.809500"
+      "timestamp": "2025-11-14T07:14:48.315714"
     },
     {
       "match": "Poland vs Netherlands",
@@ -145,7 +145,7 @@
       "skor_tahmini": "2-3",
       "home_form": "%79.2",
       "away_form": "%81.0",
-      "timestamp": "2025-11-14T06:40:25.809502"
+      "timestamp": "2025-11-14T07:14:48.315716"
     },
     {
       "match": "Croatia vs Faroe Islands",
@@ -157,7 +157,7 @@
       "skor_tahmini": "4-1",
       "home_form": "%90.5",
       "away_form": "%50.0",
-      "timestamp": "2025-11-14T06:40:25.809503"
+      "timestamp": "2025-11-14T07:14:48.315717"
     }
   ]
 }
