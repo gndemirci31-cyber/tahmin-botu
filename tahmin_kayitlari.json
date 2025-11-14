@@ -1,115 +1,163 @@
 {
-  "tarih": "2025-11-13",
-  "olusturulma_zamani": "2025-11-13T11:33:16.659661",
-  "toplam_tahmin": 12,
+  "tarih": "2025-11-14",
+  "olusturulma_zamani": "2025-11-14T06:40:25.809455",
+  "toplam_tahmin": 13,
   "tahminler": [
     {
-      "match": "United Arab Emirates vs Iraq",
+      "match": "Trinidad and Tobago vs Jamaica",
       "pick": "X",
-      "confidence": 66,
+      "confidence": 59,
       "api_prediction": "2",
-      "api_confidence": 85,
-      "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:33:16.659668"
+      "api_confidence": 77,
+      "api_advice": "Double chance : draw or Jamaica",
+      "skor_tahmini": "1-2",
+      "home_form": "%33.3",
+      "away_form": "%54.2",
+      "timestamp": "2025-11-14T06:40:25.809463"
     },
     {
-      "match": "Nigeria vs Gabon",
+      "match": "Bermuda vs Curaçao",
+      "pick": "2",
+      "confidence": 70,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Winner : Curaçao and +1.5 goals",
+      "skor_tahmini": "1-2",
+      "home_form": "%25.0",
+      "away_form": "%54.2",
+      "timestamp": "2025-11-14T06:40:25.809466"
+    },
+    {
+      "match": "Guatemala vs Panama",
+      "pick": "2",
+      "confidence": 72,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Double chance : draw or Panama and -3.5 goals",
+      "skor_tahmini": "1-2",
+      "home_form": "%38.1",
+      "away_form": "%71.4",
+      "timestamp": "2025-11-14T06:40:25.809468"
+    },
+    {
+      "match": "Nicaragua vs Honduras",
       "pick": "X",
-      "confidence": 65,
+      "confidence": 60,
+      "api_prediction": "2",
+      "api_confidence": 82,
+      "api_advice": "Double chance : draw or Honduras",
+      "skor_tahmini": "1-1",
+      "home_form": "%33.3",
+      "away_form": "%52.4",
+      "timestamp": "2025-11-14T06:40:25.809483"
+    },
+    {
+      "match": "Haiti vs Costa Rica",
+      "pick": "X",
+      "confidence": 70,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Winner : Costa Rica and +1.5 goals",
+      "skor_tahmini": "1-1",
+      "home_form": "%37.5",
+      "away_form": "%47.6",
+      "timestamp": "2025-11-14T06:40:25.809485"
+    },
+    {
+      "match": "Finland vs Malta",
+      "pick": "1",
+      "confidence": 72,
+      "api_prediction": "1",
+      "api_confidence": 82,
+      "api_advice": "Double chance : Finland or draw",
+      "skor_tahmini": "2-0",
+      "home_form": "%41.7",
+      "away_form": "%20.8",
+      "timestamp": "2025-11-14T06:40:25.809488"
+    },
+    {
+      "match": "Cannes vs Annecy",
+      "pick": "1",
+      "confidence": 78,
       "api_prediction": "X",
       "api_confidence": 60,
-      "skor_tahmini": "1-2",
-      "timestamp": "2025-11-13T11:33:16.659670"
+      "api_advice": "No predictions available",
+      "skor_tahmini": "1-1",
+      "home_form": "%58.3",
+      "away_form": "%33.3",
+      "timestamp": "2025-11-14T06:40:25.809489"
     },
     {
-      "match": "Azerbaijan vs Iceland",
+      "match": "Valladolid vs Las Palmas",
       "pick": "X",
-      "confidence": 55,
-      "api_prediction": "2",
-      "api_confidence": 82,
-      "skor_tahmini": "0-2",
-      "timestamp": "2025-11-13T11:33:16.659672"
-    },
-    {
-      "match": "Armenia vs Hungary",
-      "pick": "X",
-      "confidence": 60,
+      "confidence": 68,
       "api_prediction": "2",
       "api_confidence": 85,
+      "api_advice": "Combo Double chance : draw or Las Palmas and -3.5 goals",
       "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:33:16.659673"
+      "home_form": "%37.5",
+      "away_form": "%50.0",
+      "timestamp": "2025-11-14T06:40:25.809494"
     },
     {
-      "match": "Norway vs Estonia",
-      "pick": "1",
-      "confidence": 85,
-      "api_prediction": "1",
-      "api_confidence": 78,
-      "skor_tahmini": "4-1",
-      "timestamp": "2025-11-13T11:33:16.659674"
-    },
-    {
-      "match": "Cameroon vs Congo DR",
-      "pick": "X",
-      "confidence": 65,
-      "api_prediction": "1",
-      "api_confidence": 82,
-      "skor_tahmini": "2-2",
-      "timestamp": "2025-11-13T11:33:16.659676"
-    },
-    {
-      "match": "Andorra vs Albania",
+      "match": "Slovakia vs Northern Ireland",
       "pick": "X",
       "confidence": 61,
-      "api_prediction": "2",
-      "api_confidence": 85,
-      "skor_tahmini": "1-1",
-      "timestamp": "2025-11-13T11:33:16.659678"
-    },
-    {
-      "match": "England vs Serbia",
-      "pick": "1",
-      "confidence": 85,
       "api_prediction": "1",
       "api_confidence": 82,
-      "skor_tahmini": "3-1",
-      "timestamp": "2025-11-13T11:33:16.659681"
+      "api_advice": "Double chance : Slovakia or draw",
+      "skor_tahmini": "1-1",
+      "home_form": "%47.6",
+      "away_form": "%41.7",
+      "timestamp": "2025-11-14T06:40:25.809496"
     },
     {
-      "match": "France vs Ukraine",
-      "pick": "X",
-      "confidence": 58,
-      "api_prediction": "1",
-      "api_confidence": 77,
-      "skor_tahmini": "2-2",
-      "timestamp": "2025-11-13T11:33:16.659683"
-    },
-    {
-      "match": "Rep. Of Ireland vs Portugal",
-      "pick": "X",
-      "confidence": 60,
-      "api_prediction": "2",
-      "api_confidence": 65,
-      "skor_tahmini": "1-2",
-      "timestamp": "2025-11-13T11:33:16.659685"
-    },
-    {
-      "match": "Moldova vs Italy",
+      "match": "Gibraltar vs Montenegro",
       "pick": "2",
       "confidence": 85,
       "api_prediction": "2",
-      "api_confidence": 85,
-      "skor_tahmini": "0-3",
-      "timestamp": "2025-11-13T11:33:16.659686"
+      "api_confidence": 82,
+      "api_advice": "Double chance : draw or Montenegro",
+      "skor_tahmini": "0-2",
+      "home_form": "%0.0",
+      "away_form": "%41.7",
+      "timestamp": "2025-11-14T06:40:25.809498"
     },
     {
-      "match": "Suriname vs El Salvador",
+      "match": "Luxembourg vs Germany",
+      "pick": "2",
+      "confidence": 79,
+      "api_prediction": "2",
+      "api_confidence": 82,
+      "api_advice": "Double chance : draw or Germany",
+      "skor_tahmini": "0-2",
+      "home_form": "%16.7",
+      "away_form": "%54.2",
+      "timestamp": "2025-11-14T06:40:25.809500"
+    },
+    {
+      "match": "Poland vs Netherlands",
       "pick": "X",
-      "confidence": 57,
+      "confidence": 64,
+      "api_prediction": "2",
+      "api_confidence": 77,
+      "api_advice": "Double chance : draw or Netherlands",
+      "skor_tahmini": "2-3",
+      "home_form": "%79.2",
+      "away_form": "%81.0",
+      "timestamp": "2025-11-14T06:40:25.809502"
+    },
+    {
+      "match": "Croatia vs Faroe Islands",
+      "pick": "1",
+      "confidence": 85,
       "api_prediction": "1",
-      "api_confidence": 85,
-      "skor_tahmini": "1-0",
-      "timestamp": "2025-11-13T11:33:16.659687"
+      "api_confidence": 80,
+      "api_advice": "Winner : Croatia",
+      "skor_tahmini": "4-1",
+      "home_form": "%90.5",
+      "away_form": "%50.0",
+      "timestamp": "2025-11-14T06:40:25.809503"
     }
   ]
 }
