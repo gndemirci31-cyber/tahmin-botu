@@ -171,7 +171,10 @@ def save_predictions_to_json(tahmin_sonuclari):
                 'confidence': tahmin['confidence'],
                 'api_prediction': tahmin['api_prediction'],
                 'api_confidence': tahmin['api_confidence'],
+                'api_advice': tahmin['api_advice'],
                 'skor_tahmini': tahmin['skor_tahmini'],
+                'home_form': tahmin['home_form'],
+                'away_form': tahmin['away_form'],
                 'timestamp': datetime.now().isoformat()
             })
         
@@ -185,6 +188,190 @@ def save_predictions_to_json(tahmin_sonuclari):
     except Exception as e:
         log(f"❌ Tahmin kaydetme hatası: {e}")
         return False
+
+def get_previous_predictions(tarih):
+    """Belirtilen tarihteki tahminleri getir"""
+    try:
+        with open('tahmin_kayitlari.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if data['tarih'] == tarih:
+                return data['tahminler']
+    except Exception as e:
+        log(f"❌ Önceki tahminler okunamadı: {e}")
+    return None
+
+def mac_eslesiyor_mu(tahmin_match, home_team, away_team):
+    """Maç isimleri eşleşiyor mu kontrol et"""
+    try:
+        tahmin_home = tahmin_match.split(' vs ')[0].strip()
+        tahmin_away = tahmin_match.split(' vs ')[1].strip()
+        
+        return (tahmin_home in home_team or home_team in tahmin_home) and \
+               (tahmin_away in away_team or away_team in tahmin_away)
+    except:
+        return False
+
+def check_tahmin_durumu(tahmin, home_score, away_score):
+    """Tahminin doğru olup olmadığını kontrol et"""
+    if tahmin == 'N/A':
+        return "🔶 TAHMİN YOK"
+    
+    try:
+        home_score = int(home_score) if home_score not in [None, '?', ''] else 0
+        away_score = int(away_score) if away_score not in [None, '?', ''] else 0
+        
+        if (tahmin == '1' and home_score > away_score) or \
+           (tahmin == '2' and away_score > home_score) or \
+           (tahmin == 'X' and home_score == away_score):
+            return "✅ BAŞARILI"
+        else:
+            return "❌ BAŞARISIZ"
+    except:
+        return "🔶 SKOR HATASI"
+
+def check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_team):
+    """AI tavsiyesinin doğru olup olmadığını kontrol et"""
+    if ai_tavsiye == 'N/A' or not ai_tavsiye:
+        return "🔶 TAVSİYE YOK"
+    
+    try:
+        home_score = int(home_score) if home_score not in [None, '?', ''] else 0
+        away_score = int(away_score) if away_score not in [None, '?', ''] else 0
+        
+        ai_tavsiye_lower = ai_tavsiye.lower()
+        
+        # DOUBLE CHANCE KONTROLÜ
+        if "double chance" in ai_tavsiye_lower:
+            if "draw or" in ai_tavsiye_lower:
+                # "draw or TeamName" formatı
+                parts = ai_tavsiye_lower.split("draw or")
+                if len(parts) > 1:
+                    takim = parts[1].split(" and")[0].split(" or")[0].strip()
+                    # Beraberlik veya takım kazanırsa başarılı
+                    if home_score == away_score:
+                        return "✅ BAŞARILI"
+                    elif (takim in home_team.lower() and home_score > away_score) or \
+                         (takim in away_team.lower() and away_score > home_score):
+                        return "✅ BAŞARILI"
+            elif " or " in ai_tavsiye_lower:
+                # "Team1 or Team2" formatı
+                parts = ai_tavsiye_lower.split(" or ")
+                if len(parts) >= 2:
+                    takim1 = parts[0].replace("double chance :", "").strip()
+                    takim2 = parts[1].split(" and")[0].strip()
+                    if ((takim1 in home_team.lower() and home_score > away_score) or \
+                        (takim1 in away_team.lower() and away_score > home_score) or \
+                        (takim2 in home_team.lower() and home_score > away_score) or \
+                        (takim2 in away_team.lower() and away_score > home_score) or \
+                        (home_score == away_score)):
+                        return "✅ BAŞARILI"
+        
+        # WINNER KONTROLÜ
+        elif "winner" in ai_tavsiye_lower:
+            if "home" in ai_tavsiye_lower and home_score > away_score:
+                return "✅ BAŞARILI"
+            elif "away" in ai_tavsiye_lower and away_score > home_score:
+                return "✅ BAŞARILI"
+            elif "draw" in ai_tavsiye_lower and home_score == away_score:
+                return "✅ BAŞARILI"
+                
+        # COMBO KONTROLÜ (basitleştirilmiş)
+        elif "combo" in ai_tavsiye_lower:
+            # Sadece ana tahmin kısmını kontrol et
+            if "winner" in ai_tavsiye_lower:
+                if "home" in ai_tavsiye_lower and home_score > away_score:
+                    return "✅ BAŞARILI"
+                elif "away" in ai_tavsiye_lower and away_score > home_score:
+                    return "✅ BAŞARILI"
+            elif "double chance" in ai_tavsiye_lower:
+                return check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_team)
+        
+        return "❌ BAŞARISIZ"
+    except Exception as e:
+        log(f"AI tavsiye kontrol hatası: {e}")
+        return "🔶 KONTROL HATASI"
+
+def format_sonuc_email_detayli(sonuclar, date_str, eski_tahminler=None):
+    """DETAYLI TAHMİN vs SONUÇ karşılaştırması"""
+    if not sonuclar:
+        return f"{date_str} tarihi için sonuç bulunamadı."
+    
+    lines = []
+    lines.append(f"📊 HEDEF LİGLER - TAHMİN vs SONUÇ KARŞILAŞTIRMASI — {date_str}")
+    lines.append("=" * 70)
+    lines.append(f"⏰ Üretilme Zamanı: {datetime.now().strftime('%H:%M')}")
+    lines.append("")
+    
+    # BAŞARI ANALİZİ
+    if eski_tahminler:
+        dogru_tahmin = 0
+        dogru_api = 0
+        dogru_ai_tavsiye = 0
+        toplam_tahmin = len(eski_tahminler)
+        
+        for tahmin in eski_tahminler:
+            for sonuc in sonuclar:
+                if mac_eslesiyor_mu(tahmin['match'], sonuc['home_team'], sonuc['away_team']):
+                    # TAHMİN KONTROLÜ
+                    tahmin_durum = check_tahmin_durumu(tahmin['pick'], sonuc['home_score'], sonuc['away_score'])
+                    api_durum = check_tahmin_durumu(tahmin['api_prediction'], sonuc['home_score'], sonuc['away_score'])
+                    ai_tavsiye_durum = check_ai_tavsiye_durumu(
+                        tahmin['api_advice'], sonuc['home_score'], sonuc['away_score'],
+                        sonuc['home_team'], sonuc['away_team']
+                    )
+                    
+                    if tahmin_durum == "✅ BAŞARILI": dogru_tahmin += 1
+                    if api_durum == "✅ BAŞARILI": dogru_api += 1
+                    if ai_tavsiye_durum == "✅ BAŞARILI": dogru_ai_tavsiye += 1
+                    break
+
+        if toplam_tahmin > 0:
+            lines.append("🏆 TAHMİN PERFORMANS ANALİZİ:")
+            lines.append(f"   🎯 BİZİM TAHMİN: {dogru_tahmin}/{toplam_tahmin} (%{dogru_tahmin/toplam_tahmin*100:.1f})  |  " +
+                        f"🤖 API TAHMİNİ: {dogru_api}/{toplam_tahmin} (%{dogru_api/toplam_tahmin*100:.1f})  |  " +
+                        f"💡 AI TAVSİYE: {dogru_ai_tavsiye}/{toplam_tahmin} (%{dogru_ai_tavsiye/toplam_tahmin*100:.1f})")
+            lines.append("")
+    
+    # DETAYLI MAÇ KARŞILAŞTIRMALARI
+    lines.append("📋 MAÇ BAZINDA KARŞILAŞTIRMA:")
+    lines.append("=" * 70)
+    lines.append("")
+    
+    for sonuc in sonuclar:
+        tahmin_bulundu = None
+        for tahmin in (eski_tahminler or []):
+            if mac_eslesiyor_mu(tahmin['match'], sonuc['home_team'], sonuc['away_team']):
+                tahmin_bulundu = tahmin
+                break
+        
+        lines.append(f"⚽ {sonuc['home_team']} {sonuc['home_score']}-{sonuc['away_score']} {sonuc['away_team']}")
+        lines.append(f"🏆 {sonuc.get('league', 'Bilinmeyen Lig')}")
+        
+        if tahmin_bulundu:
+            # TAHMİN KARŞILAŞTIRMALARI
+            tahmin_durum = check_tahmin_durumu(tahmin_bulundu['pick'], sonuc['home_score'], sonuc['away_score'])
+            api_durum = check_tahmin_durumu(tahmin_bulundu['api_prediction'], sonuc['home_score'], sonuc['away_score'])
+            ai_durum = check_ai_tavsiye_durumu(
+                tahmin_bulundu['api_advice'], sonuc['home_score'], sonuc['away_score'],
+                sonuc['home_team'], sonuc['away_team']
+            )
+            
+            # AI tavsiyesini kısalt
+            ai_tavsiye_kisa = tahmin_bulundu['api_advice']
+            if len(ai_tavsiye_kisa) > 40:
+                ai_tavsiye_kisa = ai_tavsiye_kisa[:37] + "..."
+            
+            lines.append(f"   🎯 BİZİM TAHMİN: {tahmin_bulundu['pick']} → {tahmin_durum}  |  " +
+                        f"🤖 API TAHMİNİ: {tahmin_bulundu['api_prediction']} (%{tahmin_bulundu['api_confidence']}) → {api_durum}  |  " +
+                        f"💡 AI TAVSİYE: {ai_tavsiye_kisa} → {ai_durum}")
+        else:
+            lines.append("   ❌ Bu maç için tahmin bulunamadı")
+        
+        lines.append("")
+    
+    lines.append(f"📈 TOPLAM: {len(sonuclar)} maç sonucu analiz edildi")
+    
+    return "\n".join(lines)
 
 def check_previous_predictions():
     """Önceki tahminlerin sonuçlarını kontrol et ve başarı oranını hesapla"""
@@ -213,8 +400,9 @@ def check_previous_predictions():
         
         for tahmin in old_data['tahminler']:
             for mac in gercek_sonuclar:
-                if (tahmin['match'].split(' vs ')[0] in mac['teams']['home']['name'] and 
-                    tahmin['match'].split(' vs ')[1] in mac['teams']['away']['name']):
+                if mac_eslesiyor_mu(tahmin['match'], 
+                                  mac['teams']['home']['name'], 
+                                  mac['teams']['away']['name']):
                     
                     # Maç sonucunu kontrol et
                     if mac['fixture']['status']['short'] in ['FT', 'AET', 'PEN']:
@@ -324,34 +512,6 @@ def format_tahmin_email(tahmin_sonuclari, date_str):
         lines.append(f"   ⚠️ Kart 3.5: {tahmin['kart_35']} (%{tahmin['kart_prob']})")
         lines.append(f"   🎯 Korner 7.5: {tahmin['korner_75']} (%{tahmin['korner_prob']})")
         lines.append("")
-    
-    return "\n".join(lines)
-
-def format_sonuc_email(sonuclar, date_str, basari_analizi=None):
-    """Sonuçları e-posta formatında hazırla - BAŞARI ORANI EKLİ"""
-    if not sonuclar:
-        return f"{date_str} tarihi için sonuç bulunamadı."
-    
-    lines = []
-    lines.append(f"📊 HEDEF LİGLER - DÜNÜN MAÇ SONUÇLARI — {date_str}")
-    lines.append("=" * 60)
-    lines.append(f"⏰ Üretilme Zamanı: {datetime.now().strftime('%H:%M')}")
-    lines.append("")
-    
-    # BAŞARI ANALİZİ EKLE
-    if basari_analizi:
-        lines.append("🏆 ÖNCEKİ TAHMİN BAŞARI ANALİZİ:")
-        lines.append(f"   📅 Tahmin Tarihi: {basari_analizi['tarih']}")
-        lines.append(f"   ✅ Doğru Tahmin: {basari_analizi['dogru_tahmin']}/{basari_analizi['toplam_tahmin']}")
-        lines.append(f"   📈 Başarı Oranı: %{basari_analizi['basari_orani']}")
-        lines.append("")
-    
-    for sonuc in sonuclar:
-        lines.append(f"🏆 {sonuc.get('league', 'Bilinmeyen Lig')}")
-        lines.append(f"⚽ {sonuc.get('home_team', 'Bilinmiyor')} {sonuc.get('home_score', '?')}-{sonuc.get('away_score', '?')} {sonuc.get('away_team', 'Bilinmiyor')}")
-        lines.append("")
-    
-    lines.append(f"📈 TOPLAM: {len(sonuclar)} maç sonucu")
     
     return "\n".join(lines)
 
@@ -849,12 +1009,16 @@ def run_tahmin_analizi():
         return "Bugün için analiz edilecek maç bulunamadı."
 
 def run_sonuc_analizi():
-    """SAAT 04:00 - DÜNKÜ SONUÇLAR"""
+    """SAAT 04:00 - DÜNKÜ SONUÇLAR (KARŞILAŞTIRMALI)"""
     log("🔄 04:00 SONUÇ ANALİZİ BAŞLATILIYOR...")
     
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     log(f"📅 Sonuç Tarihi: {yesterday}")
     
+    # ÖNCEKİ TAHMİNLERİ AL
+    eski_tahminler = get_previous_predictions(yesterday)
+    
+    # SONUÇLARI AL
     params = {"date": yesterday}
     tum_maclar = _apifoot_get("fixtures", params)
     
@@ -893,11 +1057,8 @@ def run_sonuc_analizi():
     
     log(f"✅ Hedef liglerde {len(hedef_sonuclar)} maç sonucu bulundu")
     
-    # ÖNCEKİ TAHMİNLERİN BAŞARISINI KONTROL ET
-    basari_analizi = check_previous_predictions()
-    
     if hedef_sonuclar:
-        email_icerik = format_sonuc_email(hedef_sonuclar, yesterday, basari_analizi)
+        email_icerik = format_sonuc_email_detayli(hedef_sonuclar, yesterday, eski_tahminler)
         return email_icerik
     else:
         return "Dün hedef liglerde bitmiş maç bulunamadı."
@@ -918,7 +1079,7 @@ if __name__ == "__main__":
         # 04:00 - SONUÇ MAİLİ
         log("📊 SONUÇ ZAMANI (04:00)")
         email_icerik = run_sonuc_analizi()
-        send_mail("📊 HEDEF LİGLER - DÜNÜN MAÇ SONUÇLARI", email_icerik)
+        send_mail("📊 HEDEF LİGLER - TAHMİN vs SONUÇ KARŞILAŞTIRMASI", email_icerik)
         
     else:
         # Manuel çalıştırma
