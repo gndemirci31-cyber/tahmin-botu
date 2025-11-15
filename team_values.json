@@ -260,14 +260,14 @@
     "timestamp": 1762499671.3148227
   },
   "Spain:castellón": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762777328.630925
+    "timestamp": 1763190727.9357827
   },
   "Spain:albacete": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762586002.229484
+    "timestamp": 1763190732.2777202
   },
   "Portugal:penafiel": {
     "value": 180,
@@ -380,9 +380,9 @@
     "timestamp": 1762672612.3669102
   },
   "Spain:racing santander": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762672460.0280828
+    "timestamp": 1763190734.416388
   },
   "Spain:deportivo la coruna": {
     "value": 180,
@@ -582,7 +582,7 @@
   "World:arsenal": {
     "value": 150,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1762241574.9187772
+    "timestamp": 1763190708.4712222
   },
   "World:atletico madrid": {
     "value": 180,
@@ -885,9 +885,9 @@
     "timestamp": 1762413248.355776
   },
   "World:legia warszawa": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762413255.2634342
+    "timestamp": 1763190719.9623199
   },
   "World:drita": {
     "value": 80,
@@ -1457,12 +1457,12 @@
   "Spain:granada": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762672685.3894777
+    "timestamp": 1763190734.4189172
   },
   "Spain:real sociedad ii": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762585947.2923224
+    "timestamp": 1763190727.9383616
   },
   "France:monaco": {
     "value": 180,
@@ -1592,7 +1592,7 @@
   "Spain:fc andorra": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762586004.6125321
+    "timestamp": 1763190732.2802022
   },
   "Netherlands:psv eindhoven": {
     "value": 80,
@@ -1813,5 +1813,75 @@
     "value": 80,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1762586062.9129941
+  },
+  "World:cs dinamo bucurești": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190704.646915
+  },
+  "World:cetatea": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190704.6492877
+  },
+  "World:ml vitebsk": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190708.4687357
+  },
+  "World:csa steaua bucureşti": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190711.8381927
+  },
+  "World:petrolul ploiesti": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190711.8405933
+  },
+  "World:uta arad": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190715.6111379
+  },
+  "World:corvinul hunedoara": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190715.6136386
+  },
+  "World:vfl bochum": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190717.8040102
+  },
+  "World:vfl osnabrück": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190717.8065386
+  },
+  "World:znicz pruszków": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190719.964812
+  },
+  "World:odra opole": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190722.1615975
+  },
+  "World:wisla krakow": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190722.1640327
+  },
+  "World:borac banja luka": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190724.4018054
+  },
+  "World:radnicki 1923": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763190724.4042993
   }
 }
