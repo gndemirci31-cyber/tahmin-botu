@@ -1,43 +1,43 @@
 {
   "tarih": "2025-11-16",
-  "olusturulma_zamani": "2025-11-16T12:11:34.264269",
+  "olusturulma_zamani": "2025-11-16T13:28:05.978415",
   "toplam_tahmin": 32,
   "tahminler": [
     {
       "match": "Reims Sainte-Anne vs Gazelec FC Ajaccio",
       "pick": "X",
-      "confidence": 60,
+      "confidence": 65,
       "api_prediction": "X",
       "api_confidence": 60,
       "api_advice": "No predictions available",
       "skor_tahmini": "1-1",
       "home_form": "%41.7",
-      "away_form": "%62.5",
-      "timestamp": "2025-11-16T12:11:34.264277"
+      "away_form": "%57.1",
+      "timestamp": "2025-11-16T13:28:05.978423"
     },
     {
       "match": "AD Ceuta FC vs Leganes",
       "pick": "1",
-      "confidence": 71,
+      "confidence": 85,
       "api_prediction": "1",
       "api_confidence": 85,
       "api_advice": "Combo Double chance : AD Ceuta FC or draw and -3.5 goals",
-      "skor_tahmini": "1-1",
-      "home_form": "%66.7",
-      "away_form": "%50.0",
-      "timestamp": "2025-11-16T12:11:34.264279"
+      "skor_tahmini": "2-1",
+      "home_form": "%72.2",
+      "away_form": "%42.9",
+      "timestamp": "2025-11-16T13:28:05.978426"
     },
     {
       "match": "Avion vs Torcy",
       "pick": "X",
-      "confidence": 60,
+      "confidence": 62,
       "api_prediction": "X",
       "api_confidence": 60,
       "api_advice": "No predictions available",
       "skor_tahmini": "0-1",
       "home_form": "%9.5",
-      "away_form": "%25.0",
-      "timestamp": "2025-11-16T12:11:34.264281"
+      "away_form": "%23.8",
+      "timestamp": "2025-11-16T13:28:05.978428"
     },
     {
       "match": "Bassin d'Arcachon Sud vs Blagnac",
@@ -47,33 +47,33 @@
       "api_confidence": 77,
       "api_advice": "Double chance : Bassin d'Arcachon Sud or draw",
       "skor_tahmini": "2-1",
-      "home_form": "%70.8",
-      "away_form": "%25.0",
-      "timestamp": "2025-11-16T12:11:34.264283"
+      "home_form": "%66.7",
+      "away_form": "%28.6",
+      "timestamp": "2025-11-16T13:28:05.978430"
     },
     {
       "match": "Camon vs St Maur Lusitanos",
       "pick": "2",
-      "confidence": 73,
+      "confidence": 68,
       "api_prediction": "X",
       "api_confidence": 60,
       "api_advice": "No predictions available",
       "skor_tahmini": "2-2",
       "home_form": "%33.3",
-      "away_form": "%66.7",
-      "timestamp": "2025-11-16T12:11:34.264285"
+      "away_form": "%61.9",
+      "timestamp": "2025-11-16T13:28:05.978433"
     },
     {
       "match": "Drancy vs Beauvais",
       "pick": "1",
-      "confidence": 66,
+      "confidence": 78,
       "api_prediction": "2",
       "api_confidence": 77,
       "api_advice": "Double chance : draw or Beauvais",
       "skor_tahmini": "2-1",
-      "home_form": "%58.3",
-      "away_form": "%45.8",
-      "timestamp": "2025-11-16T12:11:34.264287"
+      "home_form": "%61.9",
+      "away_form": "%38.1",
+      "timestamp": "2025-11-16T13:28:05.978435"
     },
     {
       "match": "Olympique Marcquois vs OS Aire-Sur-La-Lys",
@@ -85,7 +85,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%33.3",
       "away_form": "%8.3",
-      "timestamp": "2025-11-16T12:11:34.264289"
+      "timestamp": "2025-11-16T13:28:05.978437"
     },
     {
       "match": "ASS Still Mutzig vs Raon l'Etape",
@@ -97,31 +97,31 @@
       "skor_tahmini": "2-2",
       "home_form": "%66.7",
       "away_form": "%50.0",
-      "timestamp": "2025-11-16T12:11:34.264292"
+      "timestamp": "2025-11-16T13:28:05.978441"
     },
     {
       "match": "SA Mérignac vs Colomiers",
       "pick": "2",
-      "confidence": 68,
+      "confidence": 65,
       "api_prediction": "X",
       "api_confidence": 60,
       "api_advice": "No predictions available",
       "skor_tahmini": "3-2",
       "home_form": "%44.4",
-      "away_form": "%75.0",
-      "timestamp": "2025-11-16T12:11:34.264295"
+      "away_form": "%71.4",
+      "timestamp": "2025-11-16T13:28:05.978443"
     },
     {
       "match": "Savigneux Montbrison vs Feurs",
       "pick": "X",
-      "confidence": 71,
+      "confidence": 65,
       "api_prediction": "X",
       "api_confidence": 60,
       "api_advice": "No predictions available",
       "skor_tahmini": "2-2",
       "home_form": "%50.0",
-      "away_form": "%54.2",
-      "timestamp": "2025-11-16T12:11:34.264296"
+      "away_form": "%47.6",
+      "timestamp": "2025-11-16T13:28:05.978445"
     },
     {
       "match": "Saint-Renan vs Stade Briochin",
@@ -133,7 +133,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%0.0",
       "away_form": "%8.3",
-      "timestamp": "2025-11-16T12:11:34.264298"
+      "timestamp": "2025-11-16T13:28:05.978447"
     },
     {
       "match": "Hungary vs Rep. Of Ireland",
@@ -145,7 +145,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%45.8",
       "away_form": "%50.0",
-      "timestamp": "2025-11-16T12:11:34.264300"
+      "timestamp": "2025-11-16T13:28:05.978449"
     },
     {
       "match": "Portugal vs Armenia",
@@ -157,7 +157,7 @@
       "skor_tahmini": "3-1",
       "home_form": "%72.2",
       "away_form": "%16.7",
-      "timestamp": "2025-11-16T12:11:34.264301"
+      "timestamp": "2025-11-16T13:28:05.978451"
     },
     {
       "match": "Agde vs Montpellier",
@@ -169,7 +169,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%33.3",
       "away_form": "%66.7",
-      "timestamp": "2025-11-16T12:11:34.264303"
+      "timestamp": "2025-11-16T13:28:05.978453"
     },
     {
       "match": "Saint-Amand vs Dieppe",
@@ -181,7 +181,7 @@
       "skor_tahmini": "0-1",
       "home_form": "%12.5",
       "away_form": "%50.0",
-      "timestamp": "2025-11-16T12:11:34.264304"
+      "timestamp": "2025-11-16T13:28:05.978455"
     },
     {
       "match": "Touraine vs Épernay",
@@ -193,7 +193,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%57.1",
       "away_form": "%54.2",
-      "timestamp": "2025-11-16T12:11:34.264306"
+      "timestamp": "2025-11-16T13:28:05.978457"
     },
     {
       "match": "Vitré vs Plouvorn",
@@ -205,7 +205,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%77.8",
       "away_form": "%33.3",
-      "timestamp": "2025-11-16T12:11:34.264308"
+      "timestamp": "2025-11-16T13:28:05.978459"
     },
     {
       "match": "Blois vs Clermont Foot",
@@ -217,7 +217,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%20.8",
       "away_form": "%33.3",
-      "timestamp": "2025-11-16T12:11:34.264309"
+      "timestamp": "2025-11-16T13:28:05.978461"
     },
     {
       "match": "Boulogne vs Dunkerque",
@@ -229,7 +229,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%37.5",
       "away_form": "%58.3",
-      "timestamp": "2025-11-16T12:11:34.264311"
+      "timestamp": "2025-11-16T13:28:05.978462"
     },
     {
       "match": "Forbach vs RED Star FC 93",
@@ -241,7 +241,7 @@
       "skor_tahmini": "0-2",
       "home_form": "%20.0",
       "away_form": "%58.3",
-      "timestamp": "2025-11-16T12:11:34.264312"
+      "timestamp": "2025-11-16T13:28:05.978464"
     },
     {
       "match": "Sporting Gijon vs Eibar",
@@ -253,7 +253,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%54.2",
       "away_form": "%37.5",
-      "timestamp": "2025-11-16T12:11:34.264314"
+      "timestamp": "2025-11-16T13:28:05.978466"
     },
     {
       "match": "Almeria vs Cadiz",
@@ -265,7 +265,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%81.0",
       "away_form": "%41.7",
-      "timestamp": "2025-11-16T12:11:34.264316"
+      "timestamp": "2025-11-16T13:28:05.978468"
     },
     {
       "match": "Ukraine vs Iceland",
@@ -277,7 +277,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%41.7",
       "away_form": "%41.7",
-      "timestamp": "2025-11-16T12:11:34.264317"
+      "timestamp": "2025-11-16T13:28:05.978470"
     },
     {
       "match": "Albania vs England",
@@ -289,7 +289,7 @@
       "skor_tahmini": "2-3",
       "home_form": "%83.3",
       "away_form": "%87.5",
-      "timestamp": "2025-11-16T12:11:34.264318"
+      "timestamp": "2025-11-16T13:28:05.978472"
     },
     {
       "match": "Serbia vs Latvia",
@@ -301,7 +301,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%54.2",
       "away_form": "%16.7",
-      "timestamp": "2025-11-16T12:11:34.264320"
+      "timestamp": "2025-11-16T13:28:05.978473"
     },
     {
       "match": "Azerbaijan vs France",
@@ -313,7 +313,7 @@
       "skor_tahmini": "0-3",
       "home_form": "%8.3",
       "away_form": "%76.2",
-      "timestamp": "2025-11-16T12:11:34.264322"
+      "timestamp": "2025-11-16T13:28:05.978475"
     },
     {
       "match": "Mirandes vs Burgos",
@@ -325,7 +325,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%23.8",
       "away_form": "%61.9",
-      "timestamp": "2025-11-16T12:11:34.264323"
+      "timestamp": "2025-11-16T13:28:05.978477"
     },
     {
       "match": "Cordoba vs Deportivo La Coruna",
@@ -337,7 +337,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%62.5",
       "away_form": "%50.0",
-      "timestamp": "2025-11-16T12:11:34.264324"
+      "timestamp": "2025-11-16T13:28:05.978479"
     },
     {
       "match": "Nigeria vs Congo DR",
@@ -349,7 +349,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%61.9",
       "away_form": "%75.0",
-      "timestamp": "2025-11-16T12:11:34.264326"
+      "timestamp": "2025-11-16T13:28:05.978481"
     },
     {
       "match": "Israel vs Moldova",
@@ -361,7 +361,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%41.7",
       "away_form": "%4.2",
-      "timestamp": "2025-11-16T12:11:34.264327"
+      "timestamp": "2025-11-16T13:28:05.978483"
     },
     {
       "match": "Italy vs Norway",
@@ -373,7 +373,7 @@
       "skor_tahmini": "3-3",
       "home_form": "%79.2",
       "away_form": "%91.7",
-      "timestamp": "2025-11-16T12:11:34.264329"
+      "timestamp": "2025-11-16T13:28:05.978485"
     },
     {
       "match": "Zaragoza vs Huesca",
@@ -385,7 +385,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%25.0",
       "away_form": "%33.3",
-      "timestamp": "2025-11-16T12:11:34.264330"
+      "timestamp": "2025-11-16T13:28:05.978486"
     }
   ]
 }
