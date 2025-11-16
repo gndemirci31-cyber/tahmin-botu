@@ -27,68 +27,34 @@ GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", False)
 TAHMIN_SAATI = os.getenv("TAHMIN_SAATI", "false").lower() == "true"  # 10:00 için
 SONUC_SAATI = os.getenv("SONUC_SAATI", "false").lower() == "true"    # 04:00 için
 
-# HEDEF LİG/KUPA/TURNUVALAR
+# HEDEF LİG/KUPA/TURNUVALAR - GÜNCELLENMİŞ DOĞRU ID'LER
 HEDEF_LIG_IDS = [
     # ULUSLARARASI TURNUVALAR
-    '2',    # UEFA Champions League
-    '3',    # UEFA Europa League 
-    '848',  # UEFA Europa Conference League
-    '667',  # UEFA Nations League
-    '1',    # FIFA World Cup
-    '4',    # UEFA European Championship
-    '5',    # Copa América
-    '6',    # AFC Asian Cup
-    '7',    # Africa Cup of Nations
-    '9',    # CONCACAF Gold Cup
-    
-    # DÜNYA KUPASI ELEMELERİ
-    '31',   # World Cup - Qualification CONCACAF - World
-    '32',   # World Cup - Qualification Europe - World
-    '29',   # World Cup - Qualification Africa - World
-    '30',   # World Cup - Qualification Asia - World
-    
-    # EKLENEN YENİ TURNUVALAR
-    '15',   # FIFA World Cup Qualification
-    '16',   # UEFA European Championship Qualification
-    '17',   # UEFA Champions League Qualification
-    '18',   # UEFA Europa League Qualification
-    '19',   # UEFA Europa Conference League Qualification
-    '20',   # UEFA Nations League
-    
-    # İNGİLTERE
-    '39',   # Premier League
-    '40',   # Championship
-    '45',   # FA Cup
-    '48',   # EFL Cup
-    
-    # İSPANYA
-    '140',  # La Liga
-    '141',  # La Liga 2
-    '143',  # Copa del Rey
-    
-    # İTALYA
-    '135',  # Serie A
-    '136',  # Serie B
-    '137',  # Coppa Italia
-    
-    # ALMANYA
-    '78',   # Bundesliga
-    '79',   # 2. Bundesliga
-    '81',   # DFB-Pokal
-    
-    # FRANSA
-    '61',   # Ligue 1
-    '62',   # Ligue 2
-    '66',   # Coupe de France
-    
-    # TÜRKİYE
-    '203',  # Süper Lig
-    '204',  # TFF 1. Lig
-    '206',  # Türkiye Kupası
-    
-    # PORTEKİZ
-    '94',   # Primeira Liga
-    '96',   # Taça de Portugal
+    '2',    # UEFA Champions League ✓
+    '3',    # UEFA Europa League ✓
+    '848',  # UEFA Europa Conference League ✓
+    '5',    # UEFA Nations League ✓ ✨ DÜZELTİLDİ (667 → 5)
+    '1',    # FIFA World Cup ✓
+    '4',    # UEFA European Championship ✓
+    '9',    # Copa América ✓
+    '6',    # Africa Cup of Nations ✓
+    '7',    # AFC Asian Cup ✓
+    '22',   # CONCACAF Gold Cup ✓ ✨ DÜZELTİLDİ (9 → 22)
+
+    # DÜNYA KUPASI ELEMELERİ ✓
+    '31',   # World Cup - Qualification CONCACAF
+    '32',   # World Cup - Qualification Europe  
+    '29',   # World Cup - Qualification Africa
+    '30',   # World Cup - Qualification Asia
+
+    # ULUSAL LİGLER ✓
+    '39', '40', '45', '48',   # İngiltere
+    '140', '141', '143',       # İspanya  
+    '135', '136', '137',       # İtalya
+    '78', '79', '81',          # Almanya
+    '61', '62', '66',          # Fransa
+    '203', '204', '206',       # Türkiye
+    '94', '96'                 # Portekiz
 ]
 
 # KADIN/GENÇ LİG FİLTRE KELİMELERİ
