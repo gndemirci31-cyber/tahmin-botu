@@ -100,9 +100,9 @@
     "timestamp": 1762672454.474417
   },
   "Spain:leganes": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293663.654763
+    "timestamp": 1763294925.211993
   },
   "Spain:malaga": {
     "value": 80,
@@ -255,9 +255,9 @@
     "timestamp": 1763104433.6788876
   },
   "Spain:sporting gijon": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293665.786501
+    "timestamp": 1763294927.3287542
   },
   "Spain:castellón": {
     "value": 180,
@@ -387,17 +387,17 @@
   "Spain:deportivo la coruna": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293673.3202949
+    "timestamp": 1763294934.8192904
   },
   "Spain:cordoba": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293673.3176785
+    "timestamp": 1763294934.8167498
   },
   "Spain:almeria": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293667.9035385
+    "timestamp": 1763294929.423193
   },
   "Turkey:fenerbahce": {
     "value": 180,
@@ -467,7 +467,7 @@
   "Spain:eibar": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293665.7890153
+    "timestamp": 1763294927.3313098
   },
   "Belgium:standard liege": {
     "value": 40,
@@ -492,12 +492,12 @@
   "Spain:cadiz": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293667.9060392
+    "timestamp": 1763294929.425643
   },
   "Spain:burgos": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293670.0271955
+    "timestamp": 1763294931.5378125
   },
   "Italy:cremonese": {
     "value": 40,
@@ -1135,9 +1135,9 @@
     "timestamp": 1762585986.0128546
   },
   "Spain:huesca": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293678.6992729
+    "timestamp": 1763294940.1706135
   },
   "Italy:pisa": {
     "value": 180,
@@ -1165,9 +1165,9 @@
     "timestamp": 1762586048.5068157
   },
   "Portugal:felgueiras 1932": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293657.235002
+    "timestamp": 1763294918.7934754
   },
   "Portugal:união de leiria": {
     "value": 40,
@@ -1177,7 +1177,7 @@
   "Portugal:leixoes": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293676.580087
+    "timestamp": 1763294938.0381882
   },
   "Portugal:sporting cp b": {
     "value": 180,
@@ -1227,7 +1227,7 @@
   "Spain:ad ceuta": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293663.6522155
+    "timestamp": 1763294925.2094288
   },
   "Italy:lecce": {
     "value": 80,
@@ -1405,9 +1405,9 @@
     "timestamp": 1762672555.0657573
   },
   "Portugal:chaves": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293676.582642
+    "timestamp": 1763294938.0406814
   },
   "Portugal:benfica b": {
     "value": 40,
@@ -1525,9 +1525,9 @@
     "timestamp": 1762586085.081435
   },
   "Spain:mirandes": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293670.0246863
+    "timestamp": 1763294931.535295
   },
   "France:marseille": {
     "value": 40,
@@ -1535,9 +1535,9 @@
     "timestamp": 1762586010.8816576
   },
   "Portugal:farense": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293657.2375562
+    "timestamp": 1763294918.796008
   },
   "Netherlands:twente": {
     "value": 180,
@@ -1772,7 +1772,7 @@
   "Spain:zaragoza": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293678.6966915
+    "timestamp": 1763294940.1680214
   },
   "Belgium:union st gilloise": {
     "value": 180,
@@ -1887,31 +1887,31 @@
   "World:los angeles galaxy": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293655.0825653
+    "timestamp": 1763294916.6543508
   },
   "World:club america": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293655.0851545
+    "timestamp": 1763294916.6568666
   },
   "World:dinamo minsk": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293659.3732126
+    "timestamp": 1763294920.9229295
   },
   "World:naftan": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293659.3757658
+    "timestamp": 1763294920.9253972
   },
   "World:dinamo brest": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293661.5371816
+    "timestamp": 1763294923.0966167
   },
   "World:krylia sovetov": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763293661.5397642
+    "timestamp": 1763294923.0991106
   }
 }
