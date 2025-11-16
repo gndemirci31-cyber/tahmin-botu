@@ -196,7 +196,7 @@ def check_tahmin_durumu(tahmin, home_score, away_score):
         return "🔶 SKOR HATASI"
 
 def check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_team):
-    """AI tavsiyesinin doğru olup olmadığını kontrol et"""
+    """AI tavsiyesinin doğru olup olmadığını kontrol et - İYİLEŞTİRİLMİŞ"""
     if ai_tavsiye == 'N/A' or not ai_tavsiye:
         return "🔶 TAVSİYE YOK"
     
@@ -205,49 +205,51 @@ def check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_
         away_score = int(away_score) if away_score not in [None, '?', ''] else 0
         
         ai_tavsiye_lower = ai_tavsiye.lower()
+        home_team_lower = home_team.lower()
+        away_team_lower = away_team.lower()
         
-        # DOUBLE CHANCE KONTROLÜ
-        if "double chance" in ai_tavsiye_lower:
-            if "draw or" in ai_tavsiye_lower:
-                # "draw or TeamName" formatı
-                parts = ai_tavsiye_lower.split("draw or")
-                if len(parts) > 1:
-                    takim = parts[1].split(" and")[0].split(" or")[0].strip()
-                    # Beraberlik veya takım kazanırsa başarılı
-                    if home_score == away_score:
-                        return "✅ BAŞARILI"
-                    elif (takim in home_team.lower() and home_score > away_score) or \
-                         (takim in away_team.lower() and away_score > home_score):
-                        return "✅ BAŞARILI"
-            elif " or " in ai_tavsiye_lower:
-                # "Team1 or Team2" formatı
-                parts = ai_tavsiye_lower.split(" or ")
-                if len(parts) >= 2:
-                    takim1 = parts[0].replace("double chance :", "").strip()
-                    takim2 = parts[1].split(" and")[0].strip()
-                    if ((takim1 in home_team.lower() and home_score > away_score) or \
-                        (takim1 in away_team.lower() and away_score > home_score) or \
-                        (takim2 in home_team.lower() and home_score > away_score) or \
-                        (takim2 in away_team.lower() and away_score > home_score) or \
-                        (home_score == away_score)):
-                        return "✅ BAŞARILI"
-        
-        # WINNER KONTROLÜ
-        elif "winner" in ai_tavsiye_lower:
+        # WINNER KONTROLÜ - İYİLEŞTİRİLMİŞ
+        if "winner" in ai_tavsiye_lower:
+            # Takım isimlerini kısmi eşleşme ile kontrol et
             if "home" in ai_tavsiye_lower and home_score > away_score:
                 return "✅ BAŞARILI"
             elif "away" in ai_tavsiye_lower and away_score > home_score:
                 return "✅ BAŞARILI"
             elif "draw" in ai_tavsiye_lower and home_score == away_score:
                 return "✅ BAŞARILI"
-                
-        # COMBO KONTROLÜ (basitleştirilmiş)
+            else:
+                # Takım ismi geçiyorsa kontrol et
+                if any(word in ai_tavsiye_lower for word in home_team_lower.split()):
+                    if home_score > away_score:
+                        return "✅ BAŞARILI"
+                elif any(word in ai_tavsiye_lower for word in away_team_lower.split()):
+                    if away_score > home_score:
+                        return "✅ BAŞARILI"
+        
+        # DOUBLE CHANCE KONTROLÜ - İYİLEŞTİRİLMİŞ
+        elif "double chance" in ai_tavsiye_lower:
+            # Beraberlik kontrolü
+            if home_score == away_score:
+                return "✅ BAŞARILI"
+            
+            # Takım isimlerini kontrol et
+            home_in_advice = any(word in ai_tavsiye_lower for word in home_team_lower.split())
+            away_in_advice = any(word in ai_tavsiye_lower for word in away_team_lower.split())
+            
+            if home_in_advice and home_score > away_score:
+                return "✅ BAŞARILI"
+            if away_in_advice and away_score > home_score:
+                return "✅ BAŞARILI"
+        
+        # COMBO KONTROLÜ
         elif "combo" in ai_tavsiye_lower:
             # Sadece ana tahmin kısmını kontrol et
             if "winner" in ai_tavsiye_lower:
                 if "home" in ai_tavsiye_lower and home_score > away_score:
                     return "✅ BAŞARILI"
                 elif "away" in ai_tavsiye_lower and away_score > home_score:
+                    return "✅ BAŞARILI"
+                elif "draw" in ai_tavsiye_lower and home_score == away_score:
                     return "✅ BAŞARILI"
             elif "double chance" in ai_tavsiye_lower:
                 return check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_team)
@@ -258,7 +260,7 @@ def check_ai_tavsiye_durumu(ai_tavsiye, home_score, away_score, home_team, away_
         return "🔶 KONTROL HATASI"
 
 def format_sonuc_email_detayli(sonuclar, date_str, eski_tahminler=None):
-    """DETAYLI TAHMİN vs SONUÇ karşılaştırması"""
+    """DETAYLI TAHMİN vs SONUÇ karşılaştırması - DÜZENLENMİŞ FORMAT"""
     if not sonuclar:
         return f"{date_str} tarihi için sonuç bulunamadı."
     
@@ -293,9 +295,9 @@ def format_sonuc_email_detayli(sonuclar, date_str, eski_tahminler=None):
 
         if toplam_tahmin > 0:
             lines.append("🏆 TAHMİN PERFORMANS ANALİZİ:")
-            lines.append(f"   🎯 BİZİM TAHMİN: {dogru_tahmin}/{toplam_tahmin} (%{dogru_tahmin/toplam_tahmin*100:.1f})  |  " +
-                        f"🤖 API TAHMİNİ: {dogru_api}/{toplam_tahmin} (%{dogru_api/toplam_tahmin*100:.1f})  |  " +
-                        f"💡 AI TAVSİYE: {dogru_ai_tavsiye}/{toplam_tahmin} (%{dogru_ai_tavsiye/toplam_tahmin*100:.1f})")
+            lines.append(f"   🎯 BİZİM TAHMİN: {dogru_tahmin}/{toplam_tahmin} (%{dogru_tahmin/toplam_tahmin*100:.1f})")
+            lines.append(f"   🤖 API TAHMİNİ: {dogru_api}/{toplam_tahmin} (%{dogru_api/toplam_tahmin*100:.1f})")
+            lines.append(f"   💡 AI TAVSİYE: {dogru_ai_tavsiye}/{toplam_tahmin} (%{dogru_ai_tavsiye/toplam_tahmin*100:.1f})")
             lines.append("")
     
     # DETAYLI MAÇ KARŞILAŞTIRMALARI
@@ -314,7 +316,7 @@ def format_sonuc_email_detayli(sonuclar, date_str, eski_tahminler=None):
         lines.append(f"🏆 {sonuc.get('league', 'Bilinmeyen Lig')}")
         
         if tahmin_bulundu:
-            # TAHMİN KARŞILAŞTIRMALARI
+            # TAHMİN KARŞILAŞTIRMALARI - ALT ALTA
             tahmin_durum = check_tahmin_durumu(tahmin_bulundu['pick'], sonuc['home_score'], sonuc['away_score'])
             api_durum = check_tahmin_durumu(tahmin_bulundu['api_prediction'], sonuc['home_score'], sonuc['away_score'])
             ai_durum = check_ai_tavsiye_durumu(
@@ -322,18 +324,18 @@ def format_sonuc_email_detayli(sonuclar, date_str, eski_tahminler=None):
                 sonuc['home_team'], sonuc['away_team']
             )
             
+            lines.append(f"   🎯 BİZİM TAHMİN: {tahmin_bulundu['pick']} → {tahmin_durum}")
+            lines.append(f"   🤖 API TAHMİNİ: {tahmin_bulundu['api_prediction']} (%{tahmin_bulundu['api_confidence']}) → {api_durum}")
+            
             # AI tavsiyesini kısalt
             ai_tavsiye_kisa = tahmin_bulundu['api_advice']
             if len(ai_tavsiye_kisa) > 40:
                 ai_tavsiye_kisa = ai_tavsiye_kisa[:37] + "..."
-            
-            lines.append(f"   🎯 BİZİM TAHMİN: {tahmin_bulundu['pick']} → {tahmin_durum}  |  " +
-                        f"🤖 API TAHMİNİ: {tahmin_bulundu['api_prediction']} (%{tahmin_bulundu['api_confidence']}) → {api_durum}  |  " +
-                        f"💡 AI TAVSİYE: {ai_tavsiye_kisa} → {ai_durum}")
+            lines.append(f"   💡 AI TAVSİYE: {ai_tavsiye_kisa} → {ai_durum}")
         else:
             lines.append("   ❌ Bu maç için tahmin bulunamadı")
         
-        lines.append("")
+        lines.append("")  # Boşluk bırak
     
     lines.append(f"📈 TOPLAM: {len(sonuclar)} maç sonucu analiz edildi")
     
