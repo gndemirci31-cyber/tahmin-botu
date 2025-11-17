@@ -105,9 +105,9 @@
     "timestamp": 1763299995.527709
   },
   "Spain:malaga": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762586087.408555
+    "timestamp": 1763363681.8305678
   },
   "Netherlands:groningen": {
     "value": 40,
@@ -1220,9 +1220,9 @@
     "timestamp": 1762672454.4768546
   },
   "Spain:cultural leonesa": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762586037.5775628
+    "timestamp": 1763363681.828095
   },
   "Spain:ad ceuta": {
     "value": 40,
