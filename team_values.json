@@ -1913,5 +1913,15 @@
     "value": 40,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1763299993.951713
+  },
+  "World:msv neuruppin": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763450035.1536
+  },
+  "World:sv babelsberg 03": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763450035.1561139
   }
 }
