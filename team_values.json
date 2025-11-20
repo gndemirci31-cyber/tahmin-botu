@@ -1923,5 +1923,15 @@
     "value": 80,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1763450035.1561139
+  },
+  "World:vasteras sk fk": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763622835.034612
+  },
+  "World:if brommapojkarna": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1763622835.037187
   }
 }
