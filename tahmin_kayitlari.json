@@ -1,6 +1,6 @@
 {
   "tarih": "2025-11-30",
-  "olusturulma_zamani": "2025-11-30T04:22:48.878767",
+  "olusturulma_zamani": "2025-11-30T07:21:37.395982",
   "toplam_tahmin": 42,
   "tahminler": [
     {
@@ -13,7 +13,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%54.2",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878777"
+      "timestamp": "2025-11-30T07:21:37.395989"
     },
     {
       "match": "Sivasspor vs Boluspor",
@@ -25,7 +25,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%41.7",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878780"
+      "timestamp": "2025-11-30T07:21:37.395991"
     },
     {
       "match": "Lecce vs Torino",
@@ -37,7 +37,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%37.5",
       "away_form": "%41.7",
-      "timestamp": "2025-11-30T04:22:48.878782"
+      "timestamp": "2025-11-30T07:21:37.395994"
     },
     {
       "match": "Crystal Palace vs Manchester United",
@@ -49,7 +49,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%54.2",
       "away_form": "%58.3",
-      "timestamp": "2025-11-30T04:22:48.878784"
+      "timestamp": "2025-11-30T07:21:37.395995"
     },
     {
       "match": "Arminia Bielefeld vs Preußen Münster",
@@ -61,7 +61,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%33.3",
       "away_form": "%33.3",
-      "timestamp": "2025-11-30T04:22:48.878786"
+      "timestamp": "2025-11-30T07:21:37.395997"
     },
     {
       "match": "SV Elversberg vs SV Darmstadt 98",
@@ -73,7 +73,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%41.7",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878789"
+      "timestamp": "2025-11-30T07:21:37.395999"
     },
     {
       "match": "Dynamo Dresden vs Fortuna Düsseldorf",
@@ -85,7 +85,7 @@
       "skor_tahmini": "3-1",
       "home_form": "%45.8",
       "away_form": "%29.2",
-      "timestamp": "2025-11-30T04:22:48.878790"
+      "timestamp": "2025-11-30T07:21:37.396000"
     },
     {
       "match": "Avranches vs Aubervilliers",
@@ -97,7 +97,7 @@
       "skor_tahmini": "2-3",
       "home_form": "%47.6",
       "away_form": "%76.2",
-      "timestamp": "2025-11-30T04:22:48.878795"
+      "timestamp": "2025-11-30T07:21:37.396004"
     },
     {
       "match": "Real Sociedad vs Villarreal",
@@ -109,7 +109,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%70.8",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878798"
+      "timestamp": "2025-11-30T07:21:37.396006"
     },
     {
       "match": "Zaragoza vs Leganes",
@@ -121,7 +121,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%37.5",
       "away_form": "%45.8",
-      "timestamp": "2025-11-30T04:22:48.878800"
+      "timestamp": "2025-11-30T07:21:37.396008"
     },
     {
       "match": "BB Bodrumspor vs Yeni Çorumspor",
@@ -133,7 +133,7 @@
       "skor_tahmini": "3-2",
       "home_form": "%66.7",
       "away_form": "%58.3",
-      "timestamp": "2025-11-30T04:22:48.878802"
+      "timestamp": "2025-11-30T07:21:37.396010"
     },
     {
       "match": "Pisa vs Inter",
@@ -145,7 +145,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%37.5",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878804"
+      "timestamp": "2025-11-30T07:21:37.396012"
     },
     {
       "match": "Strasbourg vs Stade Brestois 29",
@@ -157,7 +157,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%54.2",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878805"
+      "timestamp": "2025-11-30T07:21:37.396013"
     },
     {
       "match": "Antalyaspor vs Göztepe",
@@ -169,7 +169,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%29.2",
       "away_form": "%58.3",
-      "timestamp": "2025-11-30T04:22:48.878807"
+      "timestamp": "2025-11-30T07:21:37.396015"
     },
     {
       "match": "Juve Stabia vs Monza",
@@ -181,7 +181,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%45.8",
       "away_form": "%91.7",
-      "timestamp": "2025-11-30T04:22:48.878809"
+      "timestamp": "2025-11-30T07:21:37.396017"
     },
     {
       "match": "Les Sables-d'Olonne vs Plouvorn",
@@ -193,7 +193,7 @@
       "skor_tahmini": "3-1",
       "home_form": "%33.3",
       "away_form": "%33.3",
-      "timestamp": "2025-11-30T04:22:48.878811"
+      "timestamp": "2025-11-30T07:21:37.396018"
     },
     {
       "match": "Aston Villa vs Wolves",
@@ -205,7 +205,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%75.0",
       "away_form": "%8.3",
-      "timestamp": "2025-11-30T04:22:48.878812"
+      "timestamp": "2025-11-30T07:21:37.396019"
     },
     {
       "match": "Nottingham Forest vs Brighton",
@@ -217,7 +217,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%58.3",
       "away_form": "%58.3",
-      "timestamp": "2025-11-30T04:22:48.878814"
+      "timestamp": "2025-11-30T07:21:37.396021"
     },
     {
       "match": "West Ham vs Liverpool",
@@ -229,7 +229,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%33.3",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878816"
+      "timestamp": "2025-11-30T07:21:37.396023"
     },
     {
       "match": "Hamburger SV vs VfB Stuttgart",
@@ -241,7 +241,7 @@
       "skor_tahmini": "1-3",
       "home_form": "%33.3",
       "away_form": "%66.7",
-      "timestamp": "2025-11-30T04:22:48.878818"
+      "timestamp": "2025-11-30T07:21:37.396024"
     },
     {
       "match": "UF Touraine vs Estac Troyes",
@@ -253,7 +253,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%57.1",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878820"
+      "timestamp": "2025-11-30T07:21:37.396026"
     },
     {
       "match": "Sevilla vs Real Betis",
@@ -265,7 +265,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%50.0",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878823"
+      "timestamp": "2025-11-30T07:21:37.396028"
     },
     {
       "match": "Racing Santander vs Eibar",
@@ -277,7 +277,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%66.7",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878825"
+      "timestamp": "2025-11-30T07:21:37.396029"
     },
     {
       "match": "Rio Ave vs Santa Clara",
@@ -289,7 +289,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%37.5",
       "away_form": "%28.6",
-      "timestamp": "2025-11-30T04:22:48.878827"
+      "timestamp": "2025-11-30T07:21:37.396031"
     },
     {
       "match": "Angers vs Lens",
@@ -301,7 +301,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%45.8",
       "away_form": "%79.2",
-      "timestamp": "2025-11-30T04:22:48.878829"
+      "timestamp": "2025-11-30T07:21:37.396033"
     },
     {
       "match": "Le Havre vs Lille",
@@ -313,7 +313,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%41.7",
       "away_form": "%50.0",
-      "timestamp": "2025-11-30T04:22:48.878831"
+      "timestamp": "2025-11-30T07:21:37.396034"
     },
     {
       "match": "Lorient vs Nice",
@@ -325,7 +325,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%29.2",
       "away_form": "%25.0",
-      "timestamp": "2025-11-30T04:22:48.878833"
+      "timestamp": "2025-11-30T07:21:37.396036"
     },
     {
       "match": "Spezia vs Sampdoria",
@@ -337,7 +337,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%25.0",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878836"
+      "timestamp": "2025-11-30T07:21:37.396038"
     },
     {
       "match": "Chelsea vs Arsenal",
@@ -349,7 +349,7 @@
       "skor_tahmini": "3-3",
       "home_form": "%79.2",
       "away_form": "%91.7",
-      "timestamp": "2025-11-30T04:22:48.878838"
+      "timestamp": "2025-11-30T07:21:37.396040"
     },
     {
       "match": "Eintracht Frankfurt vs VfL Wolfsburg",
@@ -361,7 +361,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%52.4",
       "away_form": "%12.5",
-      "timestamp": "2025-11-30T04:22:48.878840"
+      "timestamp": "2025-11-30T07:21:37.396041"
     },
     {
       "match": "Atalanta vs Fiorentina",
@@ -373,7 +373,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%37.5",
       "away_form": "%25.0",
-      "timestamp": "2025-11-30T04:22:48.878842"
+      "timestamp": "2025-11-30T07:21:37.396043"
     },
     {
       "match": "Fatih Karagümrük vs Beşiktaş",
@@ -385,7 +385,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%20.8",
       "away_form": "%50.0",
-      "timestamp": "2025-11-30T04:22:48.878844"
+      "timestamp": "2025-11-30T07:21:37.396044"
     },
     {
       "match": "Celta Vigo vs Espanyol",
@@ -397,7 +397,7 @@
       "skor_tahmini": "3-1",
       "home_form": "%75.0",
       "away_form": "%54.2",
-      "timestamp": "2025-11-30T04:22:48.878846"
+      "timestamp": "2025-11-30T07:21:37.396046"
     },
     {
       "match": "Cordoba vs Cadiz",
@@ -409,7 +409,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%50.0",
       "away_form": "%37.5",
-      "timestamp": "2025-11-30T04:22:48.878849"
+      "timestamp": "2025-11-30T07:21:37.396048"
     },
     {
       "match": "Mirandes vs Real Sociedad II",
@@ -421,7 +421,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%19.0",
       "away_form": "%54.2",
-      "timestamp": "2025-11-30T04:22:48.878851"
+      "timestamp": "2025-11-30T07:21:37.396050"
     },
     {
       "match": "Sporting CP vs Estrela",
@@ -433,7 +433,7 @@
       "skor_tahmini": "3-1",
       "home_form": "%91.7",
       "away_form": "%38.1",
-      "timestamp": "2025-11-30T04:22:48.878853"
+      "timestamp": "2025-11-30T07:21:37.396051"
     },
     {
       "match": "SC Freiburg vs FSV Mainz 05",
@@ -445,7 +445,7 @@
       "skor_tahmini": "2-0",
       "home_form": "%58.3",
       "away_form": "%33.3",
-      "timestamp": "2025-11-30T04:22:48.878855"
+      "timestamp": "2025-11-30T07:21:37.396053"
     },
     {
       "match": "AS Roma vs Napoli",
@@ -457,7 +457,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%75.0",
       "away_form": "%58.3",
-      "timestamp": "2025-11-30T04:22:48.878857"
+      "timestamp": "2025-11-30T07:21:37.396054"
     },
     {
       "match": "Lyon vs Nantes",
@@ -469,7 +469,7 @@
       "skor_tahmini": "2-1",
       "home_form": "%50.0",
       "away_form": "%29.2",
-      "timestamp": "2025-11-30T04:22:48.878859"
+      "timestamp": "2025-11-30T07:21:37.396056"
     },
     {
       "match": "Girona vs Real Madrid",
@@ -481,7 +481,7 @@
       "skor_tahmini": "1-2",
       "home_form": "%42.9",
       "away_form": "%70.8",
-      "timestamp": "2025-11-30T04:22:48.878861"
+      "timestamp": "2025-11-30T07:21:37.396058"
     },
     {
       "match": "Castellón vs Las Palmas",
@@ -493,7 +493,7 @@
       "skor_tahmini": "1-1",
       "home_form": "%45.8",
       "away_form": "%62.5",
-      "timestamp": "2025-11-30T04:22:48.878862"
+      "timestamp": "2025-11-30T07:21:37.396059"
     },
     {
       "match": "FC Porto vs Estoril",
@@ -505,7 +505,7 @@
       "skor_tahmini": "2-2",
       "home_form": "%79.2",
       "away_form": "%45.8",
-      "timestamp": "2025-11-30T04:22:48.878865"
+      "timestamp": "2025-11-30T07:21:37.396060"
     }
   ]
 }
