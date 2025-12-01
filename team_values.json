@@ -85,9 +85,9 @@
     "timestamp": 1764400368.5244148
   },
   "Turkey:samsunspor": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763882009.013555
+    "timestamp": 1764573489.5466485
   },
   "Spain:elche": {
     "value": 80,
@@ -137,7 +137,7 @@
   "Italy:bologna": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763795581.0643163
+    "timestamp": 1764573494.506542
   },
   "Italy:genoa": {
     "value": 80,
@@ -220,9 +220,9 @@
     "timestamp": 1764314102.212567
   },
   "Turkey:alanyaspor": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763882007.3255954
+    "timestamp": 1764573489.5493748
   },
   "Turkey:goztepe": {
     "value": 80,
@@ -275,9 +275,9 @@
     "timestamp": 1764400366.4029996
   },
   "Portugal:feirense": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762499654.9926355
+    "timestamp": 1764573491.6678805
   },
   "Netherlands:heracles": {
     "value": 180,
@@ -375,9 +375,9 @@
     "timestamp": 1764400480.5822287
   },
   "Spain:rayo vallecano": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763881992.3374739
+    "timestamp": 1764573497.328635
   },
   "Spain:racing santander": {
     "value": 80,
@@ -500,9 +500,9 @@
     "timestamp": 1764400388.2061634
   },
   "Italy:cremonese": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763882000.660704
+    "timestamp": 1764573494.5093083
   },
   "Italy:udinese": {
     "value": 80,
@@ -525,9 +525,9 @@
     "timestamp": 1764400449.4800608
   },
   "Spain:valencia": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763709288.3716176
+    "timestamp": 1764573497.3313942
   },
   "World:kairat almaty": {
     "value": 180,
@@ -1160,14 +1160,14 @@
     "timestamp": 1764486844.8326976
   },
   "Portugal:vizela": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762586048.5068157
-  },
-  "Portugal:felgueiras 1932": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763299990.7026055
+    "timestamp": 1764573491.6650832
+  },
+  "Portugal:felgueiras 1932": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1764573483.8138342
   },
   "Portugal:união de leiria": {
     "value": 40,
@@ -1235,9 +1235,9 @@
     "timestamp": 1764486770.2607737
   },
   "Portugal:pacos ferreira": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1762672620.3073916
+    "timestamp": 1764573483.8111176
   },
   "Portugal:portimonense": {
     "value": 40,
@@ -1645,9 +1645,9 @@
     "timestamp": 1764400430.7991145
   },
   "Turkey:galatasaray": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1763795661.3192894
+    "timestamp": 1764573486.513377
   },
   "Turkey:genclerbirligi": {
     "value": 80,
@@ -2033,5 +2033,10 @@
     "value": 180,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1764486883.993686
+  },
+  "Turkey:fenerbahçe": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1764573486.5105824
   }
 }
