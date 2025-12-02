@@ -110,9 +110,9 @@
     "timestamp": 1764400524.2938614
   },
   "Netherlands:groningen": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764486908.3055365
+    "timestamp": 1764659837.2320313
   },
   "Netherlands:sparta rotterdam": {
     "value": 180,
@@ -152,7 +152,7 @@
   "England:tottenham": {
     "value": 100,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764400516.8970883
+    "timestamp": 1764659848.1066012
   },
   "England:aston villa": {
     "value": 80,
@@ -335,9 +335,9 @@
     "timestamp": 1764486826.895757
   },
   "England:manchester": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764486773.490489
+    "timestamp": 1764659842.691514
   },
   "Germany:fc st pauli": {
     "value": 80,
@@ -1342,12 +1342,12 @@
   "England:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764400475.3606095
+    "timestamp": 1764659848.1038556
   },
   "England:fulham": {
     "value": 40,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764400516.8998113
+    "timestamp": 1764659842.6887534
   },
   "Belgium:kvc westerlo": {
     "value": 40,
@@ -1547,7 +1547,7 @@
   "Netherlands:ajax": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764486908.3027186
+    "timestamp": 1764659837.2292275
   },
   "Italy:torino": {
     "value": 180,
@@ -1625,9 +1625,9 @@
     "timestamp": 1764486773.48779
   },
   "England:bournemouth": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764400436.0744436
+    "timestamp": 1764659840.040107
   },
   "England:nottingham forest": {
     "value": 25,
@@ -1707,7 +1707,7 @@
   "Spain:barcelona": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764400449.4772744
+    "timestamp": 1764659845.4757025
   },
   "Netherlands:az alkmaar": {
     "value": 40,
@@ -1747,7 +1747,7 @@
   "England:everton": {
     "value": 35,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764400475.3578525
+    "timestamp": 1764659840.0429387
   },
   "Germany:vfb stuttgart": {
     "value": 40,
@@ -1800,9 +1800,9 @@
     "timestamp": 1764486844.8354685
   },
   "Spain:atletico madrid": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764400522.2305467
+    "timestamp": 1764659845.478512
   },
   "Belgium:kortrijk": {
     "value": 40,
