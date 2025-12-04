@@ -335,9 +335,9 @@
     "timestamp": 1764746201.3231132
   },
   "England:manchester": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764659842.691514
+    "timestamp": 1764832564.1804614
   },
   "Germany:fc st pauli": {
     "value": 80,
@@ -512,7 +512,7 @@
   "England:west ham united": {
     "value": 65,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764486826.8929472
+    "timestamp": 1764832564.1832838
   },
   "England:brentford": {
     "value": 30,
@@ -1655,9 +1655,9 @@
     "timestamp": 1764314090.6591368
   },
   "Italy:juve stabia": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764486817.3269172
+    "timestamp": 1764832561.9730988
   },
   "Scotland:aberdeen": {
     "value": 40,
@@ -1735,9 +1735,9 @@
     "timestamp": 1764486867.9065354
   },
   "Italy:bari": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764400403.9495962
+    "timestamp": 1764832561.9759324
   },
   "Italy:mantova": {
     "value": 180,
@@ -1947,7 +1947,7 @@
   "World:vlašim": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764746180.2298007
+    "timestamp": 1764832558.198093
   },
   "World:české budějovice": {
     "value": 40,
@@ -2005,9 +2005,9 @@
     "timestamp": 1764400381.659625
   },
   "World:naestved": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764400381.662416
+    "timestamp": 1764832559.7937863
   },
   "Germany:1 köln": {
     "value": 180,
@@ -2043,5 +2043,15 @@
     "value": 40,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1764746180.226944
+  },
+  "World:sparta praha ii": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1764832558.1953046
+  },
+  "World:hb koge": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1764832559.7909684
   }
 }
