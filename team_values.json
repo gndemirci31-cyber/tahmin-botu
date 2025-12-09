@@ -532,7 +532,7 @@
   "World:kairat almaty": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141276.9948843
+    "timestamp": 1765264661.2317069
   },
   "World:pafos": {
     "value": 180,
@@ -540,29 +540,29 @@
     "timestamp": 1764141279.0637176
   },
   "World:barcelona": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054912.3441887
+    "timestamp": 1765264669.4271731
   },
   "World:olympiakos piraeus": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141283.198433
+    "timestamp": 1765264661.2345037
   },
   "World:union st gilloise": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054902.8865602
+    "timestamp": 1765264677.174214
   },
   "World:inter": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141285.3130562
+    "timestamp": 1765264671.8568788
   },
   "World:psv eindhoven": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141296.216209
+    "timestamp": 1765264684.453119
   },
   "World:napoli": {
     "value": 80,
@@ -587,7 +587,7 @@
   "World:atletico madrid": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141285.3102512
+    "timestamp": 1765264684.4559257
   },
   "World:fc copenhagen": {
     "value": 40,
@@ -622,7 +622,7 @@
   "World:galatasaray": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054902.8840387
+    "timestamp": 1765264680.2137115
   },
   "World:bodo glimt": {
     "value": 40,
@@ -662,12 +662,12 @@
   "World:monaco": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141279.0664263
+    "timestamp": 1765264680.210912
   },
   "World:tottenham": {
     "value": 100,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764141287.4021735
+    "timestamp": 1765264682.3165972
   },
   "World:real madrid": {
     "value": 180,
@@ -680,19 +680,19 @@
     "timestamp": 1764054922.5958118
   },
   "World:eintracht frankfurt": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141294.1395695
+    "timestamp": 1765264669.4299645
   },
   "World:liverpool": {
     "value": 140,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764141296.2134287
+    "timestamp": 1765264671.8597324
   },
   "World:chelsea": {
     "value": 120,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764054912.3416083
+    "timestamp": 1765264674.5561619
   },
   "World:ajax": {
     "value": 80,
@@ -702,27 +702,27 @@
   "World:atalanta": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141294.1422236
+    "timestamp": 1765264674.5533202
   },
   "World:slavia praha": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054919.3272724
-  },
-  "World:sporting cp": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141289.4900472
-  },
-  "World:marseille": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054909.9831483
+    "timestamp": 1765264682.3194275
+  },
+  "World:sporting cp": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1765264663.847984
+  },
+  "World:marseille": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1765264677.1771173
   },
   "World:bayern münchen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141292.0759387
+    "timestamp": 1765264663.845189
   },
   "World:club brugge kv": {
     "value": 180,
@@ -1490,9 +1490,9 @@
     "timestamp": 1764918999.7794614
   },
   "Belgium:krc genk ii": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765005225.4711158
+    "timestamp": 1765264667.5685282
   },
   "Belgium:rwdm": {
     "value": 40,
@@ -1697,7 +1697,7 @@
   "Belgium:rsc anderlecht ii": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765005263.5344007
+    "timestamp": 1765264667.5713983
   },
   "Belgium:lokeren temse": {
     "value": 180,
