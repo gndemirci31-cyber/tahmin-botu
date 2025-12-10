@@ -537,7 +537,7 @@
   "World:pafos": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141279.0637176
+    "timestamp": 1765351093.8247042
   },
   "World:barcelona": {
     "value": 40,
@@ -567,22 +567,22 @@
   "World:napoli": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054914.6785326
+    "timestamp": 1765351098.1223319
   },
   "World:leverkusen": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054907.646825
-  },
-  "World:paris saint germain": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141287.3993342
+    "timestamp": 1765351091.6977577
+  },
+  "World:paris saint germain": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1765351087.438033
   },
   "World:arsenal": {
     "value": 150,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764141292.0731232
+    "timestamp": 1765351089.5720203
   },
   "World:atletico madrid": {
     "value": 40,
@@ -592,32 +592,32 @@
   "World:fc copenhagen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141276.9921741
+    "timestamp": 1765351080.8423748
   },
   "World:borussia dortmund": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054917.0152164
+    "timestamp": 1765351095.9741952
   },
   "World:villarreal": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054917.0177355
+    "timestamp": 1765351080.8395448
   },
   "World:manchester": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054907.6442113
+    "timestamp": 1765351085.1526518
   },
   "World:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1764054909.9856257
+    "timestamp": 1765351091.700579
   },
   "World:benfica": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054900.4478192
+    "timestamp": 1765351098.119437
   },
   "World:galatasaray": {
     "value": 40,
@@ -625,19 +625,19 @@
     "timestamp": 1765264680.2137115
   },
   "World:bodo glimt": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054922.5932708
+    "timestamp": 1765351095.9771092
   },
   "World:athletic club": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054919.3298783
+    "timestamp": 1765351087.4351556
   },
   "World:qarabag": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054914.6811113
+    "timestamp": 1765351082.997806
   },
   "Turkey:konyaspor": {
     "value": 80,
@@ -670,14 +670,14 @@
     "timestamp": 1765264682.3165972
   },
   "World:real madrid": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141283.2011974
+    "timestamp": 1765351085.1498542
   },
   "World:juventus": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054922.5958118
+    "timestamp": 1765351093.8219352
   },
   "World:eintracht frankfurt": {
     "value": 180,
@@ -695,9 +695,9 @@
     "timestamp": 1765264674.5561619
   },
   "World:ajax": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764054900.4453402
+    "timestamp": 1765351083.0006282
   },
   "World:atalanta": {
     "value": 180,
@@ -725,9 +725,9 @@
     "timestamp": 1765264663.845189
   },
   "World:club brugge kv": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764141289.4927495
+    "timestamp": 1765351089.5691197
   },
   "World:fenerbahce": {
     "value": 80,
@@ -1945,9 +1945,9 @@
     "timestamp": 1765005267.48608
   },
   "World:vlašim": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1764918966.2458072
+    "timestamp": 1765351076.3826342
   },
   "World:české budějovice": {
     "value": 40,
@@ -2058,5 +2058,10 @@
     "value": 80,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1764918973.8304355
+  },
+  "World:zlaté moravce": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1765351076.3854473
   }
 }
