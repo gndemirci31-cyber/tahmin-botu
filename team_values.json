@@ -7,7 +7,7 @@
   "Portugal:maritimo": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696489.0703864
+    "timestamp": 1765869517.4032137
   },
   "Netherlands:telstar": {
     "value": 80,
@@ -1120,9 +1120,9 @@
     "timestamp": 1765610154.9958315
   },
   "Belgium:kaa gent ii": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765523921.366834
+    "timestamp": 1765869525.1279097
   },
   "Germany:werder bremen": {
     "value": 40,
@@ -1385,9 +1385,9 @@
     "timestamp": 1765696502.5041647
   },
   "Belgium:olympic charleroi": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610153.1211293
+    "timestamp": 1765869527.706322
   },
   "Turkey:kocaelispor": {
     "value": 180,
@@ -1412,7 +1412,7 @@
   "Portugal:benfica b": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696489.0732765
+    "timestamp": 1765869517.4060323
   },
   "France:paris saint germain": {
     "value": 80,
@@ -1687,7 +1687,7 @@
   "Belgium:lommel": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765523921.3639562
+    "timestamp": 1765869527.7092288
   },
   "Belgium:beerschot wilrijk": {
     "value": 80,
@@ -1805,14 +1805,14 @@
     "timestamp": 1765610080.151392
   },
   "Belgium:kortrijk": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610118.8260186
+    "timestamp": 1765869521.6310623
   },
   "Belgium:k lierse s k": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610154.9987328
+    "timestamp": 1765869521.628269
   },
   "World:cs dinamo bucurești": {
     "value": 80,
@@ -1940,9 +1940,9 @@
     "timestamp": 1765523923.9268935
   },
   "Belgium:beerschot va": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610151.3094578
+    "timestamp": 1765869525.1250732
   },
   "World:vlašim": {
     "value": 180,
