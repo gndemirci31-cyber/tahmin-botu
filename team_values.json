@@ -35,9 +35,9 @@
     "timestamp": 1765610116.7957816
   },
   "Scotland:celtic": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765091627.2004101
+    "timestamp": 1765955871.1064944
   },
   "Belgium:cercle brugge": {
     "value": 40,
@@ -1115,9 +1115,9 @@
     "timestamp": 1765696517.3109655
   },
   "Belgium:francs borains": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610154.9958315
+    "timestamp": 1765955869.26224
   },
   "Belgium:kaa gent ii": {
     "value": 40,
@@ -1355,9 +1355,9 @@
     "timestamp": 1765696554.830268
   },
   "Scotland:dundee utd": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610115.310089
+    "timestamp": 1765955871.1037223
   },
   "Scotland:st mirren": {
     "value": 40,
@@ -1380,9 +1380,9 @@
     "timestamp": 1765610115.3130426
   },
   "Belgium:club brugge ii": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696502.5041647
+    "timestamp": 1765955864.3290038
   },
   "Belgium:olympic charleroi": {
     "value": 80,
@@ -1492,12 +1492,12 @@
   "Belgium:krc genk ii": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696506.0689719
+    "timestamp": 1765955866.7860334
   },
   "Belgium:rwdm": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610153.1182172
+    "timestamp": 1765955864.3317828
   },
   "Germany:hertha bsc": {
     "value": 80,
@@ -1695,9 +1695,9 @@
     "timestamp": 1762672598.4962473
   },
   "Belgium:rsc anderlecht ii": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765523923.9297931
+    "timestamp": 1765955869.2594326
   },
   "Belgium:lokeren temse": {
     "value": 180,
@@ -1935,9 +1935,9 @@
     "timestamp": 1763622835.037187
   },
   "Belgium:sk beveren": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765523923.9268935
+    "timestamp": 1765955866.788865
   },
   "Belgium:beerschot va": {
     "value": 80,
