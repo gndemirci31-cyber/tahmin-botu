@@ -2108,5 +2108,45 @@
     "value": 40,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1766387965.5036263
+  },
+  "World:congo dr": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474345.1359863
+  },
+  "World:benin": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474345.138739
+  },
+  "World:senegal": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474347.497223
+  },
+  "World:botswana": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474347.4999027
+  },
+  "World:nigeria": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474349.8649547
+  },
+  "World:tanzania": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474349.8676136
+  },
+  "World:tunisia": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474352.192074
+  },
+  "World:uganda": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766474352.194763
   }
 }
