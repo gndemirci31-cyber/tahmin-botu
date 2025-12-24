@@ -2148,5 +2148,45 @@
     "value": 180,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1766474352.194763
+  },
+  "World:burkina faso": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560726.4210463
+  },
+  "World:equatorial guinea": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560726.4240947
+  },
+  "World:algeria": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560728.2829406
+  },
+  "World:sudan": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560728.285933
+  },
+  "World:ivory coast": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560730.2922873
+  },
+  "World:mozambique": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560730.2952738
+  },
+  "World:cameroon": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560731.853708
+  },
+  "World:gabon": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766560731.85676
   }
 }
