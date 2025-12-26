@@ -40,14 +40,14 @@
     "timestamp": 1766301304.1374104
   },
   "Belgium:cercle brugge": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301348.6347528
+    "timestamp": 1766733430.676051
   },
   "Belgium:genk": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766128643.1083477
+    "timestamp": 1766733425.8047788
   },
   "Germany:sv darmstadt 98": {
     "value": 40,
@@ -175,9 +175,9 @@
     "timestamp": 1766214829.6530716
   },
   "Italy:modena": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214787.9713073
+    "timestamp": 1766733434.046234
   },
   "Germany:freiburg": {
     "value": 80,
@@ -335,9 +335,9 @@
     "timestamp": 1766214838.881792
   },
   "England:manchester": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301326.2854624
+    "timestamp": 1766733446.853804
   },
   "Germany:fc st pauli": {
     "value": 180,
@@ -360,14 +360,14 @@
     "timestamp": 1766214831.725423
   },
   "Belgium:st truiden": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301301.6033676
+    "timestamp": 1766733438.6629348
   },
   "Belgium:anderlecht": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301339.5448868
+    "timestamp": 1766733441.2392843
   },
   "Spain:levante": {
     "value": 180,
@@ -472,7 +472,7 @@
   "Belgium:standard liege": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214810.7784505
+    "timestamp": 1766733438.6599598
   },
   "Belgium:antwerp": {
     "value": 80,
@@ -1145,9 +1145,9 @@
     "timestamp": 1766301267.501029
   },
   "Belgium:charleroi": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766128643.1055174
+    "timestamp": 1766733441.2422297
   },
   "England:leeds united": {
     "value": 80,
@@ -1265,9 +1265,9 @@
     "timestamp": 1766214784.1144917
   },
   "Italy:monza": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214782.1633315
+    "timestamp": 1766733434.0491405
   },
   "Italy:reggiana": {
     "value": 40,
@@ -1342,7 +1342,7 @@
   "England:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766214771.4073539
+    "timestamp": 1766733446.8567603
   },
   "England:fulham": {
     "value": 40,
@@ -1560,9 +1560,9 @@
     "timestamp": 1766301290.2501073
   },
   "Belgium:club brugge kv": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301270.8847833
+    "timestamp": 1766733425.8077137
   },
   "Germany:eintracht braunschweig": {
     "value": 180,
@@ -1775,9 +1775,9 @@
     "timestamp": 1766301345.2210631
   },
   "Belgium:union st gilloise": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214859.4002542
+    "timestamp": 1766733430.6789997
   },
   "Netherlands:go ahead eagles": {
     "value": 180,
@@ -2070,44 +2070,44 @@
     "timestamp": 1765437648.268531
   },
   "World:morocco": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301352.4798825
+    "timestamp": 1766733443.7399554
   },
   "World:comoros": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301352.4832048
+    "timestamp": 1766733436.342865
   },
   "World:mali": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387956.2185326
+    "timestamp": 1766733443.7428663
   },
   "World:zambia": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387956.2215376
+    "timestamp": 1766733436.3400054
   },
   "World:southrica": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387960.8897796
+    "timestamp": 1766733428.3625362
   },
   "World:angola": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387960.8928566
-  },
-  "World:egypt": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387965.5006356
-  },
-  "World:zimbabwe": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387965.5036263
+    "timestamp": 1766733423.4288168
+  },
+  "World:egypt": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766733428.3595295
+  },
+  "World:zimbabwe": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766733423.4317257
   },
   "World:congo dr": {
     "value": 80,
