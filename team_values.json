@@ -135,9 +135,9 @@
     "timestamp": 1766819640.6584435
   },
   "Italy:bologna": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696560.6019049
+    "timestamp": 1766906116.8306968
   },
   "Italy:genoa": {
     "value": 180,
@@ -152,7 +152,7 @@
   "England:tottenham": {
     "value": 100,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766214838.8790262
+    "timestamp": 1766906114.890188
   },
   "England:aston villa": {
     "value": 80,
@@ -350,9 +350,9 @@
     "timestamp": 1766214799.5813637
   },
   "Italy:atalanta": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301354.643449
+    "timestamp": 1766906121.133923
   },
   "Italy:lazio": {
     "value": 180,
@@ -432,7 +432,7 @@
   "Italy:milan": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696436.9776454
+    "timestamp": 1766906103.904747
   },
   "Italy:fiorentina": {
     "value": 40,
@@ -500,9 +500,9 @@
     "timestamp": 1766301345.2181234
   },
   "Italy:cremonese": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214831.7282104
+    "timestamp": 1766906107.450995
   },
   "Italy:udinese": {
     "value": 180,
@@ -1150,9 +1150,9 @@
     "timestamp": 1766733441.2422297
   },
   "England:leeds united": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214864.1461082
+    "timestamp": 1766906109.6111941
   },
   "Spain:sevilla": {
     "value": 40,
@@ -1235,9 +1235,9 @@
     "timestamp": 1766819637.94139
   },
   "Portugal:pacos ferreira": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214826.15099
+    "timestamp": 1766906111.2124732
   },
   "Portugal:portimonense": {
     "value": 180,
@@ -1335,9 +1335,9 @@
     "timestamp": 1766819698.1919148
   },
   "England:sunderland": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214805.3575401
+    "timestamp": 1766906109.608225
   },
   "England:newcastle united": {
     "value": 90,
@@ -1402,7 +1402,7 @@
   "Portugal:academico viseu": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214827.6841145
+    "timestamp": 1766906101.6963418
   },
   "Portugal:chaves": {
     "value": 180,
@@ -1410,9 +1410,9 @@
     "timestamp": 1766214779.9378514
   },
   "Portugal:benfica b": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766387963.9564497
+    "timestamp": 1766906101.6998549
   },
   "France:paris saint germain": {
     "value": 80,
@@ -1427,12 +1427,12 @@
   "Italy:napoli": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696467.634196
+    "timestamp": 1766906107.4539258
   },
   "Italy:inter": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696538.7258158
+    "timestamp": 1766906121.1368995
   },
   "Belgium:oh leuven": {
     "value": 80,
@@ -1535,9 +1535,9 @@
     "timestamp": 1765696563.4656668
   },
   "Portugal:farense": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301317.3932464
+    "timestamp": 1766906111.2154205
   },
   "Netherlands:twente": {
     "value": 80,
@@ -1600,9 +1600,9 @@
     "timestamp": 1766301265.2429326
   },
   "Italy:sassuolo": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301292.767069
+    "timestamp": 1766906116.8336601
   },
   "Italy:roma": {
     "value": 40,
@@ -1612,7 +1612,7 @@
   "Italy:verona": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696464.9122772
+    "timestamp": 1766906103.909667
   },
   "England:arsenal": {
     "value": 150,
@@ -1622,7 +1622,7 @@
   "England:crystal palace": {
     "value": 50,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766214864.1489067
+    "timestamp": 1766906114.8872707
   },
   "England:bournemouth": {
     "value": 40,
@@ -2150,43 +2150,43 @@
     "timestamp": 1766819695.4887178
   },
   "World:burkina faso": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560726.4210463
+    "timestamp": 1766906118.7397482
   },
   "World:equatorial guinea": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560726.4240947
+    "timestamp": 1766906112.8662493
   },
   "World:algeria": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560728.2829406
+    "timestamp": 1766906118.736754
   },
   "World:sudan": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560728.285933
+    "timestamp": 1766906112.8691666
   },
   "World:ivory coast": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560730.2922873
+    "timestamp": 1766906122.678567
   },
   "World:mozambique": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560730.2952738
+    "timestamp": 1766906105.482477
   },
   "World:cameroon": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560731.853708
+    "timestamp": 1766906122.6815104
   },
   "World:gabon": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766560731.85676
+    "timestamp": 1766906105.479503
   }
 }
