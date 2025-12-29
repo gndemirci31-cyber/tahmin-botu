@@ -140,9 +140,9 @@
     "timestamp": 1766906116.8306968
   },
   "Italy:genoa": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301354.6403263
+    "timestamp": 1766992837.6139503
   },
   "Italy:parma": {
     "value": 180,
@@ -1605,9 +1605,9 @@
     "timestamp": 1766906116.8336601
   },
   "Italy:roma": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214857.5551376
+    "timestamp": 1766992837.6110003
   },
   "Italy:verona": {
     "value": 40,
@@ -2070,44 +2070,44 @@
     "timestamp": 1765437648.268531
   },
   "World:morocco": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733443.7399554
-  },
-  "World:comoros": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733436.342865
-  },
-  "World:mali": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733443.7428663
+    "timestamp": 1766992834.0101748
+  },
+  "World:comoros": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766992835.5305593
+  },
+  "World:mali": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1766992835.5336535
   },
   "World:zambia": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733436.3400054
+    "timestamp": 1766992834.0070016
   },
   "World:southrica": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733428.3625362
+    "timestamp": 1766992832.4684684
   },
   "World:angola": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733423.4288168
+    "timestamp": 1766992830.9494138
   },
   "World:egypt": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733428.3595295
+    "timestamp": 1766992830.9524345
   },
   "World:zimbabwe": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766733423.4317257
+    "timestamp": 1766992832.4655008
   },
   "World:congo dr": {
     "value": 180,
