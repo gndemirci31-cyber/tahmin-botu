@@ -2150,43 +2150,43 @@
     "timestamp": 1767079047.2333927
   },
   "World:burkina faso": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906118.7397482
+    "timestamp": 1767165508.7718215
   },
   "World:equatorial guinea": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906112.8662493
+    "timestamp": 1767165505.9669497
   },
   "World:algeria": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906118.736754
+    "timestamp": 1767165505.9698672
   },
   "World:sudan": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906112.8691666
+    "timestamp": 1767165508.7688794
   },
   "World:ivory coast": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906122.678567
+    "timestamp": 1767165511.5210721
   },
   "World:mozambique": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906105.482477
+    "timestamp": 1767165513.833297
   },
   "World:cameroon": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906122.6815104
+    "timestamp": 1767165513.836268
   },
   "World:gabon": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906105.479503
+    "timestamp": 1767165511.5181093
   }
 }
