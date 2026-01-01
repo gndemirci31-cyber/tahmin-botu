@@ -152,7 +152,7 @@
   "England:tottenham": {
     "value": 100,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766906114.890188
+    "timestamp": 1767251899.0026839
   },
   "England:aston villa": {
     "value": 80,
@@ -332,12 +332,12 @@
   "England:liverpool": {
     "value": 140,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766819670.4915984
+    "timestamp": 1767251896.2813816
   },
   "England:manchester": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767079071.4144144
+    "timestamp": 1767251901.7384403
   },
   "Germany:fc st pauli": {
     "value": 180,
@@ -517,7 +517,7 @@
   "England:brentford": {
     "value": 30,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766819665.1025538
+    "timestamp": 1767251898.999696
   },
   "Spain:alaves": {
     "value": 80,
@@ -1152,7 +1152,7 @@
   "England:leeds united": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906109.6111941
+    "timestamp": 1767251896.2843776
   },
   "Spain:sevilla": {
     "value": 40,
@@ -1335,9 +1335,9 @@
     "timestamp": 1767079055.8975072
   },
   "England:sunderland": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906109.608225
+    "timestamp": 1767251901.735448
   },
   "England:newcastle united": {
     "value": 90,
@@ -1347,7 +1347,7 @@
   "England:fulham": {
     "value": 40,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766819673.2347755
+    "timestamp": 1767251893.520324
   },
   "Belgium:kvc westerlo": {
     "value": 80,
@@ -1622,7 +1622,7 @@
   "England:crystal palace": {
     "value": 50,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1766906114.8872707
+    "timestamp": 1767251893.5173063
   },
   "England:bournemouth": {
     "value": 180,
