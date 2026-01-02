@@ -130,9 +130,9 @@
     "timestamp": 1766301321.7191603
   },
   "Italy:cagliari": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766819640.6584435
+    "timestamp": 1767338340.6398187
   },
   "Italy:bologna": {
     "value": 40,
@@ -160,9 +160,9 @@
     "timestamp": 1767079069.4411223
   },
   "France:lens": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765696522.8686864
+    "timestamp": 1767338342.9485047
   },
   "France:paris": {
     "value": 40,
@@ -310,9 +310,9 @@
     "timestamp": 1765696520.0725868
   },
   "France:toulouse": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765610171.9499314
+    "timestamp": 1767338342.9454682
   },
   "France:metz": {
     "value": 80,
@@ -377,7 +377,7 @@
   "Spain:rayo vallecano": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301341.8099482
+    "timestamp": 1767338345.359157
   },
   "Spain:racing santander": {
     "value": 40,
@@ -430,9 +430,9 @@
     "timestamp": 1766819688.2727656
   },
   "Italy:milan": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906103.904747
+    "timestamp": 1767338340.6427832
   },
   "Italy:fiorentina": {
     "value": 40,
@@ -450,9 +450,9 @@
     "timestamp": 1765696520.0754118
   },
   "Spain:getafe": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301356.802419
+    "timestamp": 1767338345.362079
   },
   "Spain:real madrid": {
     "value": 180,
@@ -465,9 +465,9 @@
     "timestamp": 1766214869.6711423
   },
   "Spain:eibar": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766128638.1263978
+    "timestamp": 1767338338.2866051
   },
   "Belgium:standard liege": {
     "value": 80,
@@ -1525,9 +1525,9 @@
     "timestamp": 1766301312.1169264
   },
   "Spain:mirandes": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301313.8488073
+    "timestamp": 1767338338.2895977
   },
   "France:marseille": {
     "value": 80,
