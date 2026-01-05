@@ -1,8 +1,8 @@
 {
   "Portugal:fc porto b": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766301262.7544584
+    "timestamp": 1767597804.4451118
   },
   "Portugal:maritimo": {
     "value": 40,
@@ -695,9 +695,9 @@
     "timestamp": 1765264674.5561619
   },
   "World:ajax": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765351083.0006282
+    "timestamp": 1767597790.9234831
   },
   "World:atalanta": {
     "value": 180,
@@ -735,9 +735,9 @@
     "timestamp": 1764227747.1799939
   },
   "World:vfb stuttgart": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765437601.8758404
+    "timestamp": 1767597788.8095183
   },
   "World:brann": {
     "value": 180,
@@ -1100,9 +1100,9 @@
     "timestamp": 1766301273.4608219
   },
   "Portugal:torreense": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767079072.9736874
+    "timestamp": 1767597807.724368
   },
   "Portugal:oliveirense": {
     "value": 40,
@@ -1160,9 +1160,9 @@
     "timestamp": 1767511001.4843972
   },
   "Portugal:vizela": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766214827.6813283
+    "timestamp": 1767597807.7212036
   },
   "Portugal:felgueiras 1932": {
     "value": 180,
@@ -1410,9 +1410,9 @@
     "timestamp": 1766214779.9378514
   },
   "Portugal:benfica b": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766906101.6998549
+    "timestamp": 1767597804.4419115
   },
   "France:paris saint germain": {
     "value": 180,
@@ -2100,9 +2100,9 @@
     "timestamp": 1766992830.9494138
   },
   "World:egypt": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766992830.9524345
+    "timestamp": 1767597798.8492754
   },
   "World:zimbabwe": {
     "value": 180,
@@ -2117,7 +2117,7 @@
   "World:benin": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767079050.306568
+    "timestamp": 1767597798.852545
   },
   "World:senegal": {
     "value": 80,
@@ -2130,9 +2130,9 @@
     "timestamp": 1767079051.8646228
   },
   "World:nigeria": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767079047.2364557
+    "timestamp": 1767597805.9578645
   },
   "World:tanzania": {
     "value": 180,
@@ -2175,9 +2175,9 @@
     "timestamp": 1767165511.5210721
   },
   "World:mozambique": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767165513.833297
+    "timestamp": 1767597805.960948
   },
   "World:cameroon": {
     "value": 180,
@@ -2217,12 +2217,12 @@
   "World:monterrey": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767510981.036696
+    "timestamp": 1767597784.5909162
   },
   "World:atlas": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767510984.5351613
+    "timestamp": 1767597784.587834
   },
   "World:guadalajara chivas": {
     "value": 180,
@@ -2278,5 +2278,80 @@
     "value": 40,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1767511049.0325356
+  },
+  "World:cds tampico madero": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597782.3331974
+  },
+  "World:cruz azul": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597782.3362696
+  },
+  "World:hannover 96": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597786.6886694
+  },
+  "World:borussia mönchengladbach": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597786.6918287
+  },
+  "World:fc luzern": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597788.8126562
+  },
+  "World:seraing": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597790.9266038
+  },
+  "World:marbella": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597793.240802
+  },
+  "World:telstar": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597800.6688504
+  },
+  "World:fc lugano": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597795.1071103
+  },
+  "World:1 köln": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597795.1102188
+  },
+  "World:ssv ulm 1846": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597796.961152
+  },
+  "World:bonner sc": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597796.9644344
+  },
+  "World:malaga": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597800.6656578
+  },
+  "World:erzgebirge aue": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597802.62194
+  },
+  "World:union berlin": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1767597802.6252015
   }
 }
