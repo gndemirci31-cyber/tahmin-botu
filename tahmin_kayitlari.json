@@ -1,55 +1,91 @@
 {
-  "tarih": "2026-01-05",
-  "olusturulma_zamani": "2026-01-05T07:23:44.969607",
-  "toplam_tahmin": 4,
+  "tarih": "2026-01-06",
+  "olusturulma_zamani": "2026-01-06T07:21:57.109581",
+  "toplam_tahmin": 7,
   "tahminler": [
     {
-      "match": "Egypt vs Benin",
+      "match": "Pisa vs Como",
+      "pick": "2",
+      "confidence": 74,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Double chance : draw or Como and -3.5 goals",
+      "skor_tahmini": "0-2",
+      "home_form": "%25.0",
+      "away_form": "%58.3",
+      "timestamp": "2026-01-06T07:21:57.109587"
+    },
+    {
+      "match": "Algeria vs Congo DR",
       "pick": "X",
-      "confidence": 59,
+      "confidence": 61,
       "api_prediction": "1",
       "api_confidence": 85,
-      "api_advice": "Combo Double chance : Egypt or draw and -3.5 goals",
-      "skor_tahmini": "1-1",
-      "home_form": "%57.1",
-      "away_form": "%50.0",
-      "timestamp": "2026-01-05T07:23:44.969615"
-    },
-    {
-      "match": "Nigeria vs Mozambique",
-      "pick": "1",
-      "confidence": 85,
-      "api_prediction": "1",
-      "api_confidence": 80,
-      "api_advice": "Combo Double chance : Nigeria or draw and +1.5 goals",
-      "skor_tahmini": "3-1",
-      "home_form": "%83.3",
-      "away_form": "%41.7",
-      "timestamp": "2026-01-05T07:23:44.969618"
-    },
-    {
-      "match": "Montpellier vs Dunkerque",
-      "pick": "X",
-      "confidence": 64,
-      "api_prediction": "1",
-      "api_confidence": 85,
-      "api_advice": "Combo Double chance : Montpellier or draw and -3.5 goals",
-      "skor_tahmini": "1-2",
-      "home_form": "%66.7",
-      "away_form": "%66.7",
-      "timestamp": "2026-01-05T07:23:44.969620"
-    },
-    {
-      "match": "Leicester vs West Brom",
-      "pick": "X",
-      "confidence": 64,
-      "api_prediction": "1",
-      "api_confidence": 82,
-      "api_advice": "Double chance : Leicester or draw",
+      "api_advice": "Combo Double chance : Algeria or draw and -3.5 goals",
       "skor_tahmini": "2-1",
+      "home_form": "%90.5",
+      "away_form": "%90.5",
+      "timestamp": "2026-01-06T07:21:57.109590"
+    },
+    {
+      "match": "Lecce vs AS Roma",
+      "pick": "X",
+      "confidence": 72,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Double chance : draw or AS Roma and -3.5 goals",
+      "skor_tahmini": "1-1",
+      "home_form": "%45.8",
+      "away_form": "%50.0",
+      "timestamp": "2026-01-06T07:21:57.109592"
+    },
+    {
+      "match": "Granada CF vs Rayo Vallecano",
+      "pick": "X",
+      "confidence": 69,
+      "api_prediction": "2",
+      "api_confidence": 80,
+      "api_advice": "Combo Double chance : draw or Rayo Vallecano and +1.5 goals",
+      "skor_tahmini": "1-1",
       "home_form": "%41.7",
+      "away_form": "%42.9",
+      "timestamp": "2026-01-06T07:21:57.109594"
+    },
+    {
+      "match": "Ivory Coast vs Burkina Faso",
+      "pick": "X",
+      "confidence": 72,
+      "api_prediction": "2",
+      "api_confidence": 85,
+      "api_advice": "Combo Double chance : draw or Burkina Faso and -3.5 goals",
+      "skor_tahmini": "2-2",
+      "home_form": "%70.8",
+      "away_form": "%79.2",
+      "timestamp": "2026-01-06T07:21:57.109595"
+    },
+    {
+      "match": "Sassuolo vs Juventus",
+      "pick": "2",
+      "confidence": 76,
+      "api_prediction": "2",
+      "api_confidence": 82,
+      "api_advice": "Double chance : draw or Juventus",
+      "skor_tahmini": "1-2",
+      "home_form": "%41.7",
+      "away_form": "%79.2",
+      "timestamp": "2026-01-06T07:21:57.109597"
+    },
+    {
+      "match": "West Ham vs Nottingham Forest",
+      "pick": "2",
+      "confidence": 68,
+      "api_prediction": "2",
+      "api_confidence": 82,
+      "api_advice": "Double chance : draw or Nottingham Forest",
+      "skor_tahmini": "0-2",
+      "home_form": "%12.5",
       "away_form": "%37.5",
-      "timestamp": "2026-01-05T07:23:44.969622"
+      "timestamp": "2026-01-06T07:21:57.109599"
     }
   ]
 }
