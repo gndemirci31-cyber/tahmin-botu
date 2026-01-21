@@ -120,9 +120,9 @@
     "timestamp": 1768720695.3754733
   },
   "Netherlands:excelsior": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634737.296551
+    "timestamp": 1768980326.5604415
   },
   "Netherlands:fortuna sittard": {
     "value": 40,
@@ -535,14 +535,14 @@
     "timestamp": 1768893835.938524
   },
   "World:pafos": {
-    "value": 180,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765351093.8247042
-  },
-  "World:barcelona": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264669.4271731
+    "timestamp": 1768980375.3350344
+  },
+  "World:barcelona": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980366.2404819
   },
   "World:olympiakos piraeus": {
     "value": 80,
@@ -552,7 +552,7 @@
   "World:union st gilloise": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264677.174214
+    "timestamp": 1768980381.4914021
   },
   "World:inter": {
     "value": 80,
@@ -560,9 +560,9 @@
     "timestamp": 1768893903.8986442
   },
   "World:psv eindhoven": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264684.453119
+    "timestamp": 1768980378.4809084
   },
   "World:napoli": {
     "value": 180,
@@ -585,9 +585,9 @@
     "timestamp": 1768893903.90539
   },
   "World:atletico madrid": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264684.4559257
+    "timestamp": 1768980329.5800884
   },
   "World:fc copenhagen": {
     "value": 180,
@@ -612,17 +612,17 @@
   "World:newcastle united": {
     "value": 90,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1765351091.700579
+    "timestamp": 1768980378.4733548
   },
   "World:benfica": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765351098.119437
+    "timestamp": 1768980372.3072615
   },
   "World:galatasaray": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264680.2137115
+    "timestamp": 1768980329.5726058
   },
   "World:bodo glimt": {
     "value": 180,
@@ -630,14 +630,14 @@
     "timestamp": 1768893856.2190106
   },
   "World:athletic club": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765351087.4351556
+    "timestamp": 1768980369.2834003
   },
   "World:qarabag": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548044.0738125
+    "timestamp": 1768980332.6988733
   },
   "Turkey:konyaspor": {
     "value": 180,
@@ -677,22 +677,22 @@
   "World:juventus": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765351093.8219352
+    "timestamp": 1768980372.2995257
   },
   "World:eintracht frankfurt": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264669.4299645
+    "timestamp": 1768980332.706464
   },
   "World:liverpool": {
     "value": 140,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1765264671.8597324
+    "timestamp": 1768980384.5166972
   },
   "World:chelsea": {
     "value": 120,
     "source": "REALISTIC_SPECIFIC",
-    "timestamp": 1765264674.5561619
+    "timestamp": 1768980375.3274686
   },
   "World:ajax": {
     "value": 180,
@@ -700,14 +700,14 @@
     "timestamp": 1768893893.2082067
   },
   "World:atalanta": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264674.5533202
+    "timestamp": 1768980369.2758687
   },
   "World:slavia praha": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548039.664711
+    "timestamp": 1768980366.2329457
   },
   "World:sporting cp": {
     "value": 80,
@@ -717,12 +717,12 @@
   "World:marseille": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1765264677.1771173
+    "timestamp": 1768980384.5091195
   },
   "World:bayern münchen": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1767684068.31851
+    "timestamp": 1768980381.483782
   },
   "World:club brugge kv": {
     "value": 80,
@@ -890,9 +890,9 @@
     "timestamp": 1768807447.1905513
   },
   "World:drita": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1766042245.0621936
+    "timestamp": 1768980264.2780466
   },
   "World:omonia nicosia": {
     "value": 40,
@@ -1162,7 +1162,7 @@
   "Portugal:vizela": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768461708.8280103
+    "timestamp": 1768980335.7600517
   },
   "Portugal:felgueiras 1932": {
     "value": 180,
@@ -1170,9 +1170,9 @@
     "timestamp": 1768634181.0271602
   },
   "Portugal:união de leiria": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548080.7175927
+    "timestamp": 1768980335.7523234
   },
   "Portugal:leixoes": {
     "value": 40,
@@ -1712,7 +1712,7 @@
   "Netherlands:az alkmaar": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634723.9163465
+    "timestamp": 1768980326.5529742
   },
   "Netherlands:utrecht": {
     "value": 80,
@@ -1872,7 +1872,7 @@
   "World:wisla krakow": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634481.5302374
+    "timestamp": 1768980218.6002257
   },
   "World:borac banja luka": {
     "value": 180,
@@ -1880,9 +1880,9 @@
     "timestamp": 1763239285.0790994
   },
   "World:radnicki 1923": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720609.9938679
+    "timestamp": 1768980304.5691638
   },
   "World:los angeles galaxy": {
     "value": 180,
@@ -1980,14 +1980,14 @@
     "timestamp": 1764314085.9462707
   },
   "World:start brno": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634252.0688732
+    "timestamp": 1768980212.5466428
   },
   "World:příbram": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634130.5564096
+    "timestamp": 1768980258.2023847
   },
   "World:slavia praha ii": {
     "value": 180,
@@ -2362,7 +2362,7 @@
   "World:fc carl zeiss jena": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634379.3003788
+    "timestamp": 1768980344.885538
   },
   "World:1899 hoffenheim": {
     "value": 180,
@@ -2385,14 +2385,14 @@
     "timestamp": 1768375297.5300808
   },
   "World:altglienicke": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720594.741101
+    "timestamp": 1768980243.3801432
   },
   "World:polonia bytom": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768029256.53605
+    "timestamp": 1768980172.3826115
   },
   "World:alanyaspor": {
     "value": 80,
@@ -2400,9 +2400,9 @@
     "timestamp": 1767770433.5666382
   },
   "World:metaloglobus": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768115820.7367437
+    "timestamp": 1768980245.6608112
   },
   "World:nyiregyhaza": {
     "value": 80,
@@ -2487,12 +2487,12 @@
   "World:neuchatel xamax": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634357.3202782
+    "timestamp": 1768980319.901636
   },
   "World:muscelul câmpulung elite": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768202512.5053031
+    "timestamp": 1768980245.6533463
   },
   "World:unirea slobozia": {
     "value": 180,
@@ -2505,9 +2505,9 @@
     "timestamp": 1768634478.4934063
   },
   "World:bekescsaba 1912": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634391.5081897
+    "timestamp": 1768980239.9486463
   },
   "World:verl": {
     "value": 40,
@@ -2620,9 +2620,9 @@
     "timestamp": 1768461683.5126987
   },
   "World:pogoń grod mazowiecki": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634487.227854
+    "timestamp": 1768980206.4433424
   },
   "World:radomiak radom": {
     "value": 80,
@@ -2825,9 +2825,9 @@
     "timestamp": 1768029287.8096662
   },
   "World:opatija": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768029287.8133965
+    "timestamp": 1768980185.0201678
   },
   "World:nk varazdin": {
     "value": 80,
@@ -2837,7 +2837,7 @@
   "World:sesvete": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768029290.9712288
+    "timestamp": 1768980215.573681
   },
   "World:tychy 71": {
     "value": 180,
@@ -3015,9 +3015,9 @@
     "timestamp": 1768634193.23009
   },
   "World:džiugas telšiai": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634656.1555157
+    "timestamp": 1768980221.638907
   },
   "World:bfc preussen": {
     "value": 40,
@@ -3025,9 +3025,9 @@
     "timestamp": 1768375358.6861048
   },
   "World:považská bystrica": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768029376.455014
+    "timestamp": 1768980175.4312932
   },
   "World:mtk budapest": {
     "value": 40,
@@ -3045,9 +3045,9 @@
     "timestamp": 1768547987.9512057
   },
   "World:fc fredericia": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548002.1079023
+    "timestamp": 1768980188.047279
   },
   "World:pogon szczecin": {
     "value": 40,
@@ -3115,9 +3115,9 @@
     "timestamp": 1768029428.0853467
   },
   "World:wisla plock": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634376.1578548
+    "timestamp": 1768980304.5615938
   },
   "World:rapid": {
     "value": 80,
@@ -3242,7 +3242,7 @@
   "World:radomlje": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768807425.9845397
+    "timestamp": 1768980255.1424186
   },
   "World:gyori eto": {
     "value": 40,
@@ -3252,7 +3252,7 @@
   "World:fk partizan": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720656.5204237
+    "timestamp": 1768980291.6893253
   },
   "World:sandecja nowy sącz": {
     "value": 180,
@@ -3260,9 +3260,9 @@
     "timestamp": 1768634445.5125952
   },
   "World:wisła kraków ii": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768029508.5346613
+    "timestamp": 1768980297.7813613
   },
   "World:vejle": {
     "value": 80,
@@ -3402,7 +3402,7 @@
   "World:podbrezová": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720675.9908295
+    "timestamp": 1768980307.6053774
   },
   "World:nk lokomotiva zagreb": {
     "value": 80,
@@ -3537,12 +3537,12 @@
   "World:zaglebie lubin": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634684.507521
+    "timestamp": 1768980252.0595582
   },
   "World:mlada boleslav": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634531.8478398
+    "timestamp": 1768980236.923078
   },
   "World:táborsko": {
     "value": 40,
@@ -3587,7 +3587,7 @@
   "World:levski sofia": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634405.8732255
+    "timestamp": 1768980252.0519426
   },
   "World:radnicki nis": {
     "value": 40,
@@ -3595,9 +3595,9 @@
     "timestamp": 1768893778.6570697
   },
   "World:grazer ak": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548006.0885444
+    "timestamp": 1768980255.1498342
   },
   "World:komárno": {
     "value": 80,
@@ -3620,9 +3620,9 @@
     "timestamp": 1768720659.5425775
   },
   "World:imt novi beograd": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768807432.068907
+    "timestamp": 1768980294.7277665
   },
   "World:fortuna köln": {
     "value": 40,
@@ -3750,9 +3750,9 @@
     "timestamp": 1768548003.8149405
   },
   "World:chrobry głogów": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634142.9556603
+    "timestamp": 1768980191.0890262
   },
   "World:lechia zielona góra": {
     "value": 40,
@@ -3772,7 +3772,7 @@
   "World:rīgas fs": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634401.8753266
+    "timestamp": 1768980194.131397
   },
   "World:super nova": {
     "value": 80,
@@ -3790,9 +3790,9 @@
     "timestamp": 1768375294.562777
   },
   "World:dobrudzha": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768375300.5552752
+    "timestamp": 1768980264.2705665
   },
   "World:schalke u23": {
     "value": 40,
@@ -3815,9 +3815,9 @@
     "timestamp": 1768634334.5590665
   },
   "World:bvsc": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634328.4980168
+    "timestamp": 1768980261.2388365
   },
   "World:tiszakecske": {
     "value": 40,
@@ -3847,7 +3847,7 @@
   "World:javor": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634294.7994702
+    "timestamp": 1768980276.4594314
   },
   "World:baník ostrava": {
     "value": 40,
@@ -3862,7 +3862,7 @@
   "World:górnik łęczna": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634239.7515614
+    "timestamp": 1768980227.7574377
   },
   "World:stal kraśnik": {
     "value": 180,
@@ -3882,12 +3882,12 @@
   "World:posušje": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634168.87039
+    "timestamp": 1768980270.3880985
   },
   "World:miedz legnica": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634142.9498682
+    "timestamp": 1768980163.1888454
   },
   "World:miedź legnica ii": {
     "value": 180,
@@ -3895,9 +3895,9 @@
     "timestamp": 1768375351.4685571
   },
   "World:lokomotiv sofia": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634274.7255447
+    "timestamp": 1768980307.5978227
   },
   "World:radnik surdulica": {
     "value": 40,
@@ -3907,7 +3907,7 @@
   "World:makkabi": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768375358.6919005
+    "timestamp": 1768980341.8390625
   },
   "World:karcag se": {
     "value": 180,
@@ -3932,7 +3932,7 @@
   "World:cska sofia": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634531.8412173
+    "timestamp": 1768980288.6546297
   },
   "World:korona kielce": {
     "value": 80,
@@ -3977,12 +3977,12 @@
   "World:plauen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768375430.2742453
+    "timestamp": 1768980344.8930943
   },
   "World:hertha zehlendorf": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634484.5665905
+    "timestamp": 1768980341.8315248
   },
   "World:union klosterfelde": {
     "value": 40,
@@ -4030,9 +4030,9 @@
     "timestamp": 1768807408.4087396
   },
   "World:gamba osaka": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768461633.544607
+    "timestamp": 1768980154.3542395
   },
   "World:machida zelvia": {
     "value": 80,
@@ -4097,7 +4097,7 @@
   "World:botev plovdiv": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768461668.7147665
+    "timestamp": 1768980291.6818655
   },
   "World:maritsa plovdiv": {
     "value": 40,
@@ -4105,14 +4105,14 @@
     "timestamp": 1768461668.7200015
   },
   "World:ofk beograd": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720659.54969
+    "timestamp": 1768980230.7873266
   },
   "World:skive": {
-    "value": 40,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768461677.5234356
+    "timestamp": 1768980188.0546315
   },
   "World:fk tobol kostanay": {
     "value": 180,
@@ -4145,9 +4145,9 @@
     "timestamp": 1768547970.0526426
   },
   "World:fc ryukyu": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768547970.057861
+    "timestamp": 1768980157.0494049
   },
   "World:okinawa sv": {
     "value": 40,
@@ -4165,9 +4165,9 @@
     "timestamp": 1768893740.8161538
   },
   "World:consadole sapporo": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768547974.4743776
+    "timestamp": 1768980157.0567455
   },
   "World:oleksandria": {
     "value": 180,
@@ -4202,7 +4202,7 @@
   "World:aarhus fremad": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548002.1132464
+    "timestamp": 1768980236.9156199
   },
   "World:admira wacker": {
     "value": 180,
@@ -4245,9 +4245,9 @@
     "timestamp": 1768548024.1303804
   },
   "World:dunajska streda": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548030.807653
+    "timestamp": 1768980230.7799132
   },
   "World:sku amstetten": {
     "value": 180,
@@ -4292,7 +4292,7 @@
   "World:frýdek místek": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548052.8662846
+    "timestamp": 1768980175.4239464
   },
   "World:sparta katowice": {
     "value": 180,
@@ -4300,9 +4300,9 @@
     "timestamp": 1768548052.8720734
   },
   "World:mannsdorf großenzersdorf": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548055.05717
+    "timestamp": 1768980313.7198122
   },
   "World:schwechat": {
     "value": 80,
@@ -4320,9 +4320,9 @@
     "timestamp": 1768548057.2522302
   },
   "World:rapid wien ii": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768548059.4742537
+    "timestamp": 1768980313.712376
   },
   "World:donau": {
     "value": 80,
@@ -4480,14 +4480,14 @@
     "timestamp": 1768634060.1253397
   },
   "World:lnz cherkasy": {
-    "value": 40,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634063.5231826
-  },
-  "World:nasaf": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634066.5525646
+    "timestamp": 1768980288.6621654
+  },
+  "World:nasaf": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980276.4669163
   },
   "World:varnsdorf": {
     "value": 40,
@@ -4607,7 +4607,7 @@
   "World:stal rzeszów": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634121.450028
+    "timestamp": 1768980206.4358916
   },
   "World:viktoria plzeň ii": {
     "value": 40,
@@ -4635,9 +4635,9 @@
     "timestamp": 1768634136.8616674
   },
   "World:kladno": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634139.9185038
+    "timestamp": 1768980258.1949327
   },
   "World:delémont": {
     "value": 40,
@@ -4695,9 +4695,9 @@
     "timestamp": 1768634171.9217987
   },
   "World:dubrava zagreb": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634178.0199947
+    "timestamp": 1768980203.4125028
   },
   "World:varteks varaždin": {
     "value": 180,
@@ -4770,9 +4770,9 @@
     "timestamp": 1768634208.4133885
   },
   "World:ruch chorzów": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634211.444614
+    "timestamp": 1768980172.389962
   },
   "World:frem": {
     "value": 80,
@@ -4805,14 +4805,14 @@
     "timestamp": 1768634221.28285
   },
   "World:fk minyor pernik": {
-    "value": 80,
-    "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634227.4437397
-  },
-  "World:cska sofia ii": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634227.4497926
+    "timestamp": 1768980273.4319487
+  },
+  "World:cska sofia ii": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980197.261237
   },
   "World:vfl halle": {
     "value": 40,
@@ -4855,9 +4855,9 @@
     "timestamp": 1768634242.822543
   },
   "World:podbeskidzie": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720535.6438243
+    "timestamp": 1768980297.788848
   },
   "World:jastrzębie": {
     "value": 40,
@@ -4955,9 +4955,9 @@
     "timestamp": 1768634313.2245243
   },
   "World:fc schaffhausen": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634316.2677567
+    "timestamp": 1768980360.5086527
   },
   "World:elva": {
     "value": 80,
@@ -5002,7 +5002,7 @@
   "World:zorya luhansk": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634347.6403532
+    "timestamp": 1768980163.1962073
   },
   "World:štětí": {
     "value": 180,
@@ -5035,9 +5035,9 @@
     "timestamp": 1768634363.3782692
   },
   "World:bw lohne": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634373.1007066
+    "timestamp": 1768980354.0368814
   },
   "World:fsv frankfurt": {
     "value": 40,
@@ -5125,9 +5125,9 @@
     "timestamp": 1768634439.397801
   },
   "World:kickers offenbach": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634439.4042735
+    "timestamp": 1768980338.7997763
   },
   "World:rot weiß walldorf": {
     "value": 40,
@@ -5147,12 +5147,12 @@
   "World:slavia sofia": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634448.8185587
+    "timestamp": 1768980301.5177014
   },
   "World:vfr mannheim": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634451.9005015
+    "timestamp": 1768980350.977727
   },
   "World:fc 08 homburg": {
     "value": 40,
@@ -5380,9 +5380,9 @@
     "timestamp": 1768634574.3741777
   },
   "World:siroki brijeg": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634577.392534
+    "timestamp": 1768980215.566133
   },
   "World:riverstown": {
     "value": 80,
@@ -5435,14 +5435,14 @@
     "timestamp": 1768634659.1625955
   },
   "World:bulle": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634659.1694403
+    "timestamp": 1768980319.9091418
   },
   "World:grobiņa": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634665.8695006
+    "timestamp": 1768980194.1387737
   },
   "World:nürnberg ii": {
     "value": 80,
@@ -5485,9 +5485,9 @@
     "timestamp": 1768634700.6895478
   },
   "World:sarasota paradise": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768634700.696647
+    "timestamp": 1768980387.5444407
   },
   "World:hegelmann litauen": {
     "value": 180,
@@ -5525,9 +5525,9 @@
     "timestamp": 1768720509.286064
   },
   "World:prishtina": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720512.3901365
+    "timestamp": 1768980279.5204966
   },
   "World:sokol zápy": {
     "value": 40,
@@ -5602,7 +5602,7 @@
   "World:schöningen": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768720575.8515475
+    "timestamp": 1768980310.6833167
   },
   "World:aktobe": {
     "value": 40,
@@ -5715,9 +5715,9 @@
     "timestamp": 1768807419.9694645
   },
   "World:portimonense": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1768807422.9895418
+    "timestamp": 1768980267.3282192
   },
   "World:struga": {
     "value": 40,
@@ -5883,5 +5883,280 @@
     "value": 40,
     "source": "REALISTIC_LEAGUE",
     "timestamp": 1768893909.6839404
+  },
+  "World:shonan bellmare": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980154.3615072
+  },
+  "World:neman": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980166.213538
+  },
+  "World:lida": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980166.2207532
+  },
+  "World:fc sochi": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980169.3057609
+  },
+  "World:tyumen": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980169.3131025
+  },
+  "World:politehnica iasi": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980178.4538846
+  },
+  "World:usv iaşi": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980178.461248
+  },
+  "World:unia skierniewice": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980182.3748765
+  },
+  "World:pelikan łowicz": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980182.3822603
+  },
+  "World:radnik bijeljina": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980185.0275428
+  },
+  "World:kalisz": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980191.0964146
+  },
+  "World:vihren": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980197.253636
+  },
+  "World:sportist svoge": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980200.2880824
+  },
+  "World:hebar 1918": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980200.2955632
+  },
+  "World:segesta sisak": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980203.4050457
+  },
+  "World:vfb lübeck": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980209.515177
+  },
+  "World:etsv hamburg": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980209.5226462
+  },
+  "World:znojmo": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980212.5540597
+  },
+  "World:kolos kovalivka": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980218.6076636
+  },
+  "World:tauras": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980221.6315606
+  },
+  "World:ludogorets ii": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980248.6953833
+  },
+  "World:sevlievo": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980224.6734493
+  },
+  "World:resovia rzeszów": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980227.7648385
+  },
+  "World:beroe": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980233.8923028
+  },
+  "World:yantra 2019": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980233.8997126
+  },
+  "World:hódmezővásárhely": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980239.9561205
+  },
+  "World:tennis": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980243.3724654
+  },
+  "World:dunav ruse": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980248.7028155
+  },
+  "World:tatabánya": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980261.2462227
+  },
+  "World:fc dallas": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980267.3357706
+  },
+  "World:solin": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980270.3955717
+  },
+  "World:septemvri tervel": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980273.4243977
+  },
+  "World:zhenys": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980279.512943
+  },
+  "World:olimpic zărneşti": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980282.5657964
+  },
+  "World:csm vaslui": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980282.5732753
+  },
+  "World:volga ulyanovsk": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980285.6025708
+  },
+  "World:leningradets": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980285.6101806
+  },
+  "World:rubin": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980294.7352383
+  },
+  "World:enisey": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980301.5252395
+  },
+  "World:magdeburg ii": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980310.6758256
+  },
+  "World:völkermarkt": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980316.7499328
+  },
+  "World:austria klagenfurt": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980316.757431
+  },
+  "World:neusiedl": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980322.9504216
+  },
+  "World:oberpullendorf": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980322.9579036
+  },
+  "World:germania ober roden": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980338.792193
+  },
+  "World:wiener viktoria": {
+    "value": 180,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980347.9272428
+  },
+  "World:red star penzing": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980347.9347978
+  },
+  "World:weinheim": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980350.9853158
+  },
+  "World:holthausen biene": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980354.0293558
+  },
+  "World:paderborn ii": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980357.087234
+  },
+  "World:verl ii": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980357.0948646
+  },
+  "World:yf juventus": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980360.5011206
+  },
+  "World:vevey sports": {
+    "value": 80,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980363.9413846
+  },
+  "World:sion ii": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980363.949031
+  },
+  "World:new york red bulls": {
+    "value": 40,
+    "source": "REALISTIC_LEAGUE",
+    "timestamp": 1768980387.53682
   }
 }
