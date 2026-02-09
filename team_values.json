@@ -82,7 +82,7 @@
   "Turkey:kayserispor": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931406.712751
+    "timestamp": 1770623553.0282335
   },
   "Turkey:samsunspor": {
     "value": 80,
@@ -130,9 +130,9 @@
     "timestamp": 1770449901.9693274
   },
   "Italy:cagliari": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769845081.9105492
+    "timestamp": 1770623578.6150937
   },
   "Italy:bologna": {
     "value": 80,
@@ -230,9 +230,9 @@
     "timestamp": 1763881979.4522078
   },
   "Turkey:gazişehir gaziantep": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931326.473355
+    "timestamp": 1770623565.3810127
   },
   "Turkey:antalyaspor": {
     "value": 40,
@@ -350,9 +350,9 @@
     "timestamp": 1770536321.452943
   },
   "Italy:atalanta": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931305.1116326
+    "timestamp": 1770623569.0007706
   },
   "Italy:lazio": {
     "value": 180,
@@ -380,9 +380,9 @@
     "timestamp": 1770449514.4374583
   },
   "Spain:racing santander": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931450.467004
+    "timestamp": 1770623575.1909146
   },
   "Spain:deportivo la coruna": {
     "value": 180,
@@ -500,9 +500,9 @@
     "timestamp": 1770449800.7042983
   },
   "Italy:cremonese": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931403.3678312
+    "timestamp": 1770623569.0131967
   },
   "Italy:udinese": {
     "value": 180,
@@ -1035,9 +1035,9 @@
     "timestamp": 1766042237.2509618
   },
   "World:dynamo kyiv": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770277541.3849869
+    "timestamp": 1770623540.5103364
   },
   "World:fsv mainz 05": {
     "value": 180,
@@ -1240,9 +1240,9 @@
     "timestamp": 1769931190.4015894
   },
   "Portugal:portimonense": {
-    "value": 180,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769845108.0270534
+    "timestamp": 1770623572.0566463
   },
   "Italy:sudtirol": {
     "value": 80,
@@ -1392,12 +1392,12 @@
   "Turkey:kocaelispor": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770018289.848386
+    "timestamp": 1770623553.0406492
   },
   "Spain:espanyol": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769758774.021043
+    "timestamp": 1770623582.2539647
   },
   "Portugal:academico viseu": {
     "value": 80,
@@ -1410,9 +1410,9 @@
     "timestamp": 1770363929.7805088
   },
   "Portugal:benfica b": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769672218.5933325
+    "timestamp": 1770623572.069364
   },
   "France:paris saint germain": {
     "value": 40,
@@ -1522,12 +1522,12 @@
   "Spain:villarreal": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769844977.5101929
+    "timestamp": 1770623582.2416935
   },
   "Spain:mirandes": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770018297.4190838
+    "timestamp": 1770623575.2040868
   },
   "France:marseille": {
     "value": 80,
@@ -1607,7 +1607,7 @@
   "Italy:roma": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770018301.608116
+    "timestamp": 1770623578.6027486
   },
   "Italy:verona": {
     "value": 180,
@@ -1652,7 +1652,7 @@
   "Turkey:genclerbirligi": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769931326.462816
+    "timestamp": 1770623562.321709
   },
   "Italy:juve stabia": {
     "value": 180,
@@ -1912,7 +1912,7 @@
   "World:krylia sovetov": {
     "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770104283.855049
+    "timestamp": 1770623549.9701064
   },
   "World:msv neuruppin": {
     "value": 40,
@@ -2017,7 +2017,7 @@
   "Turkey:kasımpaşa": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769758690.812691
+    "timestamp": 1770623565.39333
   },
   "Turkey:başakşehir": {
     "value": 40,
@@ -2035,9 +2035,9 @@
     "timestamp": 1770536331.06288
   },
   "Turkey:fenerbahçe": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770018289.8596456
+    "timestamp": 1770623562.309334
   },
   "World:vysočina jihlava": {
     "value": 180,
@@ -3430,9 +3430,9 @@
     "timestamp": 1768115786.9564016
   },
   "World:artis": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769758583.2835946
+    "timestamp": 1770623559.2361026
   },
   "World:slávia tu košice": {
     "value": 40,
@@ -3692,7 +3692,7 @@
   "World:avispa fukuoka": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769238891.7805936
+    "timestamp": 1770623537.8282313
   },
   "World:noboeka": {
     "value": 80,
@@ -4460,9 +4460,9 @@
     "timestamp": 1768634050.8043833
   },
   "World:roasso kumamoto": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769152814.6493726
+    "timestamp": 1770623537.840732
   },
   "World:omiya ardija": {
     "value": 80,
@@ -5735,9 +5735,9 @@
     "timestamp": 1770363779.4015145
   },
   "World:surkhon": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769672138.541577
+    "timestamp": 1770623556.1854455
   },
   "World:hammarby": {
     "value": 180,
@@ -5900,9 +5900,9 @@
     "timestamp": 1768980166.2207532
   },
   "World:fc sochi": {
-    "value": 180,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770277534.7965949
+    "timestamp": 1770623556.1731868
   },
   "World:tyumen": {
     "value": 180,
@@ -6220,9 +6220,9 @@
     "timestamp": 1770363690.3178563
   },
   "World:zenit": {
-    "value": 80,
+    "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770363823.8684926
+    "timestamp": 1770623546.8949878
   },
   "World:shanghai sipg": {
     "value": 80,
@@ -6315,9 +6315,9 @@
     "timestamp": 1770449334.8115914
   },
   "World:ural": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770277504.9196959
+    "timestamp": 1770623543.5978353
   },
   "World:pyunik yerevan": {
     "value": 180,
@@ -7502,7 +7502,7 @@
   "World:dinamo samarqand": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1769584868.2541745
+    "timestamp": 1770623546.9072926
   },
   "World:chernomorets": {
     "value": 40,
@@ -8012,7 +8012,7 @@
   "World:kamaz": {
     "value": 180,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770104280.5197468
+    "timestamp": 1770623549.9824421
   },
   "World:moravia morawica": {
     "value": 40,
@@ -8045,9 +8045,9 @@
     "timestamp": 1770536297.1595948
   },
   "World:saburtalo": {
-    "value": 40,
+    "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770018276.5011961
+    "timestamp": 1770623540.522606
   },
   "World:holstein kiel ii": {
     "value": 180,
@@ -9215,9 +9215,9 @@
     "timestamp": 1770363830.604009
   },
   "World:rosenborg": {
-    "value": 80,
+    "value": 40,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770363852.2344933
+    "timestamp": 1770623559.2235804
   },
   "World:klingenbach": {
     "value": 40,
@@ -9607,7 +9607,7 @@
   "World:yunnan yukun": {
     "value": 80,
     "source": "REALISTIC_LEAGUE",
-    "timestamp": 1770449642.390827
+    "timestamp": 1770623543.6102412
   },
   "World:rudes": {
     "value": 180,
