@@ -1,16 +1,1 @@
-{
-  "elo": {},
-  "goal_scale": {},
-  "w_mkt": 0.45,
-  "pred_store": {},
-  "metrics": {},
-  "last_saved": "2026-03-15T07:39:39.486639Z",
-  "last_pred_date": null,
-  "last_res_date": null,
-  "external_data": {
-    "team_values": {},
-    "fifa_rankings": {},
-    "uefa_coefficients": {},
-    "last_updated": {}
-  }
-}
+
